@@ -3,280 +3,680 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WeStarts Global Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>مفكرة احترافية | نسخة الأداء الفائق</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        :root {
-            --primary: #00d2ff; --accent: #FF9F0A; --bg: #050505;
-            --card: rgba(255, 255, 255, 0.05); --text: #ffffff;
-            --font-main: 'Tajawal', sans-serif; --font-nums: 'Inter', sans-serif;
+        :root { 
+            --primary: #2563eb; --bg: #f8fafc; --card: #ffffff;
+            --text: #0f172a; --text-m: #64748b; --border: rgba(0,0,0,0.06);
+            --radius: 24px;
         }
-        * { box-sizing: border-box; font-family: var(--font-main); -webkit-tap-highlight-color: transparent; }
-        
+
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --text-m: #94a3b8; --border: rgba(255,255,255,0.05); }
+        }
+
+        /* --- الأنماط اللولبية --- */
+        body.theme-sunset { --primary: #f97316; --bg: #fffaf5; --card: #ffffff; --text: #431407; }
+        body.theme-nebula { --primary: #38bdf8; --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: rgba(255,255,255,0.1); }
+        body.theme-rose { --primary: #db2777; --bg: #fff1f2; --card: #ffffff; --text: #4c0519; }
+        body.theme-eclipse { --primary: #94a3b8; --bg: #1e293b; --card: #334155; --text: #f1f5f9; --border: rgba(255,255,255,0.05); }
+        body.theme-royal { --primary: #8b5cf6; --bg: #f5f3ff; --card: #ffffff; --text: #2e1065; }
+
         body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            margin: 0; 
-            height: 100vh; 
-            height: 100dvh; 
-            overflow: hidden; 
-            display: flex; 
-            justify-content: center; 
+            font-family: 'IBM Plex Sans Arabic', sans-serif; background: var(--bg); 
+            margin: 0; color: var(--text); transition: background 0.4s ease;
+            overflow-x: hidden; -webkit-tap-highlight-color: transparent;
         }
 
-        .app-container { width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column; position: relative; }
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 25px; background: var(--card); 
+            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--border);
+            height: 60px; box-sizing: border-box;
+        }
+        header h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: -0.5px; }
+
+        .search-container { padding: 15px 25px; }
+        #searchInput { 
+            width: 100%; padding: 16px 22px; border-radius: var(--radius); border: 1px solid var(--border); 
+            background: var(--card); color: var(--text); font-family: 'IBM Plex Sans Arabic'; outline: none; box-sizing: border-box;
+            transition: 0.3s; font-size: 15px;
+        }
+        #searchInput:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+
+        .tags-bar { display: flex; gap: 12px; padding: 5px 25px 20px; overflow-x: auto; scrollbar-width: none; }
+        .tag-btn { padding: 8px 24px; background: var(--card); border-radius: 50px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px solid var(--border); transition: 0.3s; color: var(--text-m); font-family: 'IBM Plex Sans Arabic'; }
+        .tag-btn.active { background: var(--primary); color: #fff; border: none; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+
+        .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px 120px; }
         
-        .header { padding: 25px 20px 10px; text-align: center; }
-        .header h2 { 
-            margin: 0 0 12px 0; font-size: 1.8rem; font-weight: 800; 
-            background: linear-gradient(45deg, #00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            font-family: var(--font-nums);
-        }
-
-        .search-wrapper {
-            background: rgba(255, 255, 255, 0.07); border-radius: 12px; padding: 10px 15px;
-            display: flex; align-items: center; border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .search-wrapper input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 0.9rem; }
-
-        .currency-list { flex: 1; overflow-y: auto; padding: 10px 15px 120px; scroll-behavior: smooth; }
-        .currency-list::-webkit-scrollbar { width: 0; }
-
-        .currency-card {
-            background: var(--card); margin-bottom: 8px; padding: 12px 16px; border-radius: 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.03); transition: 0.2s;
-        }
-        .currency-card.active { border-color: var(--primary); background: rgba(0, 210, 255, 0.1); }
-        
-        .info { display: flex; align-items: center; gap: 12px; }
-        .flag-capsule { width: 42px; height: 28px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #111; }
-        .flag-img { width: 100%; height: 100%; object-fit: cover; }
-
-        .meta { display: flex; flex-direction: column; text-align: right; }
-        .meta .code { font-family: var(--font-nums); font-weight: 700; font-size: 0.95rem; color: #eee; }
-        .meta .name { font-size: 0.75rem; color: #888; }
-        .value { font-family: var(--font-nums); font-size: 1.25rem; font-weight: 600; color: var(--primary); }
-
-        /* تعديل زر الحاسبة العائم */
-        .fab-keyboard {
-            position: absolute; 
-            bottom: 40px; /* تم رفعه قليلاً */
-            left: 20px; 
-            width: 65px; 
-            height: 65px;
-            background: var(--primary); 
-            border-radius: 50%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.4); 
-            z-index: 900; 
+        .note-card { 
+            border-radius: var(--radius); padding: 22px; min-height: 170px; 
+            background: var(--card); border: 1px solid var(--border);
+            position: relative; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, box-shadow 0.3s ease;
+            display: flex; flex-direction: column; justify-content: space-between;
             cursor: pointer;
-            border: 2px solid rgba(255,255,255,0.2);
+            animation: cardIn 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+            /* تم حذف overflow: hidden للسماح للقائمة بالظهور خارج البطاقة */
+        }
+        
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* تحسين لوحة الحاسبة */
-        .calc-sheet {
-            position: absolute; 
-            bottom: -100%; 
-            left: 0; 
-            width: 100%; 
-            background: rgba(15, 15, 18, 0.98); 
-            backdrop-filter: blur(25px);
-            padding: 20px 20px 40px; 
-            border-radius: 30px 30px 0 0;
-            transition: 0.5s cubic-bezier(0.1, 0.7, 0.1, 1); 
-            z-index: 1000;
-            border-top: 1px solid rgba(255,255,255,0.15);
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
-        }
-        .calc-sheet.show { bottom: 0; }
+        .note-card.removing { transform: scale(0.8) translateY(-20px); opacity: 0; pointer-events: none; }
+        .note-card:active { transform: scale(0.96); }
+        
+        .note-card h3 { margin: 0 0 10px; font-size: 17px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .note-card p { font-size: 13px; color: rgba(255,255,255,0.95); line-height: 1.6; margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+        .card-footer { margin-top: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: rgba(255,255,255,0.8); font-weight: 600; }
 
-        .calc-display {
-            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;
-            text-align: left; margin-bottom: 15px; min-height: 60px;
-            font-family: var(--font-nums); font-size: 1.8rem; color: var(--primary); 
-            display: flex; align-items: center; justify-content: flex-end;
-        }
+        .card-menu-btn { position: absolute; top: 15px; left: 10px; color: #fff; padding: 10px; cursor: pointer; z-index: 10; border-radius: 50%; transition: 0.2s; }
+        .card-menu-btn:hover { background: rgba(255,255,255,0.1); }
 
-        .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .keypad button {
-            height: 62px; border-radius: 16px; border: none; font-family: var(--font-nums);
-            font-size: 1.5rem; font-weight: 600; color: white; background: #252528;
-            transition: background 0.2s;
+        /* --- تعديل قائمة الخيارات لتظهر فوق البطاقة بوضوح --- */
+        .card-dropdown { 
+            position: absolute; top: 50px; left: 10px; background: var(--card); 
+            border-radius: 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); 
+            display: none; flex-direction: column; z-index: 9999; min-width: 170px; 
+            overflow: hidden; border: 1px solid var(--border);
+            animation: dropdownIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .keypad button:active { background: #444; }
-        .btn-op { background: var(--accent) !important; color: #000 !important; }
-        .btn-ac { background: #ff453a !important; }
+        @keyframes dropdownIn { from { opacity:0; transform: scale(0.9) translateY(-10px); } to { opacity:1; transform: scale(1) translateY(0); } }
 
-        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .card-dropdown div { padding: 14px 18px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); transition: 0.2s; cursor: pointer; display: flex; align-items: center; gap: 12px; font-weight: 500; }
+        .card-dropdown div:hover { background: rgba(37, 99, 235, 0.08); color: var(--primary); }
+        .card-dropdown div:last-child { border-bottom: none; }
+
+        .fab { position: fixed; bottom: 35px; left: 30px; width: 70px; height: 70px; background: var(--primary); border-radius: 24px; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border: none; z-index: 900; transition: 0.3s; }
+        .fab:active { transform: scale(0.9) rotate(45deg); }
+
+        .full-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: none; flex-direction: column; padding: 25px; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); overflow-y: auto; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* --- تعديل نافذة الـ Modal لتكون متناسقة وواضحة --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
+        .modal-card { background: var(--card); width: 100%; max-width: 350px; border-radius: 28px; padding: 25px; text-align: center; border: 1px solid var(--border); animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box; }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        
+        .modal-card h3 { margin-bottom: 10px; font-size: 20px; font-weight: 700; color: var(--text); }
+        .modal-card p { margin-bottom: 20px; font-size: 14px; color: var(--text-m); }
+        .modal-input { 
+            width: 100%; padding: 15px; border-radius: 15px; border: 2px solid var(--border); 
+            margin-bottom: 20px; font-family: 'IBM Plex Sans Arabic'; font-size: 16px; 
+            outline: none; box-sizing: border-box; background: var(--bg); color: var(--text);
+            transition: 0.3s;
+        }
+        .modal-input:focus { border-color: var(--primary); }
+        .modal-btns { display: flex; gap: 12px; }
+
+        .bottom-sheet { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; display: none; align-items: flex-end; backdrop-filter: blur(5px); }
+        .sheet-box { width: 100%; background: var(--card); border-radius: 35px 35px 0 0; padding: 30px; transform: translateY(100%); transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-sizing: border-box; }
+        .sheet-box.show { transform: translateY(0); }
+
+        .stats-card { background: var(--primary); color: white; padding: 20px; border-radius: 22px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; text-align: center; }
+        .stat-item b { display: block; font-size: 20px; }
+        .setting-row { background:var(--card); padding:20px; border-radius:22px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); cursor:pointer; margin-bottom:12px; transition: 0.2s; }
+        .setting-row:active { transform: scale(0.98); background: rgba(0,0,0,0.02); }
+
+        #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 25px; border-radius: 50px; font-size: 14px; z-index: 9999; display: none; animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-family: 'IBM Plex Sans Arabic'; }
+        @keyframes toastIn { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+        /* --- تعديل قائمة الأنماط لتكون شبكة واضحة وجميلة --- */
+        .theme-select-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 20px; }
+        .theme-card { 
+            background: var(--bg); padding: 15px; border-radius: 18px; border: 2px solid var(--border);
+            cursor: pointer; text-align: center; font-size: 14px; font-weight: 600;
+            transition: 0.3s; display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .theme-card.active { border-color: var(--primary); background: rgba(37, 99, 235, 0.05); }
+        .theme-preview { width: 40px; height: 40px; border-radius: 12px; }
+
+        .media-block { margin: 15px 0; border-radius: 20px; overflow: hidden; background: rgba(0,0,0,0.03); border: 1px solid var(--border); position: relative; }
+        .media-block img { width: 100%; height: auto; display: block; object-fit: cover; cursor: pointer; transition: 0.3s; }
+        .media-block textarea { width: 100%; border: none; background: transparent; padding: 12px; font-family: 'IBM Plex Sans Arabic'; font-size: 15px; color: var(--text); resize: none; outline: none; }
+        .remove-media { position: absolute; top: 10px; right: 10px; background: rgba(239, 68, 68, 0.9); color: white; border: none; width: 30px; height: 30px; border-radius: 10px; cursor: pointer; z-index: 5; }
+        
+        .add-media-btn { margin: 10px 0; padding: 15px; border: 2px dashed var(--border); border-radius: 20px; text-align: center; cursor: pointer; transition: 0.3s; color: var(--text-m); font-weight: 600; font-family: 'IBM Plex Sans Arabic'; }
+        .add-media-btn:hover { background: rgba(0,0,0,0.02); border-color: var(--primary); color: var(--primary); }
+
+        .card-image-preview { width: 100%; height: 120px; object-fit: cover; margin-bottom: 10px; border-radius: 15px; }
+
+        #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: none; align-items: center; justify-content: center; flex-direction: column; cursor: zoom-out; }
+        #lightbox img { max-width: 95%; max-height: 80%; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
     </style>
 </head>
-<body>
+<body onclick="closeAllDropdowns()">
 
-<div id="loader">
-    <div style="width: 45px; height: 45px; border: 4px solid #111; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+<div id="toast"></div>
+
+<div id="lightbox" onclick="this.style.display='none'">
+    <img src="" id="lightboxImg">
+    <p style="color: white; margin-top: 20px; font-family: 'IBM Plex Sans Arabic';">انقر في أي مكان للإغلاق</p>
 </div>
 
-<div class="app-container">
-    <div class="header">
-        <h2>WeStarts</h2>
-        <div class="search-wrapper">
-            <input type="text" id="search" placeholder="ابحث عن دولة أو عملة..." oninput="filterList()" onfocus="toggleCalc(false)">
+<div id="customModal" class="modal-overlay">
+    <div class="modal-card">
+        <h3 id="modalTitle">تنبيه</h3>
+        <p id="modalDesc"></p>
+        <input type="text" id="modalInput" class="modal-input" placeholder="اسم التصنيف هنا...">
+        <div class="modal-btns">
+            <button onclick="closeModal()" style="flex:1; padding:15px; border-radius:18px; border:none; background:rgba(0,0,0,0.05); color:var(--text); cursor:pointer; font-weight:600; font-family:'IBM Plex Sans Arabic';">إلغاء</button>
+            <button id="modalConfirmBtn" style="flex:1; padding:15px; border-radius:18px; border:none; background:var(--primary); color:white; font-weight:700; cursor:pointer; font-family:'IBM Plex Sans Arabic';">تأكيد</button>
         </div>
+    </div>
+</div>
+
+<div id="tagPickerSheet" class="bottom-sheet" onclick="closeTagPicker()">
+    <div class="sheet-box" id="sheetInner" onclick="event.stopPropagation()">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-weight:700;">التصنيفات</h3>
+            <button onclick="addNewTagModal()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:15px; font-weight:700; cursor:pointer; font-family:'IBM Plex Sans Arabic'; font-size:13px;">+ جديد</button>
+        </div>
+        <div id="sheetTagsList" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<div id="lockPage" class="full-screen" style="justify-content: center; align-items: center; text-align: center;">
+    <div style="max-width: 320px; width: 100%;">
+        <div style="width: 80px; height: 80px; background: var(--primary); border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; color: white; font-size: 35px;"><i class="fas fa-shield-halved"></i></div>
+        <h2 style="font-weight:700;">الوصول مقيد</h2>
+        <input type="password" id="pinEntry" maxlength="8" style="width: 100%; padding: 18px; border-radius: 20px; border: 2px solid var(--border); margin: 15px 0; text-align: center; font-size: 25px; letter-spacing: 5px; background:var(--card); color:var(--text);" placeholder="••••">
+        <button onclick="unlockApp()" style="width:100%; padding:18px; background:var(--primary); color:white; border:none; border-radius:20px; font-weight:700; font-size: 18px; cursor:pointer; font-family:'IBM Plex Sans Arabic';">فتح القفل</button>
+    </div>
+</div>
+
+<header>
+    <i class="fas fa-bars-staggered" onclick="openSettings()" style="cursor:pointer; font-size: 22px; opacity: 0.7;"></i>
+    <h1>مفكرة</h1>
+    <div style="width: 25px;"></div>
+</header>
+
+<div class="search-container">
+    <input type="text" id="searchInput" placeholder="ابحث عن ملاحظة..." oninput="renderNotes()">
+</div>
+
+<div class="tags-bar" id="tagsList"></div>
+
+<div id="pinnedGrid" class="notes-grid" style="padding-bottom: 0;"></div>
+<div id="notesGrid" class="notes-grid"></div>
+
+<button class="fab" onclick="editNote()"><i class="fas fa-plus"></i></button>
+
+<div id="editorPage" class="full-screen">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+        <i class="fas fa-arrow-right" onclick="hideOverlay('editorPage')" style="font-size:24px; cursor:pointer;"></i>
+        <button onclick="saveNote()" style="background:var(--primary); color:white; border:none; padding:12px 35px; border-radius:18px; font-weight:700; cursor:pointer; font-family:'IBM Plex Sans Arabic';">حفظ الآن</button>
+    </div>
+    <input type="text" id="nTitle" placeholder="العنوان" style="width:100%; border:none; background:none; font-size:26px; font-weight:700; color:var(--text); outline:none; font-family:'IBM Plex Sans Arabic';">
+    <div onclick="openTagPicker()" style="margin:20px 0; padding:18px; background:var(--card); border-radius:20px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); cursor:pointer;">
+        <span>تصنيف الملاحظة: <b id="activeTagLabel" style="color:var(--primary)">عام</b></span>
+        <i class="fas fa-chevron-down" style="font-size: 12px; opacity: 0.5;"></i>
     </div>
     
-    <div class="currency-list" id="list"></div>
+    <div id="mediaContainer"></div>
+    
+    <div class="add-media-btn" onclick="document.getElementById('mediaInput').click()">
+        <i class="fas fa-image"></i> إضافة صورة مع نص
+    </div>
+    <input type="file" id="mediaInput" hidden accept="image/*" onchange="handleMediaUpload(this)">
 
-    <div class="fab-keyboard" onclick="toggleCalc(true)">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="12" y1="8" x2="12" y2="16"></line>
-            <line x1="8" y1="12" x2="16" y2="12"></line>
-        </svg>
+    <textarea id="nContent" placeholder="ابدأ في كتابة نص إضافي..." style="width:100%; flex-grow:1; border:none; background:none; font-size:18px; color:var(--text); outline:none; font-family:'IBM Plex Sans Arabic'; resize:none; line-height:1.7; min-height: 150px;"></textarea>
+</div>
+
+<div id="settingsPage" class="full-screen">
+    <div style="display:flex; align-items:center; gap:20px; margin-bottom:35px;">
+        <i class="fas fa-arrow-right" onclick="hideOverlay('settingsPage')" style="cursor:pointer; font-size: 24px;"></i>
+        <h2 style="font-weight: 700; margin:0;">الإعدادات والتنظيم</h2>
     </div>
 
-    <div class="calc-sheet" id="calcSheet">
-        <div style="width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 15px; cursor: pointer;" onclick="toggleCalc(false)"></div>
-        <div class="calc-display" id="display">0</div>
-        <div class="keypad">
-            <button class="btn-ac" onclick="calcAction('AC')">AC</button>
-            <button style="background:#444" onclick="calcAction('DEL')">⌫</button>
-            <button class="btn-op" onclick="calcAction('%')">%</button>
-            <button class="btn-op" onclick="calcAction('/')">÷</button>
-            <button onclick="calcAction('7')">7</button>
-            <button onclick="calcAction('8')">8</button>
-            <button onclick="calcAction('9')">9</button>
-            <button class="btn-op" onclick="calcAction('*')">×</button>
-            <button onclick="calcAction('4')">4</button>
-            <button onclick="calcAction('5')">5</button>
-            <button onclick="calcAction('6')">6</button>
-            <button class="btn-op" onclick="calcAction('-')">-</button>
-            <button onclick="calcAction('1')">1</button>
-            <button onclick="calcAction('2')">2</button>
-            <button onclick="calcAction('3')">3</button>
-            <button class="btn-op" onclick="calcAction('+')">+</button>
-            <button onclick="calcAction('0')" style="grid-column: span 2;">0</button>
-            <button onclick="calcAction('.')">.</button>
-            <button class="btn-op" onclick="calcAction('=')">=</button>
+    <div class="stats-card">
+        <div class="stat-item"><b id="stat-notes">0</b><span>ملاحظة</span></div>
+        <div class="stat-item"><b id="stat-fav">0</b><span>مفضلة</span></div>
+        <div class="stat-item"><b id="stat-arch">0</b><span>مؤرشفة</span></div>
+        <div class="stat-item"><b id="stat-trash">0</b><span>محذوفة</span></div>
+    </div>
+    
+    <div onclick="openSpecialView('favorite')" class="setting-row">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <i class="fas fa-heart" style="color:#ef4444;"></i>
+            <span style="font-weight:700;">الملاحظات المفضلة</span>
         </div>
+        <i class="fas fa-chevron-left" style="opacity:0.3; font-size:12px;"></i>
+    </div>
+
+    <div onclick="openSpecialView('archive')" class="setting-row">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <i class="fas fa-box-archive" style="color:#10b981;"></i>
+            <span style="font-weight:700;">الأرشيف</span>
+        </div>
+        <i class="fas fa-chevron-left" style="opacity:0.3; font-size:12px;"></i>
+    </div>
+
+    <div onclick="toggleTrash()" class="setting-row">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <i class="fas fa-trash-can" style="color:#64748b;"></i>
+            <span style="font-weight:700;">سلة المهملات</span>
+        </div>
+        <i class="fas fa-chevron-left" id="trashChevron" style="opacity:0.3; font-size:12px;"></i>
+    </div>
+    <div id="trashSection" style="display:none; margin-bottom:20px;"><div id="trashGrid" class="notes-grid"></div></div>
+
+    <div onclick="openThemePicker()" class="setting-row">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <i class="fas fa-palette" style="color:var(--primary)"></i>
+            <span style="font-weight:700;">نمط المظهر</span>
+        </div>
+        <span id="currentThemeName" style="opacity:0.6; font-size:14px;">تلقائي</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+        <button onclick="exportData()" style="padding:15px; border-radius:15px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:'IBM Plex Sans Arabic'; font-weight:700; cursor:pointer;">تصدير</button>
+        <button onclick="importData()" style="padding:15px; border-radius:15px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:'IBM Plex Sans Arabic'; font-weight:700; cursor:pointer;">استعادة</button>
+    </div>
+</div>
+
+<div id="specialViewPage" class="full-screen">
+    <div style="display:flex; align-items:center; gap:20px; margin-bottom:25px;">
+        <i class="fas fa-arrow-right" onclick="hideOverlay('specialViewPage')" style="cursor:pointer; font-size: 24px;"></i>
+        <h2 id="specialViewTitle" style="font-weight: 700; margin:0;">العنوان</h2>
+    </div>
+    <div id="specialGrid" class="notes-grid"></div>
+</div>
+
+<div id="themePickerModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 400px;">
+        <h3>اختر نمطك المفضل</h3>
+        <div class="theme-select-grid">
+            <div class="theme-card" id="tp-default" onclick="setTheme('default')">
+                <div class="theme-preview" style="background:#2563eb"></div>
+                <span>كلاسيك</span>
+            </div>
+            <div class="theme-card" id="tp-sunset" onclick="setTheme('sunset')">
+                <div class="theme-preview" style="background:#f97316"></div>
+                <span>الغروب</span>
+            </div>
+            <div class="theme-card" id="tp-nebula" onclick="setTheme('nebula')">
+                <div class="theme-preview" style="background:#38bdf8"></div>
+                <span>السديم</span>
+            </div>
+            <div class="theme-card" id="tp-rose" onclick="setTheme('rose')">
+                <div class="theme-preview" style="background:#db2777"></div>
+                <span>رقة الورد</span>
+            </div>
+            <div class="theme-card" id="tp-royal" onclick="setTheme('royal')">
+                <div class="theme-preview" style="background:#8b5cf6"></div>
+                <span>الملكي</span>
+            </div>
+            <div class="theme-card" id="tp-eclipse" onclick="setTheme('eclipse')">
+                <div class="theme-preview" style="background:#94a3b8"></div>
+                <span>الكسوف</span>
+            </div>
+        </div>
+        <button onclick="document.getElementById('themePickerModal').style.display='none'" style="margin-top:20px; width:100%; padding:15px; border-radius:18px; border:none; background:var(--primary); color:white; font-family:'IBM Plex Sans Arabic'; font-weight:700; cursor:pointer;">إغلاق</button>
     </div>
 </div>
 
 <script>
-    let amount = "0", expression = "0", base = "IQD", rates = {};
+    // --- IndexedDB ---
+    const DB_NAME = "ProfessionalNotesDB";
+    const DB_VERSION = 1;
+    let db;
+    let notes = [];
+    let trash = [];
+    let tags = ["عام", "شخصي", "عمل", "مهم"];
+    let theme = localStorage.getItem('mega_theme_v26') || 'default';
+    let editIdx = null;
+    let selectedTag = 'عام';
+    let currentFilter = 'الكل';
+    let currentMedia = [];
 
-    const db = [
-        { code: "IQD", name: "العراق", flag: "iq" }, { code: "USD", name: "أمريكا", flag: "us" }, { code: "EUR", name: "أوروبا", flag: "eu" },
-        { code: "SAR", name: "السعودية", flag: "sa" }, { code: "AED", name: "الإمارات", flag: "ae" }, { code: "EGP", name: "مصر", flag: "eg" },
-        { code: "TRY", name: "تركيا", flag: "tr" }, { code: "KWD", name: "الكويت", flag: "kw" }, { code: "QAR", name: "قطر", flag: "qa" },
-        { code: "JOD", name: "الأردن", flag: "jo" }, { code: "OMR", name: "عمان", flag: "om" }, { code: "BHD", name: "البحرين", flag: "bh" },
-        { code: "MAD", name: "المغرب", flag: "ma" }, { code: "DZD", name: "الجزائر", flag: "dz" }, { code: "LYD", name: "ليبيا", flag: "ly" },
-        { code: "LBP", name: "لبنان", flag: "lb" }, { code: "SYP", name: "سوريا", flag: "sy" }, { code: "YER", name: "اليمن", flag: "ye" },
-        { code: "SDG", name: "السودان", flag: "sd" }, { code: "TND", name: "تونس", flag: "tn" }, { code: "CNY", name: "الصين", flag: "cn" },
-        { code: "JPY", name: "اليابان", flag: "jp" }, { code: "GBP", name: "بريطانيا", flag: "gb" }, { code: "RUB", name: "روسيا", flag: "ru" },
-        { code: "CAD", name: "كندا", flag: "ca" }, { code: "AUD", name: "أستراليا", flag: "au" }, { code: "CHF", name: "سويسرا", flag: "ch" },
-        { code: "INR", name: "الهند", flag: "in" }, { code: "BRL", name: "البرازيل", flag: "br" }, { code: "KRW", name: "كوريا الجنوبية", flag: "kr" },
-        { code: "IDR", name: "إندونيسيا", flag: "id" }, { code: "MYR", name: "ماليزيا", flag: "my" }, { code: "MXN", name: "المكسيك", flag: "mx" },
-        { code: "VND", name: "فيتنام", flag: "vn" }, { code: "ZAR", name: "جنوب أفريقيا", flag: "za" }, { code: "AFN", name: "أفغانستان", flag: "af" },
-        { code: "PKR", name: "باكستان", flag: "pk" }, { code: "SEK", name: "السويد", flag: "se" }, { code: "NOK", name: "النرويج", flag: "no" },
-        { code: "DKK", name: "الدنمارك", flag: "dk" }, { code: "PLN", name: "بولندا", flag: "pl" }, { code: "NZD", name: "نيوزيلندا", flag: "nz" },
-        { code: "THB", name: "تايلاند", flag: "th" }, { code: "PHP", name: "الفلبين", flag: "ph" }, { code: "AZN", name: "أذربيجان", flag: "az" },
-        { code: "KZT", name: "كازاخستان", flag: "kz" }, { code: "UZS", name: "أوزبكستان", flag: "uz" }, { code: "GEL", name: "جورجيا", flag: "ge" },
-        { code: "UAH", name: "أوكرانيا", flag: "ua" }, { code: "ARS", name: "الأرجنتين", flag: "ar" }, { code: "CLP", name: "تشيلي", flag: "cl" },
-        { code: "COP", name: "كولومبيا", flag: "co" }, { code: "PEN", name: "بيرو", flag: "pe" }, { code: "UYU", name: "أوروغواي", flag: "uy" },
-        { code: "VES", name: "فنزويلا", flag: "ve" }
-    ];
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains("data")) d.createObjectStore("data");
+    };
+    req.onsuccess = (e) => {
+        db = e.target.result;
+        loadData();
+    };
 
-    async function detectLocation() {
-        try {
-            const loc = await fetch('https://ipapi.co/json/').then(r => r.json());
-            if(loc.currency) base = loc.currency;
-        } catch(e) {}
-        db.sort((a, b) => (a.code === base ? -1 : b.code === base ? 1 : a.code === "USD" ? -1 : b.code === "USD" ? 1 : 0));
-        init();
+    async function loadData() {
+        const tx = db.transaction("data", "readonly");
+        const store = tx.objectStore("data");
+        notes = (await getVal(store, "notes")) || [];
+        trash = (await getVal(store, "trash")) || [];
+        const t = await getVal(store, "tags");
+        if(t) tags = t;
+        renderNotes();
+        setTheme(theme);
     }
 
-    async function init() {
-        try {
-            const res = await fetch(`https://open.er-api.com/v6/latest/${base}`);
-            const data = await res.json();
-            rates = data.rates;
-            document.getElementById('loader').style.display = 'none';
-            renderList();
-        } catch (e) { alert("خطأ في الاتصال بالإنترنت"); }
+    function getVal(store, key) {
+        return new Promise(res => {
+            const r = store.get(key);
+            r.onsuccess = () => res(r.result);
+        });
     }
 
-    function renderList() {
-        const list = document.getElementById('list');
-        list.innerHTML = db.map(c => `
-            <div class="currency-card ${c.code === base ? 'active' : ''}" id="card-${c.code}" onclick="setBase('${c.code}')">
-                <div class="info">
-                    <div class="flag-capsule"><img src="https://flagcdn.com/${c.flag}.svg" class="flag-img" loading="lazy"></div>
-                    <div class="meta"><span class="code">${c.code}</span><span class="name">${c.name}</span></div>
-                </div>
-                <div class="value" id="val-${c.code}">0</div>
-            </div>
-        `).join('');
-        updateValues();
+    function syncDB() {
+        const tx = db.transaction("data", "readwrite");
+        const store = tx.objectStore("data");
+        store.put(notes, "notes");
+        store.put(trash, "trash");
+        store.put(tags, "tags");
     }
 
-    function updateValues() {
-        db.forEach(c => {
-            const el = document.getElementById(`val-${c.code}`);
-            if (el) {
-                const val = c.code === base ? parseFloat(amount) : (parseFloat(amount) * (rates[c.code] || 0));
-                el.innerText = val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    // --- Media Handlers ---
+    function handleMediaUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const mediaObj = { image: e.target.result, caption: "" };
+                currentMedia.push(mediaObj);
+                renderMediaBlocks();
+            };
+            reader.readAsDataURL(input.files[0]);
+            input.value = ""; 
+        }
+    }
+
+    function renderMediaBlocks() {
+        const container = document.getElementById('mediaContainer');
+        container.innerHTML = "";
+        currentMedia.forEach((m, idx) => {
+            const block = document.createElement('div');
+            block.className = "media-block";
+            block.innerHTML = `
+                <button class="remove-media" onclick="removeMedia(${idx})"><i class="fas fa-times"></i></button>
+                <img src="${m.image}" onclick="openLightbox('${m.image}')">
+                <textarea placeholder="اكتب نصاً تحت هذه الصورة..." oninput="currentMedia[${idx}].caption = this.value">${m.caption}</textarea>
+            `;
+            container.appendChild(block);
+        });
+    }
+
+    function removeMedia(idx) {
+        currentMedia.splice(idx, 1);
+        renderMediaBlocks();
+    }
+
+    function openLightbox(src) {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightbox').style.display = 'flex';
+    }
+
+    // --- UI Logic ---
+    function toast(m) {
+        const t = document.getElementById('toast');
+        t.innerText = m;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 2000);
+    }
+
+    function renderNotes() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const pGrid = document.getElementById('pinnedGrid'), nGrid = document.getElementById('notesGrid');
+        pGrid.innerHTML = ""; nGrid.innerHTML = "";
+        
+        notes.forEach((n, i) => {
+            if(!n.archived) {
+                if((currentFilter === 'الكل' || n.tag === currentFilter) && (n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q))) {
+                    const html = createNoteHTML(n, i, 'main');
+                    n.pinned ? pGrid.innerHTML += html : nGrid.innerHTML += html;
+                }
             }
         });
+        renderTagsBar();
+        syncDB();
     }
 
-    function calcAction(val) {
-        if(val === 'AC') expression = "0";
-        else if(val === 'DEL') expression = expression.length > 1 ? expression.slice(0, -1) : "0";
-        else if(val === '=') {
-            try { expression = eval(expression.replace(/×/g, '*').replace(/÷/g, '/')).toString(); } catch { expression = "0"; }
-        } else {
-            if(expression === "0" && !"+-*/%".includes(val)) expression = val;
-            else expression += val;
+    function createNoteHTML(n, i, type) {
+        let firstImg = "";
+        if(n.media && n.media.length > 0) {
+            firstImg = `<img src="${n.media[0].image}" class="card-image-preview">`;
         }
-        document.getElementById('display').innerText = expression;
-        try {
-            let res = eval(expression.replace(/×/g, '*').replace(/÷/g, '/'));
-            if(!isNaN(res)) { amount = res.toString(); updateValues(); }
-        } catch(e) {}
+        return `
+            <div id="note-${type}-${i}" class="note-card" style="background:${n.color}" onclick="editNote(${i})">
+                <div class="card-menu-btn" onclick="showCardMenu(event, '${type}', ${i})"><i class="fas fa-ellipsis-v"></i></div>
+                <div class="card-dropdown" id="drop-${type}-${i}">
+                    <div onclick="toggleAction(event, ${i}, 'pinned')"><i class="fas fa-thumbtack"></i> ${n.pinned ? 'إلغاء التثبيت' : 'تثبيت'}</div>
+                    <div onclick="toggleAction(event, ${i}, 'favorite')"><i class="fas fa-heart"></i> ${n.favorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}</div>
+                    <div onclick="toggleAction(event, ${i}, 'archived')"><i class="fas fa-box-archive"></i> ${n.archived ? 'إلغاء الأرشفة' : 'أرشفة'}</div>
+                    <div onclick="deleteNote(event, ${i}, '${type}')" style="color:#ef4444;"><i class="fas fa-trash"></i> حذف</div>
+                </div>
+                ${n.pinned ? '<i class="fas fa-thumbtack" style="position:absolute; top:15px; left:45px; color:#fff; font-size:12px;"></i>' : ''}
+                ${n.favorite ? '<i class="fas fa-heart" style="position:absolute; top:15px; left:65px; color:#fff; font-size:12px;"></i>' : ''}
+                ${firstImg}
+                <h3>${n.title}</h3>
+                <p>${n.content}</p>
+                <div class="card-footer">
+                    <span><i class="far fa-calendar"></i> ${n.date}</span>
+                    <span><i class="far fa-clock"></i> ${n.time}</span>
+                    <span style="margin-top:6px; opacity:0.8; font-weight:700;">#${n.tag} ${n.media ? '('+n.media.length+' صور)' : ''}</span>
+                </div>
+            </div>`;
     }
 
-    function filterList() {
-        const q = document.getElementById('search').value.toLowerCase();
-        db.forEach(c => {
-            const card = document.getElementById(`card-${c.code}`);
-            if(card) card.style.display = (c.name.includes(q) || c.code.toLowerCase().includes(q)) ? 'flex' : 'none';
+    // --- Fast Actions ---
+    function toggleAction(e, i, prop) {
+        e.stopPropagation();
+        closeAllDropdowns();
+        notes[i][prop] = !notes[i][prop];
+        const card = document.getElementById(`note-main-${i}`) || document.getElementById(`note-special-${i}`);
+        if(card && (prop === 'archived')) {
+            card.classList.add('removing');
+            setTimeout(() => {
+                renderNotes();
+                if(document.getElementById('specialViewPage').style.display === 'flex') {
+                    openSpecialView(currentSpecialView);
+                }
+            }, 300);
+        } else {
+            renderNotes();
+            if(document.getElementById('specialViewPage').style.display === 'flex') {
+                openSpecialView(currentSpecialView);
+            }
+        }
+        const msgs = { favorite: "المفضلة", archived: "الأرشيف", pinned: "التثبيت" };
+        toast(`تم تحديث ${msgs[prop]}`);
+    }
+
+    function deleteNote(e, i, type) {
+        e.stopPropagation();
+        const card = document.getElementById(`note-${type}-${i}`);
+        card.classList.add('removing');
+        setTimeout(() => {
+            trash.unshift(notes[i]);
+            notes.splice(i, 1);
+            renderNotes();
+            if(document.getElementById('specialViewPage').style.display === 'flex') {
+                openSpecialView(currentSpecialView);
+            }
+            toast("تم النقل لسلة المهملات");
+        }, 300);
+    }
+
+    let currentSpecialView = '';
+    function openSpecialView(view) {
+        currentSpecialView = view;
+        const grid = document.getElementById('specialGrid');
+        const title = document.getElementById('specialViewTitle');
+        grid.innerHTML = "";
+        if(view === 'favorite') {
+            title.innerText = "الملاحظات المفضلة";
+            notes.forEach((n, i) => { if(n.favorite) grid.innerHTML += createNoteHTML(n, i, 'special'); });
+        } else {
+            title.innerText = "الأرشيف";
+            notes.forEach((n, i) => { if(n.archived) grid.innerHTML += createNoteHTML(n, i, 'special'); });
+        }
+        if(!grid.innerHTML) grid.innerHTML = "<p style='grid-column:1/-1; text-align:center; opacity:0.5;'>لا يوجد نتائج هنا</p>";
+        viewOverlay('specialViewPage');
+    }
+
+    // --- Core Functions ---
+    function saveNote() {
+        const t = document.getElementById('nTitle').value, c = document.getElementById('nContent').value;
+        if(!t && !c && currentMedia.length === 0) return hideOverlay('editorPage');
+        const now = new Date();
+        const obj = {
+            title: t || "بدون عنوان", 
+            content: c, 
+            tag: selectedTag,
+            media: [...currentMedia],
+            date: now.toLocaleDateString('ar-EG'),
+            time: now.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}),
+            pinned: editIdx !== null ? notes[editIdx].pinned : false,
+            favorite: editIdx !== null ? notes[editIdx].favorite : false,
+            archived: editIdx !== null ? notes[editIdx].archived : false,
+            color: editIdx !== null ? notes[editIdx].color : getThemeColor()
+        };
+        if(editIdx !== null) notes[editIdx] = obj; else notes.unshift(obj);
+        hideOverlay('editorPage');
+        renderNotes();
+        toast("تم الحفظ بنجاح");
+    }
+
+    function editNote(i = null) {
+        editIdx = i;
+        if(i !== null) {
+            document.getElementById('nTitle').value = notes[i].title;
+            document.getElementById('nContent').value = notes[i].content;
+            selectedTag = notes[i].tag;
+            currentMedia = notes[i].media ? JSON.parse(JSON.stringify(notes[i].media)) : [];
+        } else {
+            document.getElementById('nTitle').value = ""; 
+            document.getElementById('nContent').value = ""; 
+            selectedTag = 'عام';
+            currentMedia = [];
+        }
+        document.getElementById('activeTagLabel').innerText = selectedTag;
+        renderMediaBlocks();
+        viewOverlay('editorPage');
+    }
+
+    function getThemeColor() {
+        const pals = {
+            default: ['#2563eb', '#3b82f6', '#1d4ed8'],
+            sunset: ['#f97316', '#fb923c', '#ea580c'],
+            nebula: ['#38bdf8', '#0ea5e9', '#0284c7'],
+            rose: ['#db2777', '#f472b6', '#be185d'],
+            royal: ['#8b5cf6', '#a78bfa', '#7c3aed'],
+            eclipse: ['#64748b', '#94a3b8', '#475569']
+        };
+        const s = pals[theme] || pals.default;
+        return s[Math.floor(Math.random() * s.length)];
+    }
+
+    function setTheme(t) {
+        document.body.className = t === 'default' ? '' : 'theme-' + t;
+        theme = t;
+        localStorage.setItem('mega_theme_v26', t);
+        document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+        const el = document.getElementById('tp-' + t);
+        if(el) el.classList.add('active');
+        renderNotes();
+    }
+
+    function showCardMenu(e, type, i) { e.stopPropagation(); closeAllDropdowns(); document.getElementById(`drop-${type}-${i}`).style.display = 'flex'; }
+    function closeAllDropdowns() { document.querySelectorAll('.card-dropdown').forEach(d => d.style.display = 'none'); }
+    function viewOverlay(id) { document.getElementById(id).style.display = 'flex'; }
+    function hideOverlay(id) { document.getElementById(id).style.display = 'none'; }
+    
+    // --- Helper UI ---
+    function openSettings() {
+        document.getElementById('stat-notes').innerText = notes.filter(n => !n.archived).length;
+        document.getElementById('stat-fav').innerText = notes.filter(n => n.favorite).length;
+        document.getElementById('stat-arch').innerText = notes.filter(n => n.archived).length;
+        document.getElementById('stat-trash').innerText = trash.length;
+        viewOverlay('settingsPage');
+    }
+
+    function renderTagsBar() {
+        const b = document.getElementById('tagsList');
+        b.innerHTML = `<div class="tag-btn ${currentFilter==='الكل'?'active':''}" onclick="setFilter('الكل')">الكل</div>`;
+        tags.forEach(t => b.innerHTML += `<div class="tag-btn ${currentFilter===t?'active':''}" onclick="setFilter('${t}')">${t}</div>`);
+    }
+    function setFilter(t) { currentFilter = t; renderNotes(); }
+
+    function openTagPicker() {
+        document.getElementById('tagPickerSheet').style.display = 'flex';
+        setTimeout(() => document.getElementById('sheetInner').classList.add('show'), 10);
+        const l = document.getElementById('sheetTagsList'); l.innerHTML = "";
+        tags.forEach(t => {
+            l.innerHTML += `<div onclick="pickTag('${t}')" style="padding:16px; background:rgba(0,0,0,0.03); border-radius:15px; font-weight:700; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">${t} ${selectedTag === t ? '<i class="fas fa-check-circle" style="color:var(--primary)"></i>' : ''}</div>`;
+        });
+    }
+    function pickTag(t) { selectedTag = t; document.getElementById('activeTagLabel').innerText = t; closeTagPicker(); }
+    function closeTagPicker() { document.getElementById('sheetInner').classList.remove('show'); setTimeout(() => document.getElementById('tagPickerSheet').style.display = 'none', 400); }
+
+    function addNewTagModal() {
+        // تفريغ الحقل قبل فتحه
+        document.getElementById('modalInput').value = "";
+        askUser("تصنيف جديد", "أدخل اسم التصنيف الجديد لترتيب ملاحظاتك:", true, (v) => {
+            if(v && !tags.includes(v)) { tags.push(v); syncDB(); pickTag(v); renderTagsBar(); }
         });
     }
 
-    function toggleCalc(show) {
-        const sheet = document.getElementById('calcSheet');
-        if (show) {
-            sheet.classList.add('show');
-            history.pushState({open:true}, "");
-        } else {
-            sheet.classList.remove('show');
-        }
+    function askUser(t, d, i, c) {
+        document.getElementById('modalTitle').innerText = t;
+        document.getElementById('modalDesc').innerText = d;
+        const inp = document.getElementById('modalInput');
+        inp.style.display = i ? 'block' : 'none';
+        document.getElementById('customModal').style.display = 'flex';
+        document.getElementById('modalConfirmBtn').onclick = () => { c(inp.value); closeModal(); };
+    }
+    function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+
+    function toggleTrash() {
+        const s = document.getElementById('trashSection');
+        const isHidden = s.style.display === 'none';
+        s.style.display = isHidden ? 'block' : 'none';
+        document.getElementById('trashChevron').className = isHidden ? 'fas fa-chevron-down' : 'fas fa-chevron-left';
+        if(isHidden) renderTrash();
     }
 
-    window.onpopstate = () => toggleCalc(false);
-
-    async function setBase(code) {
-        if(base === code) return;
-        base = code; 
-        document.getElementById('loader').style.display = 'flex';
-        await init();
+    function renderTrash() {
+        const g = document.getElementById('trashGrid');
+        g.innerHTML = trash.length ? "" : "<p style='grid-column:1/-1; text-align:center; opacity:0.5;'>السلة فارغة</p>";
+        trash.forEach((n, i) => {
+            g.innerHTML += `
+                <div class="note-card" style="background:${n.color}; opacity:0.7;">
+                    <div class="card-menu-btn" onclick="showCardMenu(event, 'trash', ${i})"><i class="fas fa-ellipsis-v"></i></div>
+                    <div class="card-dropdown" id="drop-trash-${i}">
+                        <div onclick="restoreNote(${i})"><i class="fas fa-undo"></i> استعادة</div>
+                        <div onclick="hardDelete(${i})"><i class="fas fa-times" style="color:red"></i> حذف نهائي</div>
+                    </div>
+                    <h3>${n.title}</h3>
+                </div>`;
+        });
     }
 
-    window.onload = detectLocation;
+    function restoreNote(i) {
+        notes.unshift(trash[i]);
+        trash.splice(i, 1);
+        renderNotes();
+        renderTrash();
+        toast("تمت استعادة الملاحظة");
+    }
+
+    function hardDelete(i) {
+        trash.splice(i, 1);
+        renderTrash();
+        syncDB();
+        toast("حُذفت للأبد");
+    }
+
+    function openThemePicker() { document.getElementById('themePickerModal').style.display = 'flex'; }
+    
+    function unlockApp() {
+        const pin = document.getElementById('pinEntry').value;
+        if(pin.length >= 4) { hideOverlay('lockPage'); } else { toast("يرجى إدخال رمز صحيح"); }
+    }
 </script>
 </body>
 </html>
