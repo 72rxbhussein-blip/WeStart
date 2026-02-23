@@ -2,681 +2,687 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WeStarts مفــكرة</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>WeStars </title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { 
-            --primary: #2563eb; --bg: #f8fafc; --card: #ffffff;
-            --text: #0f172a; --text-m: #64748b; --border: rgba(0,0,0,0.06);
-            --radius: 24px;
+        /* تعريف الخط الخاص بالإيموجي فقط */
+        @font-face {
+            font-family: 'AppleEmojiCustom';
+            src: url('iOS_14.6.ttf') format('truetype');
+            unicode-range: U+1F600-1F64F, U+1F300-1F5FF, U+1F680-1F6FF, U+2600-26FF, U+2700-27BF, U+1F900-1F9FF, U+1F1E6-1F1FF;
         }
 
-        @media (prefers-color-scheme: dark) {
-            :root { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --text-m: #94a3b8; --border: rgba(255,255,255,0.05); }
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --bg: #0a0a0b;
+            --card: #161618;
+            --input-border: #2d2d30;
+            --accent: #00d1b2;
+            --text: #ffffff;
+            --text-dim: #a0a0a0;
+            --error: #ff4757;
+            --star-color: #f1c40f;
+            --tiktok-bg: #000000;
         }
 
-        /* --- الأنماط اللولبية --- */
-        body.theme-sunset { --primary: #f97316; --bg: #fffaf5; --card: #ffffff; --text: #431407; }
-        body.theme-nebula { --primary: #38bdf8; --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: rgba(255,255,255,0.1); }
-        body.theme-rose { --primary: #db2777; --bg: #fff1f2; --card: #ffffff; --text: #4c0519; }
-        body.theme-eclipse { --primary: #94a3b8; --bg: #1e293b; --card: #334155; --text: #f1f5f9; --border: rgba(255,255,255,0.05); }
-        body.theme-royal { --primary: #8b5cf6; --bg: #f5f3ff; --card: #ffffff; --text: #2e1065; }
-
-        body { 
-            font-family: 'IBM Plex Sans Arabic', sans-serif; background: var(--bg); 
-            margin: 0; color: var(--text); transition: background 0.4s ease;
-            overflow-x: hidden; -webkit-tap-highlight-color: transparent;
+        [data-theme="light"] {
+            --bg: #f5f6fa;
+            --card: #ffffff;
+            --input-border: #dcdde1;
+            --text: #1a1a1c;
+            --text-dim: #57606f;
+            --tiktok-bg: #000000; 
         }
 
-        header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px 25px; background: var(--card); 
-            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--border);
-            height: 60px; box-sizing: border-box;
+        * { 
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; 
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'AppleEmojiCustom', 'IBM Plex Sans Arabic', sans-serif;
+            box-sizing: border-box;
         }
-        header h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: -0.5px; }
 
-        .search-container { padding: 15px 25px; }
-        #searchInput { 
-            width: 100%; padding: 16px 22px; border-radius: var(--radius); border: 1px solid var(--border); 
-            background: var(--card); color: var(--text); font-family: 'IBM Plex Sans Arabic'; outline: none; box-sizing: border-box;
-            transition: 0.3s; font-size: 15px;
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; position: relative;
+            overflow-y: auto; 
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
         }
-        #searchInput:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
 
-        .tags-bar { display: flex; gap: 12px; padding: 5px 25px 20px; overflow-x: auto; scrollbar-width: none; }
-        .tag-btn { padding: 8px 24px; background: var(--card); border-radius: 50px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; border: 1px solid var(--border); transition: 0.3s; color: var(--text-m); font-family: 'IBM Plex Sans Arabic'; }
-        .tag-btn.active { background: var(--primary); color: #fff; border: none; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .top-controls-left {
+            position: absolute; top: 20px; left: 20px;
+            z-index: 1000;
+        }
 
-        .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px 120px; }
+        .top-controls-right {
+            position: absolute; top: 20px; right: 20px;
+            display: flex; gap: 10px; z-index: 1000;
+        }
+
+        .icon-btn {
+            width: 42px; height: 42px;
+            background: var(--card); border: 1px solid var(--input-border);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--primary); font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .full-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            z-index: 2000; display: flex; flex-direction: column; align-items: center;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .full-overlay.active { transform: translateY(0); }
+        .close-overlay { align-self: flex-start; margin-bottom: 20px; font-size: 1.5rem; cursor: pointer; color: var(--primary); }
+
+        .social-accordion { width: 100%; max-width: 400px; margin-top: 10px; }
+        .social-header { background: var(--card); border: 1px solid var(--input-border); padding: 16px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 700; color: var(--primary); transition: 0.3s; }
+        .social-header:hover { border-color: var(--primary); }
+        .social-content { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0, 1, 0, 1); display: flex; flex-direction: column; gap: 10px; padding-top: 0; }
+        .social-accordion.open .social-content { max-height: 1000px; transition: max-height 1s ease-in-out; padding-top: 15px; }
+        .social-accordion.open .fa-chevron-down { transform: rotate(180deg); }
+
+        .rating-wrapper { width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--input-border); border-radius: 22px; padding: 20px; margin-bottom: 25px; text-align: center; }
+        .stars-container { display: flex; flex-direction: row-reverse; justify-content: center; gap: 8px; margin: 15px 0; }
+        .stars-container input { display: none; }
+        .stars-container label { font-size: 30px; color: #333; cursor: pointer; transition: 0.3s; }
+        .stars-container input:checked ~ label, .stars-container label:hover, .stars-container label:hover ~ label { color: var(--star-color); text-shadow: 0 0 10px rgba(241, 196, 15, 0.4); }
+        .comment-input { width: 100%; background: var(--bg); border: 1px solid var(--input-border); border-radius: 15px; color: var(--text); padding: 12px; font-size: 0.9rem; resize: none; margin-bottom: 15px; outline: none; }
+        .submit-rating-btn { width: 100%; padding: 12px; background: var(--primary); border: none; border-radius: 15px; color: white; font-weight: bold; cursor: pointer; }
+        .view-all-reviews { display: block; margin-top: 10px; font-size: 0.8rem; color: var(--text-dim); text-decoration: underline; cursor: pointer; }
+
+        .review-card-ui { background: var(--card); padding: 18px; border-radius: 18px; border: 1px solid var(--input-border); margin-bottom: 15px; text-align: right; position: relative; }
+        .review-user-info { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
         
-        .note-card { 
-            border-radius: var(--radius); padding: 22px; min-height: 170px; 
-            background: var(--card); border: 1px solid var(--border);
-            position: relative; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, box-shadow 0.3s ease;
-            display: flex; flex-direction: column; justify-content: space-between;
+        /* تحسين مظهر صورة المستخدم من جوجل */
+        .review-avatar { 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; 
+            border: 2px solid var(--primary); 
+            object-fit: cover; 
+            background: #222;
+        }
+
+        .review-user-details { display: flex; flex-direction: column; }
+        .review-username { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+        .review-stars-ui { color: var(--star-color); font-size: 0.7rem; }
+        .review-text { font-size: 0.9rem; line-height: 1.6; margin-bottom: 12px; color: var(--text); }
+        .review-actions { display: flex; gap: 15px; border-top: 1px solid var(--input-border); padding-top: 10px; margin-top: 5px; }
+
+        .review-menu-trigger { position: absolute; top: 15px; left: 15px; color: var(--text-dim); cursor: pointer; padding: 5px; z-index: 5; }
+        .review-options-menu { position: absolute; top: 40px; left: 15px; background: var(--card); border: 1px solid var(--input-border); border-radius: 12px; display: none; flex-direction: column; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; min-width: 100px; }
+        .review-options-menu.show { display: flex; }
+        .menu-item { padding: 10px 15px; font-size: 0.85rem; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; border: none; background: none; width: 100%; text-align: right; }
+        .menu-item:hover { background: rgba(255,255,255,0.05); }
+        .menu-item.delete { color: var(--error); }
+
+        .reviews-header-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 450px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .sort-dropdown-wrapper { position: relative; }
+        .sort-trigger-btn {
+            background: var(--card);
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            animation: cardIn 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
-            /* تم حذف overflow: hidden للسماح للقائمة بالظهور خارج البطاقة */
-        }
-        
-        @keyframes cardIn {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .note-card.removing { transform: scale(0.8) translateY(-20px); opacity: 0; pointer-events: none; }
-        .note-card:active { transform: scale(0.96); }
-        
-        .note-card h3 { margin: 0 0 10px; font-size: 17px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .note-card p { font-size: 13px; color: rgba(255,255,255,0.95); line-height: 1.6; margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
-        .card-footer { margin-top: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: rgba(255,255,255,0.8); font-weight: 600; }
-
-        .card-menu-btn { position: absolute; top: 15px; left: 10px; color: #fff; padding: 10px; cursor: pointer; z-index: 10; border-radius: 50%; transition: 0.2s; }
-        .card-menu-btn:hover { background: rgba(255,255,255,0.1); }
-
-        /* --- تعديل قائمة الخيارات لتظهر فوق البطاقة بوضوح --- */
-        .card-dropdown { 
-            position: absolute; top: 50px; left: 10px; background: var(--card); 
-            border-radius: 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); 
-            display: none; flex-direction: column; z-index: 9999; min-width: 170px; 
-            overflow: hidden; border: 1px solid var(--border);
-            animation: dropdownIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes dropdownIn { from { opacity:0; transform: scale(0.9) translateY(-10px); } to { opacity:1; transform: scale(1) translateY(0); } }
-
-        .card-dropdown div { padding: 14px 18px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); transition: 0.2s; cursor: pointer; display: flex; align-items: center; gap: 12px; font-weight: 500; }
-        .card-dropdown div:hover { background: rgba(37, 99, 235, 0.08); color: var(--primary); }
-        .card-dropdown div:last-child { border-bottom: none; }
-
-        .fab { position: fixed; bottom: 35px; left: 30px; width: 70px; height: 70px; background: var(--primary); border-radius: 24px; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border: none; z-index: 900; transition: 0.3s; }
-        .fab:active { transform: scale(0.9) rotate(45deg); }
-
-        .full-screen { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: none; flex-direction: column; padding: 25px; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); overflow-y: auto; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        /* --- تعديل نافذة الـ Modal لتكون متناسقة وواضحة --- */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
-        .modal-card { background: var(--card); width: 100%; max-width: 350px; border-radius: 28px; padding: 25px; text-align: center; border: 1px solid var(--border); animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box; }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        
-        .modal-card h3 { margin-bottom: 10px; font-size: 20px; font-weight: 700; color: var(--text); }
-        .modal-card p { margin-bottom: 20px; font-size: 14px; color: var(--text-m); }
-        .modal-input { 
-            width: 100%; padding: 15px; border-radius: 15px; border: 2px solid var(--border); 
-            margin-bottom: 20px; font-family: 'IBM Plex Sans Arabic'; font-size: 16px; 
-            outline: none; box-sizing: border-box; background: var(--bg); color: var(--text);
+            color: var(--primary);
             transition: 0.3s;
+            font-size: 1.1rem;
         }
-        .modal-input:focus { border-color: var(--primary); }
-        .modal-btns { display: flex; gap: 12px; }
-
-        .bottom-sheet { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; display: none; align-items: flex-end; backdrop-filter: blur(5px); }
-        .sheet-box { width: 100%; background: var(--card); border-radius: 35px 35px 0 0; padding: 30px; transform: translateY(100%); transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-sizing: border-box; }
-        .sheet-box.show { transform: translateY(0); }
-
-        .stats-card { background: var(--primary); color: white; padding: 20px; border-radius: 22px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; text-align: center; }
-        .stat-item b { display: block; font-size: 20px; }
-        .setting-row { background:var(--card); padding:20px; border-radius:22px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); cursor:pointer; margin-bottom:12px; transition: 0.2s; }
-        .setting-row:active { transform: scale(0.98); background: rgba(0,0,0,0.02); }
-
-        #toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 25px; border-radius: 50px; font-size: 14px; z-index: 9999; display: none; animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-family: 'IBM Plex Sans Arabic'; }
-        @keyframes toastIn { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-
-        /* --- تعديل قائمة الأنماط لتكون شبكة واضحة وجميلة --- */
-        .theme-select-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 20px; }
-        .theme-card { 
-            background: var(--bg); padding: 15px; border-radius: 18px; border: 2px solid var(--border);
-            cursor: pointer; text-align: center; font-size: 14px; font-weight: 600;
-            transition: 0.3s; display: flex; flex-direction: column; align-items: center; gap: 8px;
+        .sort-trigger-btn:active { transform: scale(0.9); }
+        .sort-menu {
+            position: absolute;
+            top: 45px;
+            left: 0;
+            background: var(--card);
+            border: 1px solid var(--input-border);
+            border-radius: 15px;
+            width: 160px;
+            display: none;
+            flex-direction: column;
+            z-index: 3000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            overflow: hidden;
+            animation: fadeInMenu 0.3s ease;
         }
-        .theme-card.active { border-color: var(--primary); background: rgba(37, 99, 235, 0.05); }
-        .theme-preview { width: 40px; height: 40px; border-radius: 12px; }
+        @keyframes fadeInMenu {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .sort-menu.active { display: flex; }
+        .sort-item {
+            padding: 12px 15px;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--input-border);
+            transition: 0.2s;
+            text-align: right;
+        }
+        .sort-item:last-child { border-bottom: none; }
+        .sort-item:hover { background: rgba(108, 92, 231, 0.1); color: var(--primary); }
+        .sort-item i { font-size: 1rem; width: 20px; }
 
-        .media-block { margin: 15px 0; border-radius: 20px; overflow: hidden; background: rgba(0,0,0,0.03); border: 1px solid var(--border); position: relative; }
-        .media-block img { width: 100%; height: auto; display: block; object-fit: cover; cursor: pointer; transition: 0.3s; }
-        .media-block textarea { width: 100%; border: none; background: transparent; padding: 12px; font-family: 'IBM Plex Sans Arabic'; font-size: 15px; color: var(--text); resize: none; outline: none; }
-        .remove-media { position: absolute; top: 10px; right: 10px; background: rgba(239, 68, 68, 0.9); color: white; border: none; width: 30px; height: 30px; border-radius: 10px; cursor: pointer; z-index: 5; }
+        .edit-sheet { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card); border-top-left-radius: 25px; border-top-right-radius: 25px; padding: 25px; z-index: 5000; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); border-top: 1px solid var(--input-border); }
+        .edit-sheet.active { transform: translateY(0); }
+        .edit-sheet-header { font-weight: 700; margin-bottom: 15px; text-align: center; color: var(--primary); }
+        .edit-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-edit-save { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .btn-edit-cancel { flex: 1; padding: 12px; background: var(--input-border); color: var(--text); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+
+        .confirm-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 6000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 20px; }
+        .confirm-modal-overlay.active { display: flex; }
+        .confirm-modal { background: var(--card); border: 1px solid var(--input-border); width: 100%; max-width: 320px; border-radius: 24px; padding: 25px; text-align: center; transform: scale(0.9); transition: 0.3s; }
+        .confirm-modal-overlay.active .confirm-modal { transform: scale(1); }
+        .confirm-icon { width: 60px; height: 60px; background: rgba(255, 71, 87, 0.1); color: var(--error); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 15px; }
+        .confirm-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+        .confirm-desc { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
+        .confirm-btns { display: flex; flex-direction: column; gap: 10px; }
+        .btn-confirm-delete { padding: 12px; background: var(--error); color: white; border: none; border-radius: 15px; font-weight: 700; cursor: pointer; }
+        .btn-confirm-cancel { padding: 12px; background: transparent; color: var(--text-dim); border: none; font-weight: 700; cursor: pointer; }
+
+        .sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 4999; display: none; }
+        .sheet-overlay.active { display: block; }
         
-        .add-media-btn { margin: 10px 0; padding: 15px; border: 2px dashed var(--border); border-radius: 20px; text-align: center; cursor: pointer; transition: 0.3s; color: var(--text-m); font-weight: 600; font-family: 'IBM Plex Sans Arabic'; }
-        .add-media-btn:hover { background: rgba(0,0,0,0.02); border-color: var(--primary); color: var(--primary); }
+        .action-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.85rem; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .action-btn i { font-size: 1.1rem; }
+        .action-btn:active { transform: scale(1.4); }
+        .action-btn.active-like { color: var(--accent); transform: scale(1.1); font-weight: bold; }
+        .action-btn.active-dislike { color: var(--error); transform: scale(1.1); font-weight: bold; }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1.1); }
+        }
+        .animate-pop { animation: pulse 0.4s ease-out; }
 
-        .card-image-preview { width: 100%; height: 120px; object-fit: cover; margin-bottom: 10px; border-radius: 15px; }
+        .game-card { width: 100%; max-width: 350px; background: linear-gradient(135deg, #6c5ce7, #a29bfe); border-radius: 25px; padding: 20px; cursor: pointer; box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .game-card i { font-size: 3rem; color: white; }
+        .game-card h4 { margin: 10px 0 5px; color: white; font-size: 1.4rem; }
+        #gameWrapper { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 3000; }
+        .game-ui { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; z-index: 3200; align-items: center; }
+        .stats-group { display: flex; gap: 10px; pointer-events: none; }
+        .game-stat { background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 50px; backdrop-filter: blur(5px); color: white; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 6px; }
+        #gameStartMenu, #gameOverMenu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 3100; }
+        .game-btn { background: var(--primary); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; font-size: 1.2rem; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4); }
 
-        #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: none; align-items: center; justify-content: center; flex-direction: column; cursor: zoom-out; }
-        #lightbox img { max-width: 95%; max-height: 80%; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .social-card { width: 100%; max-width: 400px; padding: 16px; margin-bottom: 0px; border-radius: 18px; text-decoration: none; color: white !important; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; }
+        .social-tiktok { background: var(--tiktok-bg); border: 1px solid #333; }
+        .social-insta { background: linear-gradient(45deg, #f09433, #bc1888); }
+        .social-fb { background: #1877f2; }
+        .social-yt { background: #ff0000; }
+        .brand { font-size: clamp(2.5rem, 8vw, 3.5rem); font-weight: 900; margin: 80px 0 30px; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
+        .container { width: 100%; max-width: 550px; padding: 0 10px; }
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-box { width: 100%; padding: 20px 55px 20px 20px; background: var(--card); border: 2px solid var(--input-border); border-radius: 22px; color: var(--text); font-size: 1rem; outline: none; text-align: right; direction: ltr; }
+        .input-box::placeholder { direction: rtl; color: var(--text-dim); }
+        .paste-btn { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--primary); font-size: 1.2rem; cursor: pointer; }
+        .main-btn { width: 100%; padding: 18px; background: var(--primary); border: none; border-radius: 20px; color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .video-card { display: none; margin-top: 25px; background: var(--card); border-radius: 25px; padding: 15px; border: 1px solid var(--input-border); }
+        .video-preview { width: 100%; border-radius: 18px; overflow: hidden; background: #000; }
+        video { width: 100%; max-height: 500px; }
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn-action { padding: 12px; border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; }
+        .btn-reset { grid-column: span 2; color: var(--text); }
+        .history-section { width: 100%; margin-top: 30px; border-top: 1px solid var(--input-border); padding-top: 20px; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .history-header h3 { font-size: 0.95rem; margin: 0; color: var(--text-dim); }
+        .archive-trigger { color: var(--primary); font-size: 1.2rem; cursor: pointer; }
+        .history-item { background: var(--card); padding: 15px; border-radius: 20px; margin-bottom: 12px; border: 1px solid var(--input-border); display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; }
+        .history-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 65px; overflow: hidden; }
+        .history-url { direction: ltr; font-size: 0.8rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 10px; }
+        .history-btn { color: var(--primary); font-weight: 700; cursor: pointer; font-size: 0.9rem; align-self: flex-start; }
+        .history-thumb { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background: #222; flex-shrink: 0; }
+        #customAlert { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--input-border); display: flex; align-items: center; gap: 10px; z-index: 10000; transition: 0.4s ease; color: var(--text); }
+        #customAlert.show { top: 20px; }
+        .star-loader { display: none; font-size: 1.4rem; color: transparent; -webkit-text-stroke: 1.5px var(--star-color); animation: starAnim 1s infinite linear; }
+        @keyframes starAnim { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body onclick="closeAllDropdowns()">
+<body data-theme="dark">
 
-<div id="toast"></div>
-
-<div id="lightbox" onclick="this.style.display='none'">
-    <img src="" id="lightboxImg">
-    <p style="color: white; margin-top: 20px; font-family: 'IBM Plex Sans Arabic';">انقر في أي مكان للإغلاق</p>
-</div>
-
-<div id="customModal" class="modal-overlay">
-    <div class="modal-card">
-        <h3 id="modalTitle">تنبيه</h3>
-        <p id="modalDesc"></p>
-        <input type="text" id="modalInput" class="modal-input" placeholder="اسم التصنيف هنا...">
-        <div class="modal-btns">
-            <button onclick="closeModal()" style="flex:1; padding:15px; border-radius:18px; border:none; background:rgba(0,0,0,0.05); color:var(--text); cursor:pointer; font-weight:600; font-family:'IBM Plex Sans Arabic';">إلغاء</button>
-            <button id="modalConfirmBtn" style="flex:1; padding:15px; border-radius:18px; border:none; background:var(--primary); color:white; font-weight:700; cursor:pointer; font-family:'IBM Plex Sans Arabic';">تأكيد</button>
-        </div>
-    </div>
-</div>
-
-<div id="tagPickerSheet" class="bottom-sheet" onclick="closeTagPicker()">
-    <div class="sheet-box" id="sheetInner" onclick="event.stopPropagation()">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0; font-weight:700;">التصنيفات</h3>
-            <button onclick="addNewTagModal()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:15px; font-weight:700; cursor:pointer; font-family:'IBM Plex Sans Arabic'; font-size:13px;">+ جديد</button>
-        </div>
-        <div id="sheetTagsList" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;"></div>
-    </div>
-</div>
-
-<div id="lockPage" class="full-screen" style="justify-content: center; align-items: center; text-align: center;">
-    <div style="max-width: 320px; width: 100%;">
-        <div style="width: 80px; height: 80px; background: var(--primary); border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; color: white; font-size: 35px;"><i class="fas fa-shield-halved"></i></div>
-        <h2 style="font-weight:700;">الوصول مقيد</h2>
-        <input type="password" id="pinEntry" maxlength="8" style="width: 100%; padding: 18px; border-radius: 20px; border: 2px solid var(--border); margin: 15px 0; text-align: center; font-size: 25px; letter-spacing: 5px; background:var(--card); color:var(--text);" placeholder="••••">
-        <button onclick="unlockApp()" style="width:100%; padding:18px; background:var(--primary); color:white; border:none; border-radius:20px; font-weight:700; font-size: 18px; cursor:pointer; font-family:'IBM Plex Sans Arabic';">فتح القفل</button>
-    </div>
-</div>
-
-<header>
-    <i class="fas fa-bars-staggered" onclick="openSettings()" style="cursor:pointer; font-size: 22px; opacity: 0.7;"></i>
-    <h1>مفكرة</h1>
-    <div style="width: 25px;"></div>
-</header>
-
-<div class="search-container">
-    <input type="text" id="searchInput" placeholder="ابحث عن ملاحظة..." oninput="renderNotes()">
-</div>
-
-<div class="tags-bar" id="tagsList"></div>
-
-<div id="pinnedGrid" class="notes-grid" style="padding-bottom: 0;"></div>
-<div id="notesGrid" class="notes-grid"></div>
-
-<button class="fab" onclick="editNote()"><i class="fas fa-plus"></i></button>
-
-<div id="editorPage" class="full-screen">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-        <i class="fas fa-arrow-right" onclick="hideOverlay('editorPage')" style="font-size:24px; cursor:pointer;"></i>
-        <button onclick="saveNote()" style="background:var(--primary); color:white; border:none; padding:12px 35px; border-radius:18px; font-weight:700; cursor:pointer; font-family:'IBM Plex Sans Arabic';">حفظ الآن</button>
-    </div>
-    <input type="text" id="nTitle" placeholder="العنوان" style="width:100%; border:none; background:none; font-size:26px; font-weight:700; color:var(--text); outline:none; font-family:'IBM Plex Sans Arabic';">
-    <div onclick="openTagPicker()" style="margin:20px 0; padding:18px; background:var(--card); border-radius:20px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); cursor:pointer;">
-        <span>تصنيف الملاحظة: <b id="activeTagLabel" style="color:var(--primary)">عام</b></span>
-        <i class="fas fa-chevron-down" style="font-size: 12px; opacity: 0.5;"></i>
-    </div>
-    
-    <div id="mediaContainer"></div>
-    
-    <div class="add-media-btn" onclick="document.getElementById('mediaInput').click()">
-        <i class="fas fa-image"></i> إضافة صورة مع نص
-    </div>
-    <input type="file" id="mediaInput" hidden accept="image/*" onchange="handleMediaUpload(this)">
-
-    <textarea id="nContent" placeholder="ابدأ في كتابة نص إضافي..." style="width:100%; flex-grow:1; border:none; background:none; font-size:18px; color:var(--text); outline:none; font-family:'IBM Plex Sans Arabic'; resize:none; line-height:1.7; min-height: 150px;"></textarea>
-</div>
-
-<div id="settingsPage" class="full-screen">
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:35px;">
-        <i class="fas fa-arrow-right" onclick="hideOverlay('settingsPage')" style="cursor:pointer; font-size: 24px;"></i>
-        <h2 style="font-weight: 700; margin:0;">الإعدادات والتنظيم</h2>
+    <div class="top-controls-left">
+        <div class="icon-btn" onclick="toggleOverlay('gamesOverlay')" title="الألعاب"><i class="fas fa-gamepad"></i></div>
     </div>
 
-    <div class="stats-card">
-        <div class="stat-item"><b id="stat-notes">0</b><span>ملاحظة</span></div>
-        <div class="stat-item"><b id="stat-fav">0</b><span>مفضلة</span></div>
-        <div class="stat-item"><b id="stat-arch">0</b><span>مؤرشفة</span></div>
-        <div class="stat-item"><b id="stat-trash">0</b><span>محذوفة</span></div>
-    </div>
-    
-    <div onclick="openSpecialView('favorite')" class="setting-row">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <i class="fas fa-heart" style="color:#ef4444;"></i>
-            <span style="font-weight:700;">الملاحظات المفضلة</span>
-        </div>
-        <i class="fas fa-chevron-left" style="opacity:0.3; font-size:12px;"></i>
+    <div class="top-controls-right">
+        <div class="icon-btn" onclick="toggleOverlay('menuOverlay')" title="القائمة"><i class="fas fa-ellipsis-v"></i></div>
+        <div class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="تغيير الثيم"><i class="fas fa-moon"></i></div>
     </div>
 
-    <div onclick="openSpecialView('archive')" class="setting-row">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <i class="fas fa-box-archive" style="color:#10b981;"></i>
-            <span style="font-weight:700;">الأرشيف</span>
-        </div>
-        <i class="fas fa-chevron-left" style="opacity:0.3; font-size:12px;"></i>
-    </div>
-
-    <div onclick="toggleTrash()" class="setting-row">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <i class="fas fa-trash-can" style="color:#64748b;"></i>
-            <span style="font-weight:700;">سلة المهملات</span>
-        </div>
-        <i class="fas fa-chevron-left" id="trashChevron" style="opacity:0.3; font-size:12px;"></i>
-    </div>
-    <div id="trashSection" style="display:none; margin-bottom:20px;"><div id="trashGrid" class="notes-grid"></div></div>
-
-    <div onclick="openThemePicker()" class="setting-row">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <i class="fas fa-palette" style="color:var(--primary)"></i>
-            <span style="font-weight:700;">نمط المظهر</span>
-        </div>
-        <span id="currentThemeName" style="opacity:0.6; font-size:14px;">تلقائي</span>
-    </div>
-
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-        <button onclick="exportData()" style="padding:15px; border-radius:15px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:'IBM Plex Sans Arabic'; font-weight:700; cursor:pointer;">تصدير</button>
-        <button onclick="importData()" style="padding:15px; border-radius:15px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:'IBM Plex Sans Arabic'; font-weight:700; cursor:pointer;">استعادة</button>
-    </div>
-</div>
-
-<div id="specialViewPage" class="full-screen">
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:25px;">
-        <i class="fas fa-arrow-right" onclick="hideOverlay('specialViewPage')" style="cursor:pointer; font-size: 24px;"></i>
-        <h2 id="specialViewTitle" style="font-weight: 700; margin:0;">العنوان</h2>
-    </div>
-    <div id="specialGrid" class="notes-grid"></div>
-</div>
-
-<div id="themePickerModal" class="modal-overlay">
-    <div class="modal-card" style="max-width: 400px;">
-        <h3>اختر نمطك المفضل</h3>
-        <div class="theme-select-grid">
-            <div class="theme-card" id="tp-default" onclick="setTheme('default')">
-                <div class="theme-preview" style="background:#2563eb"></div>
-                <span>كلاسيك</span>
-            </div>
-            <div class="theme-card" id="tp-sunset" onclick="setTheme('sunset')">
-                <div class="theme-preview" style="background:#f97316"></div>
-                <span>الغروب</span>
-            </div>
-            <div class="theme-card" id="tp-nebula" onclick="setTheme('nebula')">
-                <div class="theme-preview" style="background:#38bdf8"></div>
-                <span>السديم</span>
-            </div>
-            <div class="theme-card" id="tp-rose" onclick="setTheme('rose')">
-                <div class="theme-preview" style="background:#db2777"></div>
-                <span>رقة الورد</span>
-            </div>
-            <div class="theme-card" id="tp-royal" onclick="setTheme('royal')">
-                <div class="theme-preview" style="background:#8b5cf6"></div>
-                <span>الملكي</span>
-            </div>
-            <div class="theme-card" id="tp-eclipse" onclick="setTheme('eclipse')">
-                <div class="theme-preview" style="background:#94a3b8"></div>
-                <span>الكسوف</span>
+    <div class="confirm-modal-overlay" id="confirmModal">
+        <div class="confirm-modal">
+            <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
+            <div class="confirm-title">حذف التعليق؟</div>
+            <div class="confirm-desc">هل أنت متأكد؟ سيتم حذف هذا الرأي نهائياً.</div>
+            <div class="confirm-btns">
+                <button class="btn-confirm-delete" id="confirmDeleteBtn">حذف الآن</button>
+                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">تراجع</button>
             </div>
         </div>
-        <button onclick="document.getElementById('themePickerModal').style.display='none'" style="margin-top:20px; width:100%; padding:15px; border-radius:18px; border:none; background:var(--primary); color:white; font-family:'IBM Plex Sans Arabic'; font-weight:700; cursor:pointer;">إغلاق</button>
     </div>
-</div>
 
-<script>
-    // --- IndexedDB ---
-    const DB_NAME = "ProfessionalNotesDB";
-    const DB_VERSION = 1;
-    let db;
-    let notes = [];
-    let trash = [];
-    let tags = ["عام", "شخصي", "عمل", "مهم"];
-    let theme = localStorage.getItem('mega_theme_v26') || 'default';
-    let editIdx = null;
-    let selectedTag = 'عام';
-    let currentFilter = 'الكل';
-    let currentMedia = [];
+    <div class="sheet-overlay" id="sheetOverlay" onclick="closeEditSheet()"></div>
+    <div class="edit-sheet" id="editSheet">
+        <div class="edit-sheet-header">تعديل الرأي</div>
+        <textarea id="editCommentInput" class="comment-input" rows="4"></textarea>
+        <div class="edit-actions">
+            <button class="btn-edit-save" onclick="saveEditedReview()">إضافة التعديل</button>
+            <button class="btn-edit-cancel" onclick="closeEditSheet()">إلغاء</button>
+        </div>
+    </div>
 
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = (e) => {
-        const d = e.target.result;
-        if (!d.objectStoreNames.contains("data")) d.createObjectStore("data");
-    };
-    req.onsuccess = (e) => {
-        db = e.target.result;
-        loadData();
-    };
+    <div class="full-overlay" id="gamesOverlay">
+        <i class="fas fa-arrow-right close-overlay" onclick="toggleOverlay('gamesOverlay')"></i>
+        <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 25px;">الألعاب</div>
+        <div class="game-card" onclick="openGame()">
+            <i class="fas fa-table-tennis-paddle-ball"></i>
+            <h4>تحدي المضرب</h4>
+            <p>سجل أعلى النقاط ونافس نفسك!</p>
+        </div>
+    </div>
 
-    async function loadData() {
-        const tx = db.transaction("data", "readonly");
-        const store = tx.objectStore("data");
-        notes = (await getVal(store, "notes")) || [];
-        trash = (await getVal(store, "trash")) || [];
-        const t = await getVal(store, "tags");
-        if(t) tags = t;
-        renderNotes();
-        setTheme(theme);
-    }
+    <div id="gameWrapper">
+        <div class="game-ui">
+            <div class="stats-group">
+                <div class="game-stat"><i class="fas fa-star" style="color:#f1c40f"></i> <span id="gameScore">0</span></div>
+                <div class="game-stat"><i class="fas fa-trophy" style="color:#ffd700"></i> <span id="gameHighScoreInner">0</span></div>
+            </div>
+            <div class="game-stat" onclick="closeGame()" style="pointer-events: auto; cursor:pointer;"><i class="fas fa-times"></i></div>
+        </div>
+        <div id="gameStartMenu">
+            <i class="fas fa-table-tennis-paddle-ball" style="font-size: 5rem; color: var(--primary);"></i>
+            <h1>تحدي المضرب</h1>
+            <button class="game-btn" onclick="startGame()">ابدأ اللعب</button>
+        </div>
+        <div id="gameOverMenu" style="display:none">
+            <h1 style="color:var(--error)">انتهت الجولة!</h1>
+            <p style="font-size: 1.5rem;">نقاطك: <span id="finalGameScore">0</span></p>
+            <button class="game-btn" onclick="startGame()">إعادة المحاولة</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
 
-    function getVal(store, key) {
-        return new Promise(res => {
-            const r = store.get(key);
-            r.onsuccess = () => res(r.result);
-        });
-    }
+    <div class="full-overlay" id="menuOverlay">
+        <i class="fas fa-arrow-right close-overlay" onclick="toggleOverlay('menuOverlay')"></i>
+        <div class="rating-wrapper">
+            <h3 style="margin:0; font-size:1.1rem;">تقييم الموقع</h3>
+            <div class="stars-container">
+                <input type="radio" id="st5" name="user_star" value="5"><label for="st5">★</label>
+                <input type="radio" id="st4" name="user_star" value="4"><label for="st4">★</label>
+                <input type="radio" id="st3" name="user_star" value="3"><label for="st3">★</label>
+                <input type="radio" id="st2" name="user_star" value="2"><label for="st2">★</label>
+                <input type="radio" id="st1" name="user_star" value="1"><label for="st1">★</label>
+            </div>
+            <textarea id="userReviewText" class="comment-input" placeholder="اكتب رأيك هنا..."></textarea>
+            <button class="submit-rating-btn" onclick="handleNewReview()">إرسال التقييم</button>
+            <span class="view-all-reviews" onclick="toggleOverlay('allReviewsOverlay')">عرض كل التعليقات</span>
+        </div>
 
-    function syncDB() {
-        const tx = db.transaction("data", "readwrite");
-        const store = tx.objectStore("data");
-        store.put(notes, "notes");
-        store.put(trash, "trash");
-        store.put(tags, "tags");
-    }
+        <div class="social-accordion" id="socialAccordion">
+            <div class="social-header" onclick="document.getElementById('socialAccordion').classList.toggle('open')">
+                <span>مواقع التواصل الأجتماعي</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="social-content">
+                <a href="https://www.tiktok.com/@72rxb" target="_blank" class="social-card social-tiktok"><i class="fab fa-tiktok"></i> تيك توك</a>
+                <a href="https://www.instagram.com/72rxb" target="_blank" class="social-card social-insta"><i class="fab fa-instagram"></i> انستغرام</a>
+                <a href="https://www.facebook.com/share/1D54JBBkJh/" target="_blank" class="social-card social-fb"><i class="fab fa-facebook-f"></i> فيسبوك</a>
+                <a href="https://youtube.com/@72rxb" target="_blank" class="social-card social-yt"><i class="fab fa-youtube"></i> يوتيوب</a>
+            </div>
+        </div>
+    </div>
 
-    // --- Media Handlers ---
-    function handleMediaUpload(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const mediaObj = { image: e.target.result, caption: "" };
-                currentMedia.push(mediaObj);
-                renderMediaBlocks();
-            };
-            reader.readAsDataURL(input.files[0]);
-            input.value = ""; 
-        }
-    }
-
-    function renderMediaBlocks() {
-        const container = document.getElementById('mediaContainer');
-        container.innerHTML = "";
-        currentMedia.forEach((m, idx) => {
-            const block = document.createElement('div');
-            block.className = "media-block";
-            block.innerHTML = `
-                <button class="remove-media" onclick="removeMedia(${idx})"><i class="fas fa-times"></i></button>
-                <img src="${m.image}" onclick="openLightbox('${m.image}')">
-                <textarea placeholder="اكتب نصاً تحت هذه الصورة..." oninput="currentMedia[${idx}].caption = this.value">${m.caption}</textarea>
-            `;
-            container.appendChild(block);
-        });
-    }
-
-    function removeMedia(idx) {
-        currentMedia.splice(idx, 1);
-        renderMediaBlocks();
-    }
-
-    function openLightbox(src) {
-        document.getElementById('lightboxImg').src = src;
-        document.getElementById('lightbox').style.display = 'flex';
-    }
-
-    // --- UI Logic ---
-    function toast(m) {
-        const t = document.getElementById('toast');
-        t.innerText = m;
-        t.style.display = 'block';
-        setTimeout(() => t.style.display = 'none', 2000);
-    }
-
-    function renderNotes() {
-        const q = document.getElementById('searchInput').value.toLowerCase();
-        const pGrid = document.getElementById('pinnedGrid'), nGrid = document.getElementById('notesGrid');
-        pGrid.innerHTML = ""; nGrid.innerHTML = "";
-        
-        notes.forEach((n, i) => {
-            if(!n.archived) {
-                if((currentFilter === 'الكل' || n.tag === currentFilter) && (n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q))) {
-                    const html = createNoteHTML(n, i, 'main');
-                    n.pinned ? pGrid.innerHTML += html : nGrid.innerHTML += html;
-                }
-            }
-        });
-        renderTagsBar();
-        syncDB();
-    }
-
-    function createNoteHTML(n, i, type) {
-        let firstImg = "";
-        if(n.media && n.media.length > 0) {
-            firstImg = `<img src="${n.media[0].image}" class="card-image-preview">`;
-        }
-        return `
-            <div id="note-${type}-${i}" class="note-card" style="background:${n.color}" onclick="editNote(${i})">
-                <div class="card-menu-btn" onclick="showCardMenu(event, '${type}', ${i})"><i class="fas fa-ellipsis-v"></i></div>
-                <div class="card-dropdown" id="drop-${type}-${i}">
-                    <div onclick="toggleAction(event, ${i}, 'pinned')"><i class="fas fa-thumbtack"></i> ${n.pinned ? 'إلغاء التثبيت' : 'تثبيت'}</div>
-                    <div onclick="toggleAction(event, ${i}, 'favorite')"><i class="fas fa-heart"></i> ${n.favorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}</div>
-                    <div onclick="toggleAction(event, ${i}, 'archived')"><i class="fas fa-box-archive"></i> ${n.archived ? 'إلغاء الأرشفة' : 'أرشفة'}</div>
-                    <div onclick="deleteNote(event, ${i}, '${type}')" style="color:#ef4444;"><i class="fas fa-trash"></i> حذف</div>
-                </div>
-                ${n.pinned ? '<i class="fas fa-thumbtack" style="position:absolute; top:15px; left:45px; color:#fff; font-size:12px;"></i>' : ''}
-                ${n.favorite ? '<i class="fas fa-heart" style="position:absolute; top:15px; left:65px; color:#fff; font-size:12px;"></i>' : ''}
-                ${firstImg}
-                <h3>${n.title}</h3>
-                <p>${n.content}</p>
-                <div class="card-footer">
-                    <span><i class="far fa-calendar"></i> ${n.date}</span>
-                    <span><i class="far fa-clock"></i> ${n.time}</span>
-                    <span style="margin-top:6px; opacity:0.8; font-weight:700;">#${n.tag} ${n.media ? '('+n.media.length+' صور)' : ''}</span>
-                </div>
-            </div>`;
-    }
-
-    // --- Fast Actions ---
-    function toggleAction(e, i, prop) {
-        e.stopPropagation();
-        closeAllDropdowns();
-        notes[i][prop] = !notes[i][prop];
-        const card = document.getElementById(`note-main-${i}`) || document.getElementById(`note-special-${i}`);
-        if(card && (prop === 'archived')) {
-            card.classList.add('removing');
-            setTimeout(() => {
-                renderNotes();
-                if(document.getElementById('specialViewPage').style.display === 'flex') {
-                    openSpecialView(currentSpecialView);
-                }
-            }, 300);
-        } else {
-            renderNotes();
-            if(document.getElementById('specialViewPage').style.display === 'flex') {
-                openSpecialView(currentSpecialView);
-            }
-        }
-        const msgs = { favorite: "المفضلة", archived: "الأرشيف", pinned: "التثبيت" };
-        toast(`تم تحديث ${msgs[prop]}`);
-    }
-
-    function deleteNote(e, i, type) {
-        e.stopPropagation();
-        const card = document.getElementById(`note-${type}-${i}`);
-        card.classList.add('removing');
-        setTimeout(() => {
-            trash.unshift(notes[i]);
-            notes.splice(i, 1);
-            renderNotes();
-            if(document.getElementById('specialViewPage').style.display === 'flex') {
-                openSpecialView(currentSpecialView);
-            }
-            toast("تم النقل لسلة المهملات");
-        }, 300);
-    }
-
-    let currentSpecialView = '';
-    function openSpecialView(view) {
-        currentSpecialView = view;
-        const grid = document.getElementById('specialGrid');
-        const title = document.getElementById('specialViewTitle');
-        grid.innerHTML = "";
-        if(view === 'favorite') {
-            title.innerText = "الملاحظات المفضلة";
-            notes.forEach((n, i) => { if(n.favorite) grid.innerHTML += createNoteHTML(n, i, 'special'); });
-        } else {
-            title.innerText = "الأرشيف";
-            notes.forEach((n, i) => { if(n.archived) grid.innerHTML += createNoteHTML(n, i, 'special'); });
-        }
-        if(!grid.innerHTML) grid.innerHTML = "<p style='grid-column:1/-1; text-align:center; opacity:0.5;'>لا يوجد نتائج هنا</p>";
-        viewOverlay('specialViewPage');
-    }
-
-    // --- Core Functions ---
-    function saveNote() {
-        const t = document.getElementById('nTitle').value, c = document.getElementById('nContent').value;
-        if(!t && !c && currentMedia.length === 0) return hideOverlay('editorPage');
-        const now = new Date();
-        const obj = {
-            title: t || "بدون عنوان", 
-            content: c, 
-            tag: selectedTag,
-            media: [...currentMedia],
-            date: now.toLocaleDateString('ar-EG'),
-            time: now.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}),
-            pinned: editIdx !== null ? notes[editIdx].pinned : false,
-            favorite: editIdx !== null ? notes[editIdx].favorite : false,
-            archived: editIdx !== null ? notes[editIdx].archived : false,
-            color: editIdx !== null ? notes[editIdx].color : getThemeColor()
-        };
-        if(editIdx !== null) notes[editIdx] = obj; else notes.unshift(obj);
-        hideOverlay('editorPage');
-        renderNotes();
-        toast("تم الحفظ بنجاح");
-    }
-
-    function editNote(i = null) {
-        editIdx = i;
-        if(i !== null) {
-            document.getElementById('nTitle').value = notes[i].title;
-            document.getElementById('nContent').value = notes[i].content;
-            selectedTag = notes[i].tag;
-            currentMedia = notes[i].media ? JSON.parse(JSON.stringify(notes[i].media)) : [];
-        } else {
-            document.getElementById('nTitle').value = ""; 
-            document.getElementById('nContent').value = ""; 
-            selectedTag = 'عام';
-            currentMedia = [];
-        }
-        document.getElementById('activeTagLabel').innerText = selectedTag;
-        renderMediaBlocks();
-        viewOverlay('editorPage');
-    }
-
-    function getThemeColor() {
-        const pals = {
-            default: ['#2563eb', '#3b82f6', '#1d4ed8'],
-            sunset: ['#f97316', '#fb923c', '#ea580c'],
-            nebula: ['#38bdf8', '#0ea5e9', '#0284c7'],
-            rose: ['#db2777', '#f472b6', '#be185d'],
-            royal: ['#8b5cf6', '#a78bfa', '#7c3aed'],
-            eclipse: ['#64748b', '#94a3b8', '#475569']
-        };
-        const s = pals[theme] || pals.default;
-        return s[Math.floor(Math.random() * s.length)];
-    }
-
-    function setTheme(t) {
-        document.body.className = t === 'default' ? '' : 'theme-' + t;
-        theme = t;
-        localStorage.setItem('mega_theme_v26', t);
-        document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
-        const el = document.getElementById('tp-' + t);
-        if(el) el.classList.add('active');
-        renderNotes();
-    }
-
-    function showCardMenu(e, type, i) { e.stopPropagation(); closeAllDropdowns(); document.getElementById(`drop-${type}-${i}`).style.display = 'flex'; }
-    function closeAllDropdowns() { document.querySelectorAll('.card-dropdown').forEach(d => d.style.display = 'none'); }
-    function viewOverlay(id) { document.getElementById(id).style.display = 'flex'; }
-    function hideOverlay(id) { document.getElementById(id).style.display = 'none'; }
-    
-    // --- Helper UI ---
-    function openSettings() {
-        document.getElementById('stat-notes').innerText = notes.filter(n => !n.archived).length;
-        document.getElementById('stat-fav').innerText = notes.filter(n => n.favorite).length;
-        document.getElementById('stat-arch').innerText = notes.filter(n => n.archived).length;
-        document.getElementById('stat-trash').innerText = trash.length;
-        viewOverlay('settingsPage');
-    }
-
-    function renderTagsBar() {
-        const b = document.getElementById('tagsList');
-        b.innerHTML = `<div class="tag-btn ${currentFilter==='الكل'?'active':''}" onclick="setFilter('الكل')">الكل</div>`;
-        tags.forEach(t => b.innerHTML += `<div class="tag-btn ${currentFilter===t?'active':''}" onclick="setFilter('${t}')">${t}</div>`);
-    }
-    function setFilter(t) { currentFilter = t; renderNotes(); }
-
-    function openTagPicker() {
-        document.getElementById('tagPickerSheet').style.display = 'flex';
-        setTimeout(() => document.getElementById('sheetInner').classList.add('show'), 10);
-        const l = document.getElementById('sheetTagsList'); l.innerHTML = "";
-        tags.forEach(t => {
-            l.innerHTML += `<div onclick="pickTag('${t}')" style="padding:16px; background:rgba(0,0,0,0.03); border-radius:15px; font-weight:700; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">${t} ${selectedTag === t ? '<i class="fas fa-check-circle" style="color:var(--primary)"></i>' : ''}</div>`;
-        });
-    }
-    function pickTag(t) { selectedTag = t; document.getElementById('activeTagLabel').innerText = t; closeTagPicker(); }
-    function closeTagPicker() { document.getElementById('sheetInner').classList.remove('show'); setTimeout(() => document.getElementById('tagPickerSheet').style.display = 'none', 400); }
-
-    function addNewTagModal() {
-        // تفريغ الحقل قبل فتحه
-        document.getElementById('modalInput').value = "";
-        askUser("تصنيف جديد", "أدخل اسم التصنيف الجديد لترتيب ملاحظاتك:", true, (v) => {
-            if(v && !tags.includes(v)) { tags.push(v); syncDB(); pickTag(v); renderTagsBar(); }
-        });
-    }
-
-    function askUser(t, d, i, c) {
-        document.getElementById('modalTitle').innerText = t;
-        document.getElementById('modalDesc').innerText = d;
-        const inp = document.getElementById('modalInput');
-        inp.style.display = i ? 'block' : 'none';
-        document.getElementById('customModal').style.display = 'flex';
-        document.getElementById('modalConfirmBtn').onclick = () => { c(inp.value); closeModal(); };
-    }
-    function closeModal() { document.getElementById('customModal').style.display = 'none'; }
-
-    function toggleTrash() {
-        const s = document.getElementById('trashSection');
-        const isHidden = s.style.display === 'none';
-        s.style.display = isHidden ? 'block' : 'none';
-        document.getElementById('trashChevron').className = isHidden ? 'fas fa-chevron-down' : 'fas fa-chevron-left';
-        if(isHidden) renderTrash();
-    }
-
-    function renderTrash() {
-        const g = document.getElementById('trashGrid');
-        g.innerHTML = trash.length ? "" : "<p style='grid-column:1/-1; text-align:center; opacity:0.5;'>السلة فارغة</p>";
-        trash.forEach((n, i) => {
-            g.innerHTML += `
-                <div class="note-card" style="background:${n.color}; opacity:0.7;">
-                    <div class="card-menu-btn" onclick="showCardMenu(event, 'trash', ${i})"><i class="fas fa-ellipsis-v"></i></div>
-                    <div class="card-dropdown" id="drop-trash-${i}">
-                        <div onclick="restoreNote(${i})"><i class="fas fa-undo"></i> استعادة</div>
-                        <div onclick="hardDelete(${i})"><i class="fas fa-times" style="color:red"></i> حذف نهائي</div>
+    <div class="full-overlay" id="allReviewsOverlay">
+        <i class="fas fa-arrow-right close-overlay" onclick="toggleOverlay('allReviewsOverlay')"></i>
+        <div class="reviews-header-area">
+            <div style="font-size: 1.5rem; font-weight: 700;">آراء المستخدمين</div>
+            <div class="sort-dropdown-wrapper">
+                <div class="sort-trigger-btn" onclick="toggleSortMenu(event)">
+                    <i class="fas fa-filter"></i> </div>
+                <div class="sort-menu" id="sortMenu">
+                    <div class="sort-item" onclick="sortReviews('newest')">
+                        <i class="fas fa-clock"></i> الأحدث
                     </div>
-                    <h3>${n.title}</h3>
-                </div>`;
+                    <div class="sort-item" onclick="sortReviews('most_liked')">
+                        <i class="fas fa-heart"></i> الأكثر إعجاباً
+                    </div>
+                    <div class="sort-item" onclick="sortReviews('most_disliked')">
+                        <i class="fas fa-thumbs-down"></i> الأكثر سوءاً
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="reviewsListContainer" style="width: 100%; max-width: 450px;"></div>
+    </div>
+
+    <div class="full-overlay" id="archiveOverlay">
+        <i class="fas fa-arrow-right close-overlay" onclick="toggleOverlay('archiveOverlay')"></i>
+        <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; width: 100%; text-align: center;">أرشيف التحميلات</div>
+        <div id="fullHistoryContainer" style="width: 100%; max-width: 550px;"></div>
+    </div>
+
+    <div class="brand">WeStars</div>
+
+    <div class="container">
+        <div class="input-group">
+            <input type="text" id="urlInput" class="input-box" placeholder="...الصق الرابط هنا">
+            <i class="fas fa-paste paste-btn" onclick="pasteLink()"></i>
+        </div>
+        <button class="main-btn" onclick="processVideo()">
+            <span id="btnText">استخراج الفيديو</span>
+            <i class="far fa-star star-loader" id="starLoader"></i>
+        </button>
+        <div id="resultCard" class="video-card">
+            <div class="video-preview">
+                <video id="videoPlayer" controls playsinline></video>
+            </div>
+            <div class="actions">
+                <button onclick="downloadNow()" class="btn-action btn-download" style="background:var(--accent);"><i class="fas fa-download"></i> حفظ </button>
+                <button onclick="copyLink()" class="btn-action btn-copy" style="background:var(--input-border); color:var(--text);"><i class="fas fa-copy"></i> نسخ</button>
+                <button onclick="location.reload()" class="btn-action btn-reset" style="background:var(--input-border);"><i class="fas fa-redo"></i> جديد</button>
+            </div>
+        </div>
+        <div class="history-section" id="historySection">
+            <div class="history-header">
+                <h3>آخر التحميلات:</h3>
+                <i class="fas fa-box-archive archive-trigger" onclick="toggleOverlay('archiveOverlay')" title="الأرشيف"></i>
+            </div>
+            <div id="mainHistoryList"></div>
+        </div>
+    </div>
+
+    <div id="customAlert">
+        <i id="alertIcon" class="fas fa-info-circle"></i>
+        <span id="alertMsg"></span>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://westrts-d4078-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        let editingReviewId = null;
+        let reviewToDeleteId = null;
+        let currentReviewsData = [];
+
+        // دالة إرسال التعليق المحسنة (تسجيل الدخول بجوجل)
+        async function handleNewReview() {
+            const starInput = document.querySelector('input[name="user_star"]:checked');
+            const commentInput = document.getElementById('userReviewText');
+            
+            if(!starInput || !commentInput.value.trim()) { 
+                notify("يرجى اختيار النجوم وكتابة تعليق", "error"); 
+                return; 
+            }
+
+            try {
+                let user = auth.currentUser;
+                
+                // إذا لم يكن مسجل الدخول، افتح نافذة جوجل
+                if (!user) {
+                    notify("جاري تسجيل الدخول بجوجل...");
+                    const result = await auth.signInWithPopup(provider);
+                    user = result.user;
+                }
+
+                const newReview = { 
+                    uid: user.uid,
+                    stars: parseInt(starInput.value), 
+                    text: commentInput.value.trim(), 
+                    date: new Date().toLocaleDateString('ar-EG'), 
+                    timestamp: Date.now(), 
+                    likes: 0, 
+                    dislikes: 0, 
+                    userAvatar: user.photoURL, // صورة جوجل الحقيقية
+                    userName: user.displayName // اسم جوجل الحقيقي
+                };
+
+                await db.ref('reviews').push(newReview);
+                
+                commentInput.value = ""; 
+                if(starInput) starInput.checked = false; 
+                notify(`شكراً ${user.displayName.split(' ')[0]}! تم النشر ✨`);
+
+            } catch (error) {
+                console.error(error);
+                if(error.code === 'auth/popup-closed-by-user') {
+                    notify("تم إلغاء تسجيل الدخول", "error");
+                } else {
+                    notify("حدث خطأ أثناء الإرسال", "error");
+                }
+            }
+        }
+
+        // جلب البيانات ومزامنتها
+        db.ref('reviews').on('value', (snapshot) => {
+            currentReviewsData = [];
+            snapshot.forEach((child) => { 
+                let data = child.val(); 
+                data.id = child.key; 
+                currentReviewsData.push(data); 
+            });
+            currentReviewsData.sort((a, b) => b.timestamp - a.timestamp);
+            renderReviews(currentReviewsData);
         });
-    }
 
-    function restoreNote(i) {
-        notes.unshift(trash[i]);
-        trash.splice(i, 1);
-        renderNotes();
-        renderTrash();
-        toast("تمت استعادة الملاحظة");
-    }
+        function renderReviews(reviews) {
+            const container = document.getElementById('reviewsListContainer');
+            const currentUser = auth.currentUser;
 
-    function hardDelete(i) {
-        trash.splice(i, 1);
-        renderTrash();
-        syncDB();
-        toast("حُذفت للأبد");
-    }
+            if(!reviews || reviews.length === 0) { 
+                container.innerHTML = '<p style="text-align:center; opacity:0.5;">لا توجد تعليقات بعد</p>'; 
+                return; 
+            }
 
-    function openThemePicker() { document.getElementById('themePickerModal').style.display = 'flex'; }
-    
-    function unlockApp() {
-        const pin = document.getElementById('pinEntry').value;
-        if(pin.length >= 4) { hideOverlay('lockPage'); } else { toast("يرجى إدخال رمز صحيح"); }
-    }
-</script>
+            container.innerHTML = reviews.map(r => {
+                const myStatus = localStorage.getItem(`interact_${r.id}`);
+                const isMyReview = currentUser && r.uid === currentUser.uid;
+                
+                return `
+                <div class="review-card-ui">
+                    ${isMyReview ? `
+                    <div class="review-menu-trigger" onclick="toggleReviewMenu('${r.id}')">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </div>
+                    <div class="review-options-menu" id="menu-${r.id}">
+                        <button class="menu-item" onclick="openEditSheet('${r.id}', '${r.text.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
+                        <button class="menu-item delete" onclick="openConfirmModal('${r.id}')">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </div>
+                    ` : ''}
+                    <div class="review-user-info">
+                        <img src="${r.userAvatar || 'https://via.placeholder.com/40'}" class="review-avatar" onerror="this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('${r.userName}')">
+                        <div class="review-user-details">
+                            <span class="review-username">${r.userName || 'مستخدم مجهول'}</span>
+                            <div class="review-stars-ui">${"★".repeat(r.stars)}${"☆".repeat(5-r.stars)}</div>
+                        </div>
+                    </div>
+                    <div class="review-text">${r.text}</div>
+                    <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:8px;">${r.date}</div>
+                    <div class="review-actions">
+                        <button class="action-btn like ${myStatus === 'like' ? 'active-like' : ''}" onclick="handleInteraction('${r.id}', 'like')">
+                            <i class="${myStatus === 'like' ? 'fas' : 'far'} fa-thumbs-up"></i>
+                            <span>${r.likes || 0}</span>
+                        </button>
+                        <button class="action-btn dislike ${myStatus === 'dislike' ? 'active-dislike' : ''}" onclick="handleInteraction('${r.id}', 'dislike')">
+                            <i class="${myStatus === 'dislike' ? 'fas' : 'far'} fa-thumbs-down"></i>
+                            <span>${r.dislikes || 0}</span>
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // الدوال المساعدة للفرز والتفاعل
+        function toggleSortMenu(e) { e.stopPropagation(); document.getElementById('sortMenu').classList.toggle('active'); }
+        
+        function sortReviews(type) {
+            if (type === 'newest') currentReviewsData.sort((a, b) => b.timestamp - a.timestamp);
+            else if (type === 'most_liked') currentReviewsData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+            else if (type === 'most_disliked') currentReviewsData.sort((a, b) => (b.dislikes || 0) - (a.dislikes || 0));
+            renderReviews(currentReviewsData);
+            document.getElementById('sortMenu').classList.remove('active');
+            notify("تم تحديث الترتيب");
+        }
+
+        function handleInteraction(id, type) {
+            const interactionKey = `interact_${id}`;
+            const previousType = localStorage.getItem(interactionKey);
+            const reviewRef = db.ref('reviews/' + id);
+            
+            reviewRef.transaction((currentData) => {
+                if (currentData) {
+                    if (previousType === type) {
+                        if (type === 'like') currentData.likes = Math.max(0, (currentData.likes || 0) - 1);
+                        else currentData.dislikes = Math.max(0, (currentData.dislikes || 0) - 1);
+                        localStorage.removeItem(interactionKey);
+                    } else {
+                        if (previousType === 'like') currentData.likes = Math.max(0, (currentData.likes || 0) - 1);
+                        else if (previousType === 'dislike') currentData.dislikes = Math.max(0, (currentData.dislikes || 0) - 1);
+                        if (type === 'like') currentData.likes = (currentData.likes || 0) + 1;
+                        else currentData.dislikes = (currentData.dislikes || 0) + 1;
+                        localStorage.setItem(interactionKey, type);
+                    }
+                }
+                return currentData;
+            });
+        }
+
+        function toggleReviewMenu(id) {
+            document.querySelectorAll('.review-options-menu').forEach(m => {
+                if(m.id !== 'menu-' + id) m.classList.remove('show');
+            });
+            document.getElementById('menu-' + id).classList.toggle('show');
+        }
+
+        function openConfirmModal(id) {
+            reviewToDeleteId = id;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            reviewToDeleteId = null;
+        }
+
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            if(reviewToDeleteId) {
+                db.ref('reviews/' + reviewToDeleteId).remove().then(() => {
+                    notify("تم الحذف بنجاح");
+                    closeConfirmModal();
+                });
+            }
+        };
+
+        function openEditSheet(id, currentText) {
+            editingReviewId = id;
+            document.getElementById('editCommentInput').value = currentText;
+            document.getElementById('editSheet').classList.add('active');
+            document.getElementById('sheetOverlay').classList.add('active');
+        }
+
+        function closeEditSheet() {
+            document.getElementById('editSheet').classList.remove('active');
+            document.getElementById('sheetOverlay').classList.remove('active');
+            editingReviewId = null;
+        }
+
+        function saveEditedReview() {
+            const newText = document.getElementById('editCommentInput').value.trim();
+            if(!newText) return;
+            db.ref('reviews/' + editingReviewId).update({ text: newText }).then(() => {
+                notify("تم التعديل ✨");
+                closeEditSheet();
+            });
+        }
+
+        // بقية دوال الموقع (الثيم، الفيديو، اللعبة) كما هي مع تحسينات طفيفة
+        function toggleOverlay(id) { document.getElementById(id).classList.toggle('active'); }
+        function toggleTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            document.getElementById('themeBtn').innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        }
+
+        function notify(msg, type = 'success') {
+            const alert = document.getElementById('customAlert');
+            document.getElementById('alertMsg').innerText = msg;
+            alert.classList.add('show');
+            setTimeout(() => alert.classList.remove('show'), 3000);
+        }
+
+        async function pasteLink() { const text = await navigator.clipboard.readText(); document.getElementById('urlInput').value = text; }
+        
+        async function processVideo() {
+            const url = document.getElementById('urlInput').value;
+            if(!url) return notify("ضع الرابط أولاً", "error");
+            document.getElementById('btnText').style.display = 'none';
+            document.getElementById('starLoader').style.display = 'block';
+            try {
+                let apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`;
+                const res = await fetch(apiUrl);
+                const json = await res.json();
+                const videoUrl = json.data?.play;
+                if(videoUrl) {
+                    document.getElementById('videoPlayer').src = videoUrl;
+                    document.getElementById('resultCard').style.display = 'block';
+                    notify("تم استخراج الفيديو ✨");
+                } else { throw new Error(); }
+            } catch (e) { notify("الرابط غير مدعوم حالياً", "error"); }
+            finally {
+                document.getElementById('btnText').style.display = 'block';
+                document.getElementById('starLoader').style.display = 'none';
+            }
+        }
+
+        // لعبة المضرب (مختصرة للسرعة)
+        const gCanvas = document.getElementById("gameCanvas");
+        const gCtx = gCanvas.getContext("2d");
+        let gRunning = false, gScore = 0;
+        function openGame() { document.getElementById('gameWrapper').style.display = 'block'; initGame(); }
+        function closeGame() { gRunning = false; document.getElementById('gameWrapper').style.display = 'none'; }
+        function initGame() { gCanvas.width = window.innerWidth; gCanvas.height = window.innerHeight; }
+        function startGame() { gRunning = true; gScore = 0; document.getElementById('gameStartMenu').style.display = 'none'; }
+        
+        window.onclick = function(e) {
+            if (!e.target.closest('.sort-dropdown-wrapper')) document.getElementById('sortMenu').classList.remove('active');
+        };
+    </script>
 </body>
 </html>
