@@ -67,7 +67,7 @@
         .arena { flex-shrink: 0; padding: 20px 10px; display: flex; justify-content: center; gap: 15px; }
         .card-box { flex: 1; max-width: 145px; text-align: center; }
         .card { aspect-ratio: 3/4; background: #1a1a20; border-radius: 20px; border: 1px solid #333; overflow: hidden; }
-        .card img { width: 100%; height: 100%; object-fit: cover; }
+        .card img { width: 100%; height: 100%; object-fit: cover; transition: filter 0.5s ease; }
         .blur-img { filter: blur(30px) brightness(0.6); }
         .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .voice-controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; }
@@ -75,6 +75,8 @@
         .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
         .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; scrollbar-width: none; }
         .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; background: var(--purple); color: #000; align-self: flex-start; }
+        /* ستايل لرسالة الخصم */
+        .msg.opp-msg { background: #2d2d35; color: white; align-self: flex-end; }
         .input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 15px 25px; background: #16161d; display: flex; gap: 10px; border-top: 1px solid #2d2d35; z-index: 1000; }
         input[type="text"] { flex: 1; background: #2d2d35; border: none; padding: 12px; border-radius: 12px; color: white; outline: none; }
         .send-btn { background: var(--purple); border: none; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -117,11 +119,11 @@
             </div>
             <div class="vs-badge">VS</div>
             <div class="ludo-box">
-                <img id="oppAvatarSearch" src="" class="ludo-avatar" style="border-color:#ff4757">
+                <img id="oppAvatarSearch" src="https://api.dicebear.com/7.x/avataaars/svg?seed=placeholder" class="ludo-avatar" style="border-color:#ff4757">
                 <div id="oppNameSearch" style="margin-top:10px; font-weight:700; font-size:0.9rem; color:#ff4757">جاري البحث..</div>
             </div>
         </div>
-        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">يتم البحث عن منافس...</p>
+        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">يتم البحث عن منافس حقيقي...</p>
         <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="stopSearch()">إلغاء البحث</button>
     </div>
 
@@ -161,7 +163,7 @@
                 <div class="avatar-circle"><img id="gameOppAvatar" src="" style="width:100%;height:100%"></div>
                 <div style="display: flex; flex-direction: column;">
                     <span id="gameOppName" style="font-weight:600;">الخصم</span>
-                    <span style="font-size:0.75rem; color:var(--purple); font-weight: bold;">XP 850</span>
+                    <span style="font-size:0.75rem; color:var(--purple); font-weight: bold;">لاعب حقيقي</span>
                 </div>
             </div>
             <div class="round-indicator" id="roundTxt">الجولة 1/3</div>
@@ -169,7 +171,7 @@
 
         <div class="arena">
             <div class="card-box"><div class="card"><img class="blur-img" id="oppCardImg" src=""></div><div class="label">بطاقة الخصم</div></div>
-            <div class="card-box"><div class="card" style="border-color: var(--purple);"><img id="myCardImg" src="https://picsum.photos/seed/99/300/400"></div><div class="label">بطاقتك</div></div>
+            <div class="card-box"><div class="card" style="border-color: var(--purple);"><img id="myCardImg" src=""></div><div class="label">بطاقتك</div></div>
         </div>
 
         <div class="chat-section">
@@ -228,14 +230,19 @@
     </div>
 
     <script>
-        // الربط المباشر برابط الفايربيس الخاص بك
         const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // معرف فريد لكل لاعب في الجلسة الحالية
+        let myID = "user_" + Math.floor(Math.random() * 1000000);
         let userData = { name: "لاعب جديد", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
         const XP_PER_LEVEL = 500;
-        let currentRound = 1, myPoints = 0, oppPoints = 0, searchTimer, foundOpp = null;
+        
+        let currentRoom = null;
+        let isHost = false;
+        let currentRound = 1, myPoints = 0, oppPoints = 0;
+        let foundOpp = null;
 
         function updateUI() {
             const level = Math.floor(userData.xp / XP_PER_LEVEL) + 1;
@@ -269,78 +276,182 @@
             if(val) { userData.name = val; saveToStorage(); updateUI(); closeAll(); }
         }
 
+        // --- نظام البحث الحقيقي عن لاعبين ---
         function startLudoSearch() {
             document.getElementById('searchingOverlay').style.display = 'flex';
-            let count = 0;
-            const opponents = [{n:"سيف الإسلام", s:"7"}, {n:"مريم خالد", s:"12"}, {n:"المحترف 007", s:"9"}];
-            searchTimer = setInterval(() => {
-                const rand = opponents[Math.floor(Math.random() * opponents.length)];
-                foundOpp = { n: rand.n, img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${rand.s}` };
-                document.getElementById('oppAvatarSearch').src = foundOpp.img;
-                document.getElementById('oppNameSearch').innerText = foundOpp.n;
-                if(++count > 15) {
-                    clearInterval(searchTimer);
-                    document.getElementById('statusMsg').innerText = "تم العثور على الخصم!";
-                    setTimeout(() => {
-                        document.getElementById('searchingOverlay').style.display = 'none';
-                        document.getElementById('mainMenuView').classList.remove('active-view');
-                        document.getElementById('gamePlayView').classList.add('active-view');
-                        document.getElementById('gameOppName').innerText = foundOpp.n;
-                        document.getElementById('gameOppAvatar').src = foundOpp.img;
-                        initGame();
-                    }, 1200);
+            const matchRef = db.ref('matchmaking');
+
+            matchRef.once('value').then((snap) => {
+                let found = false;
+                snap.forEach((child) => {
+                    if (child.key !== myID && !found) {
+                        found = true;
+                        let peer = child.val();
+                        let roomID = "room_" + Math.min(myID, child.key) + "_" + Math.max(myID, child.key);
+                        
+                        currentRoom = roomID;
+                        foundOpp = { name: peer.name, avatar: peer.avatar, id: child.key };
+                        
+                        db.ref('rooms/' + roomID).set({
+                            players: { [myID]: userData, [child.key]: peer },
+                            status: "playing",
+                            currentRound: 1,
+                            scores: { [myID]: 0, [child.key]: 0 },
+                            lastAction: ""
+                        });
+
+                        matchRef.child(child.key).remove();
+                        initGameUI();
+                    }
+                });
+
+                if (!found) {
+                    matchRef.child(myID).set(userData);
+                    isHost = true;
+                    db.ref('rooms').on('child_added', (snap) => {
+                        if (snap.key.includes(myID)) {
+                            currentRoom = snap.key;
+                            let players = snap.val().players;
+                            let peerID = Object.keys(players).find(id => id !== myID);
+                            foundOpp = { name: players[peerID].name, avatar: players[peerID].avatar, id: peerID };
+                            matchRef.child(myID).remove();
+                            initGameUI();
+                        }
+                    });
                 }
-            }, 140);
+            });
         }
 
-        function initGame() { currentRound = 1; myPoints = 0; oppPoints = 0; document.getElementById('chatBox').innerHTML = ''; getNextSystemImage(); showTransition(1); }
+        function initGameUI() {
+            document.getElementById('searchingOverlay').style.display = 'none';
+            document.getElementById('mainMenuView').classList.remove('active-view');
+            document.getElementById('gamePlayView').classList.add('active-view');
+            document.getElementById('gameOppName').innerText = foundOpp.name;
+            document.getElementById('gameOppAvatar').src = foundOpp.avatar;
+            document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
+            document.getElementById('oppNameSearch').innerText = foundOpp.name;
+            
+            listenToGame();
+            if(isHost) getNextSystemImage(); 
+            showTransition(1);
+        }
+
+        function listenToGame() {
+            const roomRef = db.ref('rooms/' + currentRoom);
+            roomRef.on('value', (snap) => {
+                const data = snap.val();
+                if(!data) return;
+
+                myPoints = data.scores[myID] || 0;
+                oppPoints = data.scores[foundOpp.id] || 0;
+
+                if(data.images) {
+                    const myUrl = isHost ? data.images.hostImg : data.images.peerImg;
+                    const oppUrl = isHost ? data.images.peerImg : data.images.hostImg;
+                    if(document.getElementById('myCardImg').src !== myUrl) {
+                        document.getElementById('myCardImg').src = myUrl;
+                        document.getElementById('oppCardImg').src = oppUrl;
+                        document.getElementById('oppCardImg').classList.add('blur-img');
+                    }
+                }
+
+                if(data.lastAction === "correct_" + foundOpp.id) {
+                    document.getElementById('oppCardImg').classList.remove('blur-img');
+                    setTimeout(() => triggerNextRound(), 3000);
+                }
+            });
+
+            db.ref('chats/' + currentRoom).on('child_added', (snap) => {
+                const msg = snap.val();
+                if(msg.sender !== myID) {
+                    displayMsg(msg.text, 'opp');
+                }
+            });
+        }
 
         function getNextSystemImage() {
             db.ref('bank_images').once('value').then((snapshot) => {
-                const imgs = []; snapshot.forEach(c => imgs.push(c.val()));
-                if(imgs.length > 0) document.getElementById('oppCardImg').src = imgs[Math.floor(Math.random()*imgs.length)].url;
+                const imgs = []; 
+                snapshot.forEach(child => { if(child.val().url) imgs.push(child.val().url); });
+                
+                if(imgs.length >= 2) {
+                    let idx1 = Math.floor(Math.random() * imgs.length);
+                    let idx2; do { idx2 = Math.floor(Math.random() * imgs.length); } while (idx1 === idx2);
+                    db.ref('rooms/' + currentRoom + '/images').set({ hostImg: imgs[idx1], peerImg: imgs[idx2] });
+                }
             });
         }
 
         function showTransition(r, isFinal=false, cb) {
             const trans = document.getElementById('roundTransition');
-            document.getElementById('transOppName').innerText = `${foundOpp.n} : ${oppPoints}`;
+            document.getElementById('transOppName').innerText = `${foundOpp ? foundOpp.name : 'الخصم'} : ${oppPoints}`;
             document.getElementById('transMyName').innerText = `انت : ${myPoints}`;
             document.getElementById('transRoundTxt').innerText = isFinal ? "النتيجة النهائية" : `الجولة ${r}`;
+            
             trans.style.display = 'flex';
             const bars = document.querySelectorAll('.trans-bar');
-            bars[0].className = 'trans-bar top slide-in-top'; bars[1].className = 'trans-bar mid slide-in-mid'; bars[2].className = 'trans-bar bottom slide-in-bottom';
-            setTimeout(() => { bars[0].classList.replace('slide-in-top', 'slide-out-top'); bars[1].classList.replace('slide-in-mid', 'slide-out-mid'); bars[2].classList.replace('slide-in-bottom', 'slide-out-bottom'); }, 4500);
+            bars[0].className = 'trans-bar top slide-in-top'; 
+            bars[1].className = 'trans-bar mid slide-in-mid'; 
+            bars[2].className = 'trans-bar bottom slide-in-bottom';
+
+            if(!isFinal && r > 1 && isHost) getNextSystemImage();
+            if(!isFinal) document.getElementById('roundTxt').innerText = `الجولة ${r}/3`;
+            
+            setTimeout(() => { 
+                bars[0].classList.replace('slide-in-top', 'slide-out-top'); 
+                bars[1].classList.replace('slide-in-mid', 'slide-out-mid'); 
+                bars[2].classList.replace('slide-in-bottom', 'slide-out-bottom'); 
+            }, 4500);
+
             setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 5000);
         }
 
         function handleCorrectClick() {
-            oppPoints += 100;
+            document.getElementById('oppCardImg').classList.remove('blur-img');
+            db.ref('rooms/' + currentRoom + '/scores/' + myID).set(myPoints + 100);
+            db.ref('rooms/' + currentRoom + '/lastAction').set("correct_" + myID);
+            setTimeout(() => {
+                db.ref('rooms/' + currentRoom + '/lastAction').set("");
+                triggerNextRound();
+            }, 3000);
+        }
+
+        function triggerNextRound() {
             if(currentRound < 3) {
                 currentRound++;
-                showTransition(currentRound, false, () => { document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`; getNextSystemImage(); });
-            } else { 
-                showTransition(3, true, () => { 
-                    document.getElementById('myFinalScore').innerText = myPoints; 
-                    document.getElementById('oppFinalScore').innerText = oppPoints; 
-                    document.getElementById('resultsModal').style.display = 'flex'; 
-                }); 
+                showTransition(currentRound);
+            } else {
+                showTransition(3, true, () => {
+                    document.getElementById('myFinalScore').innerText = myPoints;
+                    document.getElementById('oppFinalScore').innerText = oppPoints;
+                    document.getElementById('resultsModal').style.display = 'flex';
+                });
             }
         }
 
         function sendMessage() {
             const inp = document.getElementById('userInput');
-            if(!inp.value.trim()) return;
-            const m = document.createElement('div'); m.className = 'msg'; m.textContent = inp.value;
-            document.getElementById('chatBox').appendChild(m);
-            inp.value = ""; document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+            const txt = inp.value.trim();
+            if(!txt) return;
+            db.ref('chats/' + currentRoom).push({ sender: myID, text: txt });
+            displayMsg(txt, 'me');
+            inp.value = "";
+        }
+
+        function displayMsg(txt, type) {
+            const box = document.getElementById('chatBox');
+            const m = document.createElement('div');
+            m.className = 'msg' + (type === 'opp' ? ' opp-msg' : '');
+            m.textContent = txt;
+            box.appendChild(m);
+            box.scrollTop = box.scrollHeight;
         }
 
         function openEdit() { document.getElementById('profileModal').style.display = 'none'; document.getElementById('editModal').style.display = 'flex'; document.getElementById('nameInput').value = userData.name; }
         function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
         function openProfile() { document.getElementById('profileModal').style.display = 'flex'; }
         function saveToStorage() { localStorage.setItem('guessGameUser', JSON.stringify(userData)); }
-        function stopSearch() { clearInterval(searchTimer); document.getElementById('searchingOverlay').style.display = 'none'; }
+        function stopSearch() { db.ref('matchmaking/' + myID).remove(); location.reload(); }
 
         window.onload = () => {
             const saved = localStorage.getItem('guessGameUser');
