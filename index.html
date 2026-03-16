@@ -78,7 +78,6 @@
 
         .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        /* أزرار الصوت الجديدة */
         .voice-controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; }
         .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
         .voice-btn.active-mic { background: var(--red); border-color: var(--red); box-shadow: 0 0 10px var(--red); }
@@ -92,7 +91,6 @@
         input[type="text"] { flex: 1; background: #2d2d35; border: none; padding: 12px; border-radius: 12px; color: white; outline: none; }
         .send-btn { background: var(--purple); border: none; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        /* --- النوافذ المنبثقة --- */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
         .card-content { background: var(--surface); width: 85%; max-width: 300px; padding: 35px 25px; border-radius: 35px; border: 1px solid rgba(188, 111, 241, 0.3); text-align: center; position: relative; animation: pop 0.3s ease; }
         @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -135,7 +133,7 @@
                 <div id="oppNameSearch" style="margin-top:10px; font-weight:700; font-size:0.9rem; color:#ff4757">جاري البحث..</div>
             </div>
         </div>
-        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">يتم البحث عن منافس...</p>
+        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">يتم البحث عن منافس حقيقي...</p>
         <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="stopSearch()">إلغاء البحث</button>
     </div>
 
@@ -149,9 +147,7 @@
         <div id="resultsModal" class="modal">
             <div class="card-content" style="background: var(--bg); border:none;">
                 <div id="trophyIcon" style="margin-bottom: 20px;">
-                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 5H18V4C18 2.89543 17.1046 2 16 2H8C6.89543 2 6 2.89543 6 4V5H5C3.34315 5 2 6.34315 2 8V9C2 10.6569 3.34315 12 5 12H6.17071C6.60235 13.6703 7.84411 15.0116 9.46231 15.6552C9.8009 16.7417 10.8119 17.5 12 17.5C13.1881 17.5 14.1991 16.7417 14.5377 15.6552C16.1559 15.0116 17.3976 13.6703 17.8293 12H19C20.6569 12 22 10.6569 22 9V8C22 6.34315 20.6569 5 19 5ZM5 10C4.44772 10 4 9.55228 4 9V8C4 7.44772 4.44772 7 5 7H6V10H5ZM19 10H18V7H19C19.5523 7 20 7.44772 20 8V9C20 9.55228 19.5523 10 19 10ZM13 20H15C15.5523 20 16 20.4477 16 21C16 21.5523 15.5523 22 15 22H9C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20H11V18H13V20Z" fill="#FFD700"/>
-                    </svg>
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 5H18V4C18 2.89543 17.1046 2 16 2H8C6.89543 2 6 2.89543 6 4V5H5C3.34315 5 2 6.34315 2 8V9C2 10.6569 3.34315 12 5 12H6.17071C6.60235 13.6703 7.84411 15.0116 9.46231 15.6552C9.8009 16.7417 10.8119 17.5 12 17.5C13.1881 17.5 14.1991 16.7417 14.5377 15.6552C16.1559 15.0116 17.3976 13.6703 17.8293 12H19C20.6569 12 22 10.6569 22 9V8C22 6.34315 20.6569 5 19 5ZM5 10C4.44772 10 4 9.55228 4 9V8C4 7.44772 4.44772 7 5 7H6V10H5ZM19 10H18V7H19C19.5523 7 20 7.44772 20 8V9C20 9.55228 19.5523 10 19 10ZM13 20H15C15.5523 20 16 20.4477 16 21C16 21.5523 15.5523 22 15 22H9C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20H11V18H13V20Z" fill="#FFD700"/></svg>
                 </div>
                 <h2 style="margin: 0; color: white; font-weight: 700;">انتهى التحدي</h2>
                 <div style="margin: 30px 0;">
@@ -237,71 +233,63 @@
     </div>
 
     <script>
-        // --- تهيئة Firebase ---
         const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- البيانات الأساسية ---
         let userData = { name: "لاعب " + Math.floor(Math.random()*100), avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
         const XP_PER_LEVEL = 500;
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
 
-        // --- متغيرات الصوت WebRTC ---
         let localStream, peerConnection;
         let isMicOn = false, isSpeakerOn = true;
         const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
-        // --- تحديث واجهة المستخدم بالكامل ---
         function updateUI() {
             const level = Math.floor(userData.xp / XP_PER_LEVEL) + 1;
             const curXP = userData.xp % XP_PER_LEVEL;
             const progress = (curXP / XP_PER_LEVEL) * 100;
-            
             document.getElementById('headerName').innerText = userData.name;
             document.getElementById('cardName').innerText = userData.name;
             document.getElementById('headerLevelText').innerText = "المستوى " + level;
             document.getElementById('cardLevelLabel').innerText = "المستوى " + level;
-            document.getElementById('xpRemaining').innerText = `يتبقى ${XP_PER_LEVEL - curXP} XP للمستوى التالي`;
-            document.getElementById('totalXP').innerText = userData.xp;
-            document.getElementById('totalWins').innerText = userData.wins;
             document.getElementById('miniProgress').style.width = progress + "%";
             document.getElementById('cardProgress').style.width = progress + "%";
-            
             document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        // --- نظام البحث الأصلي ---
+        // --- نظام البحث عن "لاعب حقيقي متصل الآن" ---
         function startLudoSearch() {
             document.getElementById('searchingOverlay').style.display = 'flex';
             currentPlayerId = "user_" + Date.now();
             
-            db.ref("waitingPlayers/" + currentPlayerId).set({ 
-                id: currentPlayerId, 
-                name: userData.name, 
-                avatar: userData.avatar,
-                xp: userData.xp
-            });
+            const myRef = db.ref("waitingPlayers/" + currentPlayerId);
+            myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            myRef.onDisconnect().remove();
 
             db.ref("waitingPlayers").on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
-                const ids = Object.keys(players);
-                if (ids.length >= 2) {
-                    let oppId = ids.find(id => id !== currentPlayerId);
-                    if (oppId) {
-                        foundOpp = players[oppId];
-                        db.ref("waitingPlayers").off();
-                        db.ref("waitingPlayers/" + currentPlayerId).remove();
-                        prepareGame(oppId);
-                    }
+                
+                const now = Date.now();
+                const activeIds = Object.keys(players).filter(id => {
+                    // فقط اللاعبين الذين بدأوا البحث في آخر 30 ثانية (لاعبين حقيقيين حاليين)
+                    return id !== currentPlayerId && (now - players[id].timestamp < 30000);
+                });
+
+                if (activeIds.length > 0) {
+                    let oppId = activeIds[0];
+                    foundOpp = players[oppId];
+                    db.ref("waitingPlayers").off();
+                    db.ref("waitingPlayers/" + currentPlayerId).remove();
+                    prepareGame(oppId);
                 }
             });
         }
 
         function prepareGame(oppId) {
-            document.getElementById('statusMsg').innerText = "تم العثور على خصم!";
+            document.getElementById('statusMsg').innerText = "تم العثور على منافس حقيقي!";
             document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
 
@@ -319,7 +307,6 @@
             }, 2000);
         }
 
-        // --- نظام الصوت الحقيقي (WebRTC) ---
         async function initVoiceChat(roomId) {
             peerConnection = new RTCPeerConnection(rtcConfig);
             try {
@@ -372,55 +359,45 @@
             document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn);
         }
 
-        // --- منطق الجولات المتزامن الجديد ---
+        // --- منطق اللعبة المصلح تماماً ---
         function initGameLogic() {
             currentRound = 1; myPoints = 0; oppPoints = 0;
             document.getElementById('chatBox').innerHTML = '';
+            const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
-            // اللاعب الأول (المنشئ) يختار الصور للغرفة بالكامل لضمان التشابه
+            // اللاعب الأصغر في المعرف (ID) هو المسؤول عن إنشاء الجولة الأولى فوراً
             if (currentPlayerId < foundOpp.id) {
-                setupSharedImages();
+                setupSharedImages(1);
             }
 
-            // الاستماع لأي تغيير في صور الجولة أو حالة "صحيح"
-            db.ref(`rooms/${currentGameRoom}`).on('value', (snap) => {
+            roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
 
-                // مزامنة الصور
                 if (data.cards) {
-                    if (currentPlayerId < foundOpp.id) {
-                        document.getElementById('myCardImg').src = data.cards.img1;
-                        document.getElementById('oppCardImg').src = data.cards.img2;
-                    } else {
-                        document.getElementById('myCardImg').src = data.cards.img2;
-                        document.getElementById('oppCardImg').src = data.cards.img1;
-                    }
+                    const myCard = (currentPlayerId < foundOpp.id) ? data.cards.img1 : data.cards.img2;
+                    const oppCard = (currentPlayerId < foundOpp.id) ? data.cards.img2 : data.cards.img1;
+                    document.getElementById('myCardImg').src = myCard;
+                    document.getElementById('oppCardImg').src = oppCard;
                 }
 
-                // مزامنة حالة كشف الصورة (إذا ضغط أحد اللاعبين صحيح)
                 if (data.reveal) {
                     document.getElementById('oppCardImg').classList.remove('blur-img');
-                    // تحديث النقاط إذا لم يتم تحديثها بعد
-                    if (data.lastWinner === currentPlayerId) {
-                        myPoints = data.myPointsAtRound;
-                        oppPoints = data.oppPointsAtRound;
-                    } else {
-                        oppPoints = data.myPointsAtRound; // بالنسبة للخصم
-                        myPoints = data.oppPointsAtRound;
-                    }
                 } else {
                     document.getElementById('oppCardImg').classList.add('blur-img');
                 }
 
-                // مزامنة الانتقال للجولة التالية
                 if (data.round && data.round !== currentRound) {
                     currentRound = data.round;
                     document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
                     showTransition(currentRound, false);
                 }
 
-                // مزامنة النهاية
+                if (data.scores) {
+                    myPoints = data.scores[currentPlayerId] || 0;
+                    oppPoints = data.scores[foundOpp.id] || 0;
+                }
+
                 if (data.gameState === 'finished') {
                     showTransition(3, true, () => {
                         document.getElementById('myFinalScore').innerText = myPoints;
@@ -433,7 +410,7 @@
             showTransition(1);
         }
 
-        function setupSharedImages() {
+        function setupSharedImages(roundNum) {
             db.ref('bank_images').once('value').then((snap) => {
                 const imgs = []; snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
                 if(imgs.length > 1) {
@@ -442,10 +419,33 @@
                     db.ref(`rooms/${currentGameRoom}`).update({
                         cards: { img1: imgs[r1], img2: imgs[r2] },
                         reveal: false,
-                        round: 1
+                        round: roundNum
                     });
                 }
             });
+        }
+
+        function handleCorrectClick() {
+            const cardImg = document.getElementById('oppCardImg');
+            if (!cardImg.classList.contains('blur-img')) return;
+
+            myPoints += 100;
+            const roomRef = db.ref(`rooms/${currentGameRoom}`);
+            
+            const updates = {};
+            updates[`scores/${currentPlayerId}`] = myPoints;
+            updates['reveal'] = true;
+            roomRef.update(updates);
+
+            setTimeout(() => {
+                if(currentRound < 3) {
+                    if (currentPlayerId < foundOpp.id) {
+                        setupSharedImages(currentRound + 1);
+                    }
+                } else {
+                    roomRef.update({ gameState: 'finished' });
+                }
+            }, 3000);
         }
 
         function showTransition(r, isFinal=false, cb) {
@@ -453,54 +453,19 @@
             document.getElementById('transOppName').innerText = `${foundOpp.name} : ${oppPoints}`;
             document.getElementById('transMyName').innerText = `أنت : ${myPoints}`;
             document.getElementById('transRoundTxt').innerText = isFinal ? "النتيجة" : `الجولة ${r}`;
-            
             trans.style.display = 'flex';
             const bars = document.querySelectorAll('.trans-bar');
             bars[0].className = 'trans-bar top slide-in-top'; 
             bars[1].className = 'trans-bar mid slide-in-mid'; 
             bars[2].className = 'trans-bar bottom slide-in-bottom';
-
             setTimeout(() => {
                 bars[0].classList.replace('slide-in-top', 'slide-out-top'); 
                 bars[1].classList.replace('slide-in-mid', 'slide-out-mid'); 
                 bars[2].classList.replace('slide-in-bottom', 'slide-out-bottom'); 
             }, 3000);
-
             setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 3600);
         }
 
-        function handleCorrectClick() {
-            // إضافة نقاط للاعب الحالي وتفعيل كشف الصورة للجميع
-            myPoints += 100;
-            db.ref(`rooms/${currentGameRoom}`).update({
-                reveal: true,
-                lastWinner: currentPlayerId,
-                myPointsAtRound: myPoints,
-                oppPointsAtRound: oppPoints
-            });
-
-            setTimeout(() => {
-                if(currentRound < 3) {
-                    // فقط اللاعب الذي فاز هو من يغير الصور للجولة التالية
-                    if (currentPlayerId < foundOpp.id || true) { 
-                        db.ref('bank_images').once('value').then((snap) => {
-                            const imgs = []; snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
-                            const r1 = Math.floor(Math.random()*imgs.length);
-                            const r2 = (r1 + 1) % imgs.length;
-                            db.ref(`rooms/${currentGameRoom}`).update({
-                                cards: { img1: imgs[r1], img2: imgs[r2] },
-                                reveal: false,
-                                round: currentRound + 1
-                            });
-                        });
-                    }
-                } else {
-                    db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'finished' });
-                }
-            }, 3000);
-        }
-
-        // --- وظائف عامة ---
         function sendMessage() {
             const inp = document.getElementById('userInput');
             if(!inp.value.trim()) return;
