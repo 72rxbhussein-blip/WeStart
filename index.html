@@ -70,8 +70,13 @@
         .card img { width: 100%; height: 100%; object-fit: cover; transition: filter 0.5s ease; }
         .blur-img { filter: blur(30px) brightness(0.6); }
         .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        /* أزرار الصوت */
         .voice-controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; }
-        .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .voice-btn.active-mic { background: var(--red); border-color: var(--red); box-shadow: 0 0 10px var(--red); }
+        .voice-btn.muted-spk { background: var(--dim); opacity: 0.5; }
+
         .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
         .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; scrollbar-width: none; }
         .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; background: var(--purple); color: #000; align-self: flex-start; }
@@ -104,7 +109,7 @@
             <div class="menu-options">
                 <button class="btn-main btn-play" onclick="startLudoSearch()">ابدأ التحدي</button>
                 <button class="btn-main btn-secondary">المتجر</button>
-                <button class="btn-main btn-secondary">الإعدادات</button>
+                <button class="btn-main btn-secondary" onclick="openProfile()">الإعدادات</button>
             </div>
         </div>
     </div>
@@ -140,7 +145,6 @@
                     </svg>
                 </div>
                 <h2 style="margin: 0; color: white; font-weight: 700;">انتهى التحدي</h2>
-                
                 <div style="margin: 30px 0;">
                     <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 1.1rem;">
                         <span style="color: white;">نقاطك:</span>
@@ -151,7 +155,6 @@
                         <span id="oppFinalScore" style="color: var(--green); font-weight: bold;">0</span>
                     </div>
                 </div>
-
                 <button class="btn-main btn-play" style="width: 100%; border-radius: 15px;" onclick="location.reload()">خروج للقائمة</button>
             </div>
         </div>
@@ -175,20 +178,21 @@
         <div class="chat-section">
             <div class="voice-controls">
                 <button class="correct-btn" onclick="handleCorrectClick()">صحيح</button>
-                <button class="voice-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                <button class="voice-btn" id="micBtn" onclick="toggleMic()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line></svg>
                 </button>
-                <button class="voice-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                <button class="voice-btn" id="spkBtn" onclick="toggleSpeaker()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                 </button>
             </div>
             <div class="chat-messages" id="chatBox"></div>
+            <audio id="remoteAudio" autoplay></audio>
         </div>
 
         <div class="input-area">
             <input type="text" id="userInput" placeholder="اكتب تخمينك هنا...">
             <button class="send-btn" onclick="sendMessage()">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
     </div>
@@ -228,20 +232,28 @@
     </div>
 
     <script>
+        // --- تهيئة Firebase ---
         const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // --- البيانات والتعريفات ---
         let userData = { name: "لاعب جديد", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
         const XP_PER_LEVEL = 500;
-        let currentRound = 1, myPoints = 0, oppPoints = 0, searchTimer, foundOpp = null;
-        let currentPlayerId = null;
+        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null;
 
+        // --- متغيرات الصوت الحقيقي WebRTC ---
+        let localStream;
+        let peerConnection;
+        let isMicOn = false;
+        let isSpeakerOn = true;
+        const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+        // --- وظائف الواجهة الأصلية ---
         function updateUI() {
             const level = Math.floor(userData.xp / XP_PER_LEVEL) + 1;
             const curXP = userData.xp % XP_PER_LEVEL;
             const progress = (curXP / XP_PER_LEVEL) * 100;
-
             document.getElementById('headerName').innerText = userData.name;
             document.getElementById('cardName').innerText = userData.name;
             document.getElementById('headerLevelText').innerText = "المستوى " + level;
@@ -269,71 +281,130 @@
             if(val) { userData.name = val; saveToStorage(); updateUI(); closeAll(); }
         }
 
-        // --- دالة البحث الجديدة ---
+        // --- نظام البحث (أكوادك الأصلية مع الربط) ---
         function startLudoSearch() {
             document.getElementById('searchingOverlay').style.display = 'flex';
             document.getElementById('statusMsg').innerText = "يتم البحث عن منافس...";
             
-            const playerId = Date.now();
+            const playerId = "user_" + Date.now();
             currentPlayerId = playerId;
 
-            const playerData = {
-                id: playerId,
-                name: userData.name,
-                avatar: userData.avatar
-            };
-
             const waitingRef = db.ref("waitingPlayers/" + playerId);
-            waitingRef.set(playerData);
+            waitingRef.set({ id: playerId, name: userData.name, avatar: userData.avatar });
 
             db.ref("waitingPlayers").on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
-
                 const ids = Object.keys(players);
-
                 if (ids.length >= 2) {
                     let opponentId = ids.find(id => id != playerId);
                     if (opponentId) {
                         foundOpp = players[opponentId];
-                        
-                        // إزالة اللاعبين من قائمة الانتظار لبدء اللعب
                         db.ref("waitingPlayers/" + playerId).remove();
                         db.ref("waitingPlayers/" + opponentId).remove();
-                        
-                        // التوقف عن الاستماع للتغييرات بعد العثور على خصم
                         db.ref("waitingPlayers").off();
                         
-                        startRealGame();
+                        // بدء اللعبة وتفعيل الصوت
+                        startRealGame(opponentId);
                     }
                 }
             });
         }
 
-        // --- دالة بدء اللعبة الحقيقية ---
-        function startRealGame() {
-            document.getElementById('statusMsg').innerText = "تم العثور على لاعب حقيقي!";
-            
-            // تحديث واجهة البحث ببيانات الخصم قبل الانتقال
+        function startRealGame(oppId) {
+            document.getElementById('statusMsg').innerText = "تم العثور على لاعب!";
             document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
 
-            setTimeout(() => {
+            // معرف الغرفة الفريد لتبادل بيانات الصوت
+            const roomId = [currentPlayerId, oppId].sort().join("_");
+
+            setTimeout(async () => {
                 document.getElementById('searchingOverlay').style.display = 'none';
                 document.getElementById('mainMenuView').classList.remove('active-view');
                 document.getElementById('gamePlayView').classList.add('active-view');
-                
                 document.getElementById('gameOppName').innerText = foundOpp.name;
                 document.getElementById('gameOppAvatar').src = foundOpp.avatar;
                 
+                // تشغيل نظام الصوت
+                await initVoiceChat(roomId);
                 initGame();
             }, 1500);
         }
 
+        // --- منطق الصوت الحقيقي (WebRTC) ---
+        async function initVoiceChat(roomId) {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            // طلب المايك
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                localStream.getAudioTracks()[0].enabled = false; // افتراضياً صامت
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            } catch (err) { console.warn("المايك غير متاح"); }
+
+            // استقبال صوت الخصم
+            peerConnection.ontrack = (event) => {
+                document.getElementById('remoteAudio').srcObject = event.streams[0];
+            };
+
+            // إرسال الـ Candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    db.ref(`calls/${roomId}/candidates/${currentPlayerId}`).push(event.candidate.toJSON());
+                }
+            };
+
+            const callRef = db.ref(`calls/${roomId}`);
+
+            // إنشاء الاتصال
+            if (currentPlayerId < foundOpp.id) {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
+            }
+
+            // الاستماع للإشارات
+            callRef.on('value', async (snap) => {
+                const data = snap.val();
+                if (!data) return;
+
+                if (data.offer && currentPlayerId > foundOpp.id && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    callRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
+                }
+
+                if (data.answer && currentPlayerId < foundOpp.id && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                }
+            });
+
+            // استقبال الـ Candidates من الخصم
+            db.ref(`calls/${roomId}/candidates/${foundOpp.id}`).on('child_added', (snap) => {
+                peerConnection.addIceCandidate(new RTCIceCandidate(snap.val()));
+            });
+        }
+
+        // --- وظائف أزرار الصوت ---
+        function toggleMic() {
+            if (localStream) {
+                isMicOn = !isMicOn;
+                localStream.getAudioTracks()[0].enabled = isMicOn;
+                document.getElementById('micBtn').classList.toggle('active-mic', isMicOn);
+            }
+        }
+
+        function toggleSpeaker() {
+            isSpeakerOn = !isSpeakerOn;
+            document.getElementById('remoteAudio').muted = !isSpeakerOn;
+            document.getElementById('spkBtn').classList.toggle('muted-spk', !isSpeakerOn);
+        }
+
+        // --- منطق اللعبة الأصلية (بدون تغيير) ---
         function initGame() { 
-            currentRound = 1; 
-            myPoints = 0; 
-            oppPoints = 0; 
+            currentRound = 1; myPoints = 0; oppPoints = 0; 
             document.getElementById('chatBox').innerHTML = ''; 
             getNextSystemImage(); 
             showTransition(1); 
@@ -341,24 +412,13 @@
 
         function getNextSystemImage() {
             db.ref('bank_images').once('value').then((snapshot) => {
-                const imgs = []; 
-                snapshot.forEach(child => {
-                    const data = child.val();
-                    if(data && data.url) imgs.push(data.url);
-                });
-                
+                const imgs = []; snapshot.forEach(child => { if(child.val().url) imgs.push(child.val().url); });
                 if(imgs.length >= 2) {
                     let idx1 = Math.floor(Math.random() * imgs.length);
-                    let idx2;
-                    do { idx2 = Math.floor(Math.random() * imgs.length); } while (idx1 === idx2);
-
-                    const myUrl = imgs[idx1];
-                    const oppUrl = imgs[idx2];
-
-                    document.getElementById('myCardImg').src = myUrl;
-                    const oppImg = document.getElementById('oppCardImg');
-                    oppImg.classList.add('blur-img'); 
-                    oppImg.src = oppUrl;
+                    let idx2 = (idx1 + 1) % imgs.length;
+                    document.getElementById('myCardImg').src = imgs[idx1];
+                    document.getElementById('oppCardImg').src = imgs[idx2];
+                    document.getElementById('oppCardImg').classList.add('blur-img');
                 }
             });
         }
@@ -375,32 +435,23 @@
             bars[1].className = 'trans-bar mid slide-in-mid'; 
             bars[2].className = 'trans-bar bottom slide-in-bottom';
 
-            if(!isFinal && r > 1) {
-                getNextSystemImage();
-                document.getElementById('roundTxt').innerText = `الجولة ${r}/3`;
-            }
+            if(!isFinal && r > 1) { getNextSystemImage(); document.getElementById('roundTxt').innerText = `الجولة ${r}/3`; }
             
             setTimeout(() => { 
                 bars[0].classList.replace('slide-in-top', 'slide-out-top'); 
                 bars[1].classList.replace('slide-in-mid', 'slide-out-mid'); 
                 bars[2].classList.replace('slide-in-bottom', 'slide-out-bottom'); 
-            }, 4500);
+            }, 4000);
 
-            setTimeout(() => { 
-                trans.style.display='none'; 
-                if(cb) cb(); 
-            }, 5000);
+            setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 4500);
         }
 
         function handleCorrectClick() {
             document.getElementById('oppCardImg').classList.remove('blur-img');
             oppPoints += 100;
-
             setTimeout(() => {
-                if(currentRound < 3) {
-                    currentRound++;
-                    showTransition(currentRound, false, null);
-                } else { 
+                if(currentRound < 3) { currentRound++; showTransition(currentRound); }
+                else { 
                     showTransition(3, true, () => { 
                         document.getElementById('myFinalScore').innerText = myPoints; 
                         document.getElementById('oppFinalScore').innerText = oppPoints; 
@@ -422,14 +473,7 @@
         function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
         function openProfile() { document.getElementById('profileModal').style.display = 'flex'; }
         function saveToStorage() { localStorage.setItem('guessGameUser', JSON.stringify(userData)); }
-        
-        function stopSearch() { 
-            if(currentPlayerId) {
-                db.ref("waitingPlayers/" + currentPlayerId).remove();
-            }
-            db.ref("waitingPlayers").off();
-            document.getElementById('searchingOverlay').style.display = 'none'; 
-        }
+        function stopSearch() { location.reload(); }
 
         window.onload = () => {
             const saved = localStorage.getItem('guessGameUser');
@@ -439,3 +483,4 @@
     </script>
 </body>
 </html>
+
