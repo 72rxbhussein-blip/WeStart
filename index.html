@@ -245,7 +245,7 @@
         // --- البيانات الأساسية ---
         let userData = { name: "لاعب " + Math.floor(Math.random()*100), avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
         const XP_PER_LEVEL = 500;
-        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null;
+        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
 
         // --- متغيرات الصوت WebRTC ---
         let localStream, peerConnection;
@@ -313,9 +313,9 @@
                 document.getElementById('gameOppAvatar').src = foundOpp.avatar;
                 document.getElementById('gameOppXP').innerText = "XP " + foundOpp.xp;
 
-                const roomId = [currentPlayerId, oppId].sort().join("_");
-                initVoiceChat(roomId); // تفعيل الصوت الحقيقي
-                initGameLogic();       // بدء اللعبة
+                currentGameRoom = [currentPlayerId, oppId].sort().join("_");
+                initVoiceChat(currentGameRoom); 
+                initGameLogic();       
             }, 2000);
         }
 
@@ -372,22 +372,78 @@
             document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn);
         }
 
-        // --- منطق الجولات والأنيميشن الأصلي ---
+        // --- منطق الجولات المتزامن الجديد ---
         function initGameLogic() {
             currentRound = 1; myPoints = 0; oppPoints = 0;
             document.getElementById('chatBox').innerHTML = '';
-            fetchImages();
+            
+            // اللاعب الأول (المنشئ) يختار الصور للغرفة بالكامل لضمان التشابه
+            if (currentPlayerId < foundOpp.id) {
+                setupSharedImages();
+            }
+
+            // الاستماع لأي تغيير في صور الجولة أو حالة "صحيح"
+            db.ref(`rooms/${currentGameRoom}`).on('value', (snap) => {
+                const data = snap.val();
+                if (!data) return;
+
+                // مزامنة الصور
+                if (data.cards) {
+                    if (currentPlayerId < foundOpp.id) {
+                        document.getElementById('myCardImg').src = data.cards.img1;
+                        document.getElementById('oppCardImg').src = data.cards.img2;
+                    } else {
+                        document.getElementById('myCardImg').src = data.cards.img2;
+                        document.getElementById('oppCardImg').src = data.cards.img1;
+                    }
+                }
+
+                // مزامنة حالة كشف الصورة (إذا ضغط أحد اللاعبين صحيح)
+                if (data.reveal) {
+                    document.getElementById('oppCardImg').classList.remove('blur-img');
+                    // تحديث النقاط إذا لم يتم تحديثها بعد
+                    if (data.lastWinner === currentPlayerId) {
+                        myPoints = data.myPointsAtRound;
+                        oppPoints = data.oppPointsAtRound;
+                    } else {
+                        oppPoints = data.myPointsAtRound; // بالنسبة للخصم
+                        myPoints = data.oppPointsAtRound;
+                    }
+                } else {
+                    document.getElementById('oppCardImg').classList.add('blur-img');
+                }
+
+                // مزامنة الانتقال للجولة التالية
+                if (data.round && data.round !== currentRound) {
+                    currentRound = data.round;
+                    document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
+                    showTransition(currentRound, false);
+                }
+
+                // مزامنة النهاية
+                if (data.gameState === 'finished') {
+                    showTransition(3, true, () => {
+                        document.getElementById('myFinalScore').innerText = myPoints;
+                        document.getElementById('oppFinalScore').innerText = oppPoints;
+                        document.getElementById('resultsModal').style.display = 'flex';
+                    });
+                }
+            });
+
             showTransition(1);
         }
 
-        function fetchImages() {
+        function setupSharedImages() {
             db.ref('bank_images').once('value').then((snap) => {
                 const imgs = []; snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
                 if(imgs.length > 1) {
                     const r1 = Math.floor(Math.random()*imgs.length);
-                    document.getElementById('myCardImg').src = imgs[r1];
-                    document.getElementById('oppCardImg').src = imgs[(r1+1)%imgs.length];
-                    document.getElementById('oppCardImg').classList.add('blur-img');
+                    const r2 = (r1 + 1) % imgs.length;
+                    db.ref(`rooms/${currentGameRoom}`).update({
+                        cards: { img1: imgs[r1], img2: imgs[r2] },
+                        reveal: false,
+                        round: 1
+                    });
                 }
             });
         }
@@ -414,21 +470,34 @@
         }
 
         function handleCorrectClick() {
-            document.getElementById('oppCardImg').classList.remove('blur-img');
-            oppPoints += 100;
+            // إضافة نقاط للاعب الحالي وتفعيل كشف الصورة للجميع
+            myPoints += 100;
+            db.ref(`rooms/${currentGameRoom}`).update({
+                reveal: true,
+                lastWinner: currentPlayerId,
+                myPointsAtRound: myPoints,
+                oppPointsAtRound: oppPoints
+            });
+
             setTimeout(() => {
                 if(currentRound < 3) {
-                    currentRound++;
-                    document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
-                    showTransition(currentRound, false, fetchImages);
+                    // فقط اللاعب الذي فاز هو من يغير الصور للجولة التالية
+                    if (currentPlayerId < foundOpp.id || true) { 
+                        db.ref('bank_images').once('value').then((snap) => {
+                            const imgs = []; snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
+                            const r1 = Math.floor(Math.random()*imgs.length);
+                            const r2 = (r1 + 1) % imgs.length;
+                            db.ref(`rooms/${currentGameRoom}`).update({
+                                cards: { img1: imgs[r1], img2: imgs[r2] },
+                                reveal: false,
+                                round: currentRound + 1
+                            });
+                        });
+                    }
                 } else {
-                    showTransition(3, true, () => {
-                        document.getElementById('myFinalScore').innerText = myPoints;
-                        document.getElementById('oppFinalScore').innerText = oppPoints;
-                        document.getElementById('resultsModal').style.display = 'flex';
-                    });
+                    db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'finished' });
                 }
-            }, 2500);
+            }, 3000);
         }
 
         // --- وظائف عامة ---
