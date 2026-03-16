@@ -2,686 +2,350 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>WeStars </title>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تحدي التخمين - النسخة الاحترافية الكاملة</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    
     <style>
-        /* تعريف الخط الخاص بالإيموجي فقط */
-        @font-face {
-            font-family: 'AppleEmojiCustom';
-            src: url('iOS_14.6.ttf') format('truetype');
-            unicode-range: U+1F600-1F64F, U+1F300-1F5FF, U+1F680-1F6FF, U+2600-26FF, U+2700-27BF, U+1F900-1F9FF, U+1F1E6-1F1FF;
-        }
-
-        :root {
-            --primary: #6c5ce7;
-            --secondary: #a29bfe;
-            --bg: #0a0a0b;
-            --card: #161618;
-            --input-border: #2d2d30;
-            --accent: #00d1b2;
-            --text: #ffffff;
-            --text-dim: #a0a0a0;
-            --error: #ff4757;
-            --star-color: #f1c40f;
-            --tiktok-bg: #000000;
-        }
-
-        [data-theme="light"] {
-            --bg: #f5f6fa;
-            --card: #ffffff;
-            --input-border: #dcdde1;
-            --text: #1a1a1c;
-            --text-dim: #57606f;
-            --tiktok-bg: #000000; 
-        }
-
-        * { 
-            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; 
-            -webkit-tap-highlight-color: transparent;
-            font-family: 'AppleEmojiCustom', 'IBM Plex Sans Arabic', sans-serif;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0; padding: 20px;
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; position: relative;
-            overflow-y: auto; 
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .top-controls-left {
-            position: absolute; top: 20px; left: 20px;
-            z-index: 1000;
-        }
-
-        .top-controls-right {
-            position: absolute; top: 20px; right: 20px;
-            display: flex; gap: 10px; z-index: 1000;
-        }
-
-        .icon-btn {
-            width: 42px; height: 42px;
-            background: var(--card); border: 1px solid var(--input-border);
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; color: var(--primary); font-size: 1.2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .full-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg);
-            z-index: 2000; display: flex; flex-direction: column; align-items: center;
-            transform: translateY(100%);
-            transition: transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-            padding: 20px;
-            overflow-y: auto;
-        }
-        .full-overlay.active { transform: translateY(0); }
-        .close-overlay { align-self: flex-start; margin-bottom: 20px; font-size: 1.5rem; cursor: pointer; color: var(--primary); }
-
-        .social-accordion { width: 100%; max-width: 400px; margin-top: 10px; }
-        .social-header { background: var(--card); border: 1px solid var(--input-border); padding: 16px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 700; color: var(--primary); transition: 0.3s; }
-        .social-header:hover { border-color: var(--primary); }
-        .social-content { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0, 1, 0, 1); display: flex; flex-direction: column; gap: 10px; padding-top: 0; }
-        .social-accordion.open .social-content { max-height: 1000px; transition: max-height 1s ease-in-out; padding-top: 15px; }
-        .social-accordion.open .fa-chevron-down { transform: rotate(180deg); }
-
-        .rating-wrapper { width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--input-border); border-radius: 22px; padding: 20px; margin-bottom: 25px; text-align: center; }
-        .stars-container { display: flex; flex-direction: row-reverse; justify-content: center; gap: 8px; margin: 15px 0; }
-        .stars-container input { display: none; }
-        .stars-container label { font-size: 30px; color: #333; cursor: pointer; transition: 0.3s; }
-        .stars-container input:checked ~ label, .stars-container label:hover, .stars-container label:hover ~ label { color: var(--star-color); text-shadow: 0 0 10px rgba(241, 196, 15, 0.4); }
-        .comment-input { width: 100%; background: var(--bg); border: 1px solid var(--input-border); border-radius: 15px; color: var(--text); padding: 12px; font-size: 0.9rem; resize: none; margin-bottom: 15px; outline: none; }
-        .submit-rating-btn { width: 100%; padding: 12px; background: var(--primary); border: none; border-radius: 15px; color: white; font-weight: bold; cursor: pointer; }
-        .view-all-reviews { display: block; margin-top: 10px; font-size: 0.8rem; color: var(--text-dim); text-decoration: underline; cursor: pointer; }
-
-        .review-card-ui { background: var(--card); padding: 18px; border-radius: 18px; border: 1px solid var(--input-border); margin-bottom: 15px; text-align: right; position: relative; }
-        .review-user-info { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        :root { --bg: #08080a; --purple: #bc6ff1; --surface: #16161d; --text: #e2e8f0; --dim: #64748b; --red: #ff4d4d; --green: #2ecc71; }
+        * { box-sizing: border-box; font-family: 'IBM Plex Sans Arabic', sans-serif; outline: none; -webkit-tap-highlight-color: transparent; }
         
-        /* تحسين مظهر صورة المستخدم من جوجل */
-        .review-avatar { 
-            width: 42px; 
-            height: 42px; 
-            border-radius: 50%; 
-            border: 2px solid var(--primary); 
-            object-fit: cover; 
-            background: #222;
+        body, html { 
+            background: var(--bg); color: var(--text); margin: 0; height: 100dvh; width: 100%;
+            overflow: hidden; display: flex; flex-direction: column; position: fixed;
         }
 
-        .review-user-details { display: flex; flex-direction: column; }
-        .review-username { font-weight: 700; font-size: 0.9rem; color: var(--text); }
-        .review-stars-ui { color: var(--star-color); font-size: 0.7rem; }
-        .review-text { font-size: 0.9rem; line-height: 1.6; margin-bottom: 12px; color: var(--text); }
-        .review-actions { display: flex; gap: 15px; border-top: 1px solid var(--input-border); padding-top: 10px; margin-top: 5px; }
+        .game-view { display: none; height: 100%; width: 100%; flex-direction: column; }
+        .active-view { display: flex; }
 
-        .review-menu-trigger { position: absolute; top: 15px; left: 15px; color: var(--text-dim); cursor: pointer; padding: 5px; z-index: 5; }
-        .review-options-menu { position: absolute; top: 40px; left: 15px; background: var(--card); border: 1px solid var(--input-border); border-radius: 12px; display: none; flex-direction: column; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; min-width: 100px; }
-        .review-options-menu.show { display: flex; }
-        .menu-item { padding: 10px 15px; font-size: 0.85rem; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; border: none; background: none; width: 100%; text-align: right; }
-        .menu-item:hover { background: rgba(255,255,255,0.05); }
-        .menu-item.delete { color: var(--error); }
+        /* --- قائمة البداية --- */
+        #mainMenuView { background: radial-gradient(circle at top right, #1a1a2e 0%, #08080a 100%); }
+        .top-bar { width: 100%; padding: 25px; display: flex; align-items: center; gap: 12px; cursor: pointer; z-index: 10; }
+        .my-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--purple); background: #222; overflow: hidden; object-fit: cover; }
+        .level-mini-bar { width: 100px; height: 4px; background: #2d2d35; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+        .level-progress-fill { height: 100%; background: var(--purple); width: 0%; transition: 0.8s ease-out; }
+        .main-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; }
+        .game-logo { font-size: 3rem; font-weight: 800; color: white; margin-bottom: 5px; text-shadow: 0 0 20px rgba(188, 111, 241, 0.5); }
+        .game-tagline { color: var(--dim); font-size: 1rem; margin-bottom: 50px; }
+        .menu-options { width: 85%; max-width: 340px; display: flex; flex-direction: column; gap: 18px; }
+        .btn-main { width: 100%; padding: 18px; border-radius: 20px; border: none; font-size: 1.15rem; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; gap: 12px; }
+        .btn-play { background: var(--purple); color: white; box-shadow: 0 10px 25px rgba(188, 111, 241, 0.25); }
+        .btn-secondary { background: var(--surface); color: white; border: 1px solid #2d2d35; }
 
-        .reviews-header-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            max-width: 450px;
-            margin-bottom: 20px;
-            position: relative;
-        }
-        .sort-dropdown-wrapper { position: relative; }
-        .sort-trigger-btn {
-            background: var(--card);
-            border: 1px solid var(--input-border);
-            border-radius: 10px;
-            width: 38px;
-            height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: var(--primary);
-            transition: 0.3s;
-            font-size: 1.1rem;
-        }
-        .sort-trigger-btn:active { transform: scale(0.9); }
-        .sort-menu {
-            position: absolute;
-            top: 45px;
-            left: 0;
-            background: var(--card);
-            border: 1px solid var(--input-border);
-            border-radius: 15px;
-            width: 160px;
-            display: none;
-            flex-direction: column;
-            z-index: 3000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            overflow: hidden;
-            animation: fadeInMenu 0.3s ease;
-        }
-        @keyframes fadeInMenu {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .sort-menu.active { display: flex; }
-        .sort-item {
-            padding: 12px 15px;
-            font-size: 0.9rem;
-            color: var(--text);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 1px solid var(--input-border);
-            transition: 0.2s;
-            text-align: right;
-        }
-        .sort-item:last-child { border-bottom: none; }
-        .sort-item:hover { background: rgba(108, 92, 231, 0.1); color: var(--primary); }
-        .sort-item i { font-size: 1rem; width: 20px; }
+        /* --- شاشة البحث --- */
+        #searchingOverlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e 0%, #08080a 100%); }
+        .vs-container { display: flex; align-items: center; gap: 30px; margin-bottom: 40px; }
+        .ludo-box { text-align: center; width: 115px; }
+        .ludo-avatar { width: 105px; height: 105px; border-radius: 25px; border: 3px solid var(--purple); object-fit: cover; background: #222; position: relative; z-index: 2; }
+        .pulse-ring { position: absolute; inset: 0; border: 3px solid var(--purple); border-radius: 25px; animation: pulse-anim 1.5s infinite; }
+        @keyframes pulse-anim { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
+        .vs-badge { font-size: 2.8rem; font-weight: 900; color: #ff4757; font-style: italic; text-shadow: 0 0 15px rgba(255, 71, 87, 0.4); }
 
-        .edit-sheet { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card); border-top-left-radius: 25px; border-top-right-radius: 25px; padding: 25px; z-index: 5000; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); border-top: 1px solid var(--input-border); }
-        .edit-sheet.active { transform: translateY(0); }
-        .edit-sheet-header { font-weight: 700; margin-bottom: 15px; text-align: center; color: var(--primary); }
-        .edit-actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-edit-save { flex: 2; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .btn-edit-cancel { flex: 1; padding: 12px; background: var(--input-border); color: var(--text); border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        /* --- الكيم بلاي والأنيميشن --- */
+        #roundTransition { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.92); flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+        .trans-bar { width: 200%; height: 65px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem; box-shadow: 0 0 40px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
+        .trans-bar::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transform: skewX(-20deg); animation: shine 2s infinite; }
+        @keyframes shine { 100% { left: 200%; } }
+        .trans-bar.top, .trans-bar.bottom { background: #1a1a20; color: var(--purple); border-top: 2px solid var(--purple); border-bottom: 2px solid var(--purple); }
+        .trans-bar.mid { background: var(--purple); color: #000; margin: 15px 0; }
+        .slide-in-top { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+        .slide-in-mid { animation: slideInRight 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.1s; }
+        .slide-in-bottom { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.2s; }
+        .slide-out-top { animation: slideOutLeft 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards !important; }
+        .slide-out-mid { animation: slideOutRight 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards !important; }
+        .slide-out-bottom { animation: slideOutLeft 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards !important; }
+        @keyframes slideInLeft { from { transform: rotate(-8deg) translateX(-150%); } to { transform: rotate(-8deg) translateX(0); } }
+        @keyframes slideInRight { from { transform: rotate(-8deg) translateX(150%); } to { transform: rotate(-8deg) translateX(0); } }
+        @keyframes slideOutLeft { to { transform: rotate(-8deg) translateX(-200%); opacity: 0; } }
+        @keyframes slideOutRight { to { transform: rotate(-8deg) translateX(200%); opacity: 0; } }
 
-        .confirm-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 6000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 20px; }
-        .confirm-modal-overlay.active { display: flex; }
-        .confirm-modal { background: var(--card); border: 1px solid var(--input-border); width: 100%; max-width: 320px; border-radius: 24px; padding: 25px; text-align: center; transform: scale(0.9); transition: 0.3s; }
-        .confirm-modal-overlay.active .confirm-modal { transform: scale(1); }
-        .confirm-icon { width: 60px; height: 60px; background: rgba(255, 71, 87, 0.1); color: var(--error); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 15px; }
-        .confirm-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: var(--text); }
-        .confirm-desc { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
-        .confirm-btns { display: flex; flex-direction: column; gap: 10px; }
-        .btn-confirm-delete { padding: 12px; background: var(--error); color: white; border: none; border-radius: 15px; font-weight: 700; cursor: pointer; }
-        .btn-confirm-cancel { padding: 12px; background: transparent; color: var(--text-dim); border: none; font-weight: 700; cursor: pointer; }
+        .header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d2d35; flex-shrink: 0; }
+        .avatar-circle { width: 45px; height: 45px; border-radius: 50%; background: #333; border: 2px solid var(--purple); overflow: hidden; }
+        .round-indicator { background: #2d2d35; padding: 4px 12px; border-radius: 10px; font-size: 0.8rem; color: var(--purple); font-weight: bold; }
+        .arena { flex-shrink: 0; padding: 20px 10px; display: flex; justify-content: center; gap: 15px; }
+        .card-box { flex: 1; max-width: 145px; text-align: center; }
+        .card { aspect-ratio: 3/4; background: #1a1a20; border-radius: 20px; border: 1px solid #333; overflow: hidden; }
+        .card img { width: 100%; height: 100%; object-fit: cover; }
+        .blur-img { filter: blur(30px) brightness(0.6); }
+        .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .voice-controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; }
+        .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; scrollbar-width: none; }
+        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; background: var(--purple); color: #000; align-self: flex-start; }
+        .input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 15px 25px; background: #16161d; display: flex; gap: 10px; border-top: 1px solid #2d2d35; z-index: 1000; }
+        input[type="text"] { flex: 1; background: #2d2d35; border: none; padding: 12px; border-radius: 12px; color: white; outline: none; }
+        .send-btn { background: var(--purple); border: none; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        .sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 4999; display: none; }
-        .sheet-overlay.active { display: block; }
-        
-        .action-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.85rem; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .action-btn i { font-size: 1.1rem; }
-        .action-btn:active { transform: scale(1.4); }
-        .action-btn.active-like { color: var(--accent); transform: scale(1.1); font-weight: bold; }
-        .action-btn.active-dislike { color: var(--error); transform: scale(1.1); font-weight: bold; }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); }
-            100% { transform: scale(1.1); }
-        }
-        .animate-pop { animation: pulse 0.4s ease-out; }
-
-        .game-card { width: 100%; max-width: 350px; background: linear-gradient(135deg, #6c5ce7, #a29bfe); border-radius: 25px; padding: 20px; cursor: pointer; box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .game-card i { font-size: 3rem; color: white; }
-        .game-card h4 { margin: 10px 0 5px; color: white; font-size: 1.4rem; }
-        #gameWrapper { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 3000; }
-        .game-ui { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; z-index: 3200; align-items: center; }
-        .stats-group { display: flex; gap: 10px; pointer-events: none; }
-        .game-stat { background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 50px; backdrop-filter: blur(5px); color: white; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 6px; }
-        #gameStartMenu, #gameOverMenu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 3100; }
-        .game-btn { background: var(--primary); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; font-size: 1.2rem; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4); }
-
-        .social-card { width: 100%; max-width: 400px; padding: 16px; margin-bottom: 0px; border-radius: 18px; text-decoration: none; color: white !important; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; }
-        .social-tiktok { background: var(--tiktok-bg); border: 1px solid #333; }
-        .social-insta { background: linear-gradient(45deg, #f09433, #bc1888); }
-        .social-fb { background: #1877f2; }
-        .social-yt { background: #ff0000; }
-        .brand { font-size: clamp(2.5rem, 8vw, 3.5rem); font-weight: 900; margin: 80px 0 30px; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
-        .container { width: 100%; max-width: 550px; padding: 0 10px; }
-        .input-group { position: relative; margin-bottom: 20px; }
-        .input-box { width: 100%; padding: 20px 55px 20px 20px; background: var(--card); border: 2px solid var(--input-border); border-radius: 22px; color: var(--text); font-size: 1rem; outline: none; text-align: right; direction: ltr; }
-        .input-box::placeholder { direction: rtl; color: var(--text-dim); }
-        .paste-btn { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--primary); font-size: 1.2rem; cursor: pointer; }
-        .main-btn { width: 100%; padding: 18px; background: var(--primary); border: none; border-radius: 20px; color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .video-card { display: none; margin-top: 25px; background: var(--card); border-radius: 25px; padding: 15px; border: 1px solid var(--input-border); }
-        .video-preview { width: 100%; border-radius: 18px; overflow: hidden; background: #000; }
-        video { width: 100%; max-height: 500px; }
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn-action { padding: 12px; border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; }
-        .btn-reset { grid-column: span 2; color: var(--text); }
-        .history-section { width: 100%; margin-top: 30px; border-top: 1px solid var(--input-border); padding-top: 20px; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .history-header h3 { font-size: 0.95rem; margin: 0; color: var(--text-dim); }
-        .archive-trigger { color: var(--primary); font-size: 1.2rem; cursor: pointer; }
-        .history-item { background: var(--card); padding: 15px; border-radius: 20px; margin-bottom: 12px; border: 1px solid var(--input-border); display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; }
-        .history-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 65px; overflow: hidden; }
-        .history-url { direction: ltr; font-size: 0.8rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 10px; }
-        .history-btn { color: var(--primary); font-weight: 700; cursor: pointer; font-size: 0.9rem; align-self: flex-start; }
-        .history-thumb { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background: #222; flex-shrink: 0; }
-        #customAlert { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid var(--input-border); display: flex; align-items: center; gap: 10px; z-index: 10000; transition: 0.4s ease; color: var(--text); }
-        #customAlert.show { top: 20px; }
-        .star-loader { display: none; font-size: 1.4rem; color: transparent; -webkit-text-stroke: 1.5px var(--star-color); animation: starAnim 1s infinite linear; }
-        @keyframes starAnim { to { transform: rotate(360deg); } }
+        /* --- المودال والنوافذ --- */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
+        .card-content { background: var(--surface); width: 85%; max-width: 300px; padding: 35px 25px; border-radius: 35px; border: 1px solid rgba(188, 111, 241, 0.3); text-align: center; position: relative; animation: pop 0.3s ease; }
+        .profile-pic-large { width: 95px; height: 95px; border-radius: 50%; border: 3px solid var(--purple); margin: 0 auto 15px; object-fit: cover; display: block; }
+        .level-info-card { background: #0d0d12; padding: 15px; border-radius: 20px; margin: 15px 0; border: 1px solid #2d2d35; }
+        .save-btn { width: 100%; background: var(--purple); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
-<body data-theme="dark">
+<body>
 
-    <div class="top-controls-left">
-        <div class="icon-btn" onclick="toggleOverlay('gamesOverlay')" title="الألعاب"><i class="fas fa-gamepad"></i></div>
-    </div>
-
-    <div class="top-controls-right">
-        <div class="icon-btn" onclick="toggleOverlay('menuOverlay')" title="القائمة"><i class="fas fa-ellipsis-v"></i></div>
-        <div class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="تغيير الثيم"><i class="fas fa-moon"></i></div>
-    </div>
-
-    <div class="confirm-modal-overlay" id="confirmModal">
-        <div class="confirm-modal">
-            <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
-            <div class="confirm-title">حذف التعليق؟</div>
-            <div class="confirm-desc">هل أنت متأكد؟ سيتم حذف هذا الرأي نهائياً.</div>
-            <div class="confirm-btns">
-                <button class="btn-confirm-delete" id="confirmDeleteBtn">حذف الآن</button>
-                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">تراجع</button>
+    <div id="mainMenuView" class="game-view active-view">
+        <div class="top-bar" onclick="openProfile()">
+            <img id="headerAvatar" src="" class="my-avatar">
+            <div style="margin-right: 10px;">
+                <div id="headerName" style="font-weight: 700; font-size: 1.15rem;">لاعب جديد</div>
+                <div id="headerLevelText" style="font-size: 0.75rem; color: var(--purple);">المستوى 1</div>
+                <div class="level-mini-bar"><div id="miniProgress" class="level-progress-fill"></div></div>
+            </div>
+        </div>
+        <div class="main-hero">
+            <h1 class="game-logo">تحدي التخمين</h1>
+            <p class="game-tagline">أظهر ذكاءك في تخمين الصور</p>
+            <div class="menu-options">
+                <button class="btn-main btn-play" onclick="startLudoSearch()">ابدأ التحدي</button>
+                <button class="btn-main btn-secondary">المتجر</button>
+                <button class="btn-main btn-secondary">الإعدادات</button>
             </div>
         </div>
     </div>
 
-    <div class="sheet-overlay" id="sheetOverlay" onclick="closeEditSheet()"></div>
-    <div class="edit-sheet" id="editSheet">
-        <div class="edit-sheet-header">تعديل الرأي</div>
-        <textarea id="editCommentInput" class="comment-input" rows="4"></textarea>
-        <div class="edit-actions">
-            <button class="btn-edit-save" onclick="saveEditedReview()">إضافة التعديل</button>
-            <button class="btn-edit-cancel" onclick="closeEditSheet()">إلغاء</button>
-        </div>
-    </div>
-
-    <div class="full-overlay" id="gamesOverlay">
-        <i class="fas fa-arrow-right close-overlay" onclick="toggleOverlay('gamesOverlay')"></i>
-        <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 25px;">الألعاب</div>
-        <div class="game-card" onclick="openGame()">
-            <i class="fas fa-table-tennis-paddle-ball"></i>
-            <h4>تحدي المضرب</h4>
-            <p>سجل أعلى النقاط ونافس نفسك!</p>
-        </div>
-    </div>
-
-    <div id="gameWrapper">
-        <div class="game-ui">
-            <div class="stats-group">
-                <div class="game-stat"><i class="fas fa-star" style="color:#f1c40f"></i> <span id="gameScore">0</span></div>
-                <div class="game-stat"><i class="fas fa-trophy" style="color:#ffd700"></i> <span id="gameHighScoreInner">0</span></div>
+    <div id="searchingOverlay">
+        <div class="vs-container">
+            <div class="ludo-box">
+                <div style="position:relative"><div class="pulse-ring"></div><img id="mySearchAvatar" src="" class="ludo-avatar"></div>
+                <div id="mySearchName" style="margin-top:10px; font-weight:700; font-size:0.9rem;">أنت</div>
             </div>
-            <div class="game-stat" onclick="closeGame()" style="pointer-events: auto; cursor:pointer;"><i class="fas fa-times"></i></div>
-        </div>
-        <div id="gameStartMenu">
-            <i class="fas fa-table-tennis-paddle-ball" style="font-size: 5rem; color: var(--primary);"></i>
-            <h1>تحدي المضرب</h1>
-            <button class="game-btn" onclick="startGame()">ابدأ اللعب</button>
-        </div>
-        <div id="gameOverMenu" style="display:none">
-            <h1 style="color:var(--error)">انتهت الجولة!</h1>
-            <p style="font-size: 1.5rem;">نقاطك: <span id="finalGameScore">0</span></p>
-            <button class="game-btn" onclick="startGame()">إعادة المحاولة</button>
-        </div>
-        <canvas id="gameCanvas"></canvas>
-    </div>
-
-    <div class="full-overlay" id="menuOverlay">
-        <i class="fas fa-arrow-right close-overlay" onclick="toggleOverlay('menuOverlay')"></i>
-        <div class="rating-wrapper">
-            <h3 style="margin:0; font-size:1.1rem;">تقييم الموقع</h3>
-            <div class="stars-container">
-                <input type="radio" id="st5" name="user_star" value="5"><label for="st5">★</label>
-                <input type="radio" id="st4" name="user_star" value="4"><label for="st4">★</label>
-                <input type="radio" id="st3" name="user_star" value="3"><label for="st3">★</label>
-                <input type="radio" id="st2" name="user_star" value="2"><label for="st2">★</label>
-                <input type="radio" id="st1" name="user_star" value="1"><label for="st1">★</label>
-            </div>
-            <textarea id="userReviewText" class="comment-input" placeholder="اكتب رأيك هنا..."></textarea>
-            <button class="submit-rating-btn" onclick="handleNewReview()">إرسال التقييم</button>
-            <span class="view-all-reviews" onclick="toggleOverlay('allReviewsOverlay')">عرض كل التعليقات</span>
-        </div>
-
-        <div class="social-accordion" id="socialAccordion">
-            <div class="social-header" onclick="document.getElementById('socialAccordion').classList.toggle('open')">
-                <span>مواقع التواصل الأجتماعي</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="social-content">
-                <a href="https://www.tiktok.com/@72rxb" target="_blank" class="social-card social-tiktok"><i class="fab fa-tiktok"></i> تيك توك</a>
-                <a href="https://www.instagram.com/72rxb" target="_blank" class="social-card social-insta"><i class="fab fa-instagram"></i> انستغرام</a>
-                <a href="https://www.facebook.com/share/1D54JBBkJh/" target="_blank" class="social-card social-fb"><i class="fab fa-facebook-f"></i> فيسبوك</a>
-                <a href="https://youtube.com/@72rxb" target="_blank" class="social-card social-yt"><i class="fab fa-youtube"></i> يوتيوب</a>
+            <div class="vs-badge">VS</div>
+            <div class="ludo-box">
+                <img id="oppAvatarSearch" src="" class="ludo-avatar" style="border-color:#ff4757">
+                <div id="oppNameSearch" style="margin-top:10px; font-weight:700; font-size:0.9rem; color:#ff4757">جاري البحث..</div>
             </div>
         </div>
+        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">يتم البحث عن منافس...</p>
+        <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="stopSearch()">إلغاء البحث</button>
     </div>
 
-    <div class="full-overlay" id="allReviewsOverlay">
-        <i class="fas fa-arrow-right close-overlay" onclick="toggleOverlay('allReviewsOverlay')"></i>
-        <div class="reviews-header-area">
-            <div style="font-size: 1.5rem; font-weight: 700;">آراء المستخدمين</div>
-            <div class="sort-dropdown-wrapper">
-                <div class="sort-trigger-btn" onclick="toggleSortMenu(event)">
-                    <i class="fas fa-filter"></i> </div>
-                <div class="sort-menu" id="sortMenu">
-                    <div class="sort-item" onclick="sortReviews('newest')">
-                        <i class="fas fa-clock"></i> الأحدث
+    <div id="gamePlayView" class="game-view">
+        <div id="roundTransition">
+            <div class="trans-bar top" id="transOppName">الخصم : 0</div>
+            <div class="trans-bar mid" id="transRoundTxt">الجولة 1</div>
+            <div class="trans-bar bottom" id="transMyName">انت : 0</div>
+        </div>
+
+        <div id="resultsModal" class="modal">
+            <div class="card-content" style="background: var(--bg); border:none;">
+                <div id="trophyIcon" style="margin-bottom: 20px;">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 5H18V4C18 2.89543 17.1046 2 16 2H8C6.89543 2 6 2.89543 6 4V5H5C3.34315 5 2 6.34315 2 8V9C2 10.6569 3.34315 12 5 12H6.17071C6.60235 13.6703 7.84411 15.0116 9.46231 15.6552C9.8009 16.7417 10.8119 17.5 12 17.5C13.1881 17.5 14.1991 16.7417 14.5377 15.6552C16.1559 15.0116 17.3976 13.6703 17.8293 12H19C20.6569 12 22 10.6569 22 9V8C22 6.34315 20.6569 5 19 5ZM5 10C4.44772 10 4 9.55228 4 9V8C4 7.44772 4.44772 7 5 7H6V10H5ZM19 10H18V7H19C19.5523 7 20 7.44772 20 8V9C20 9.55228 19.5523 10 19 10ZM13 20H15C15.5523 20 16 20.4477 16 21C16 21.5523 15.5523 22 15 22H9C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20H11V18H13V20Z" fill="#FFD700"/>
+                    </svg>
+                </div>
+                <h2 style="margin: 0; color: white; font-weight: 700;">انتهى التحدي</h2>
+                
+                <div style="margin: 30px 0;">
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 1.1rem;">
+                        <span style="color: white;">نقاطك:</span>
+                        <span id="myFinalScore" style="color: var(--purple); font-weight: bold;">0</span>
                     </div>
-                    <div class="sort-item" onclick="sortReviews('most_liked')">
-                        <i class="fas fa-heart"></i> الأكثر إعجاباً
-                    </div>
-                    <div class="sort-item" onclick="sortReviews('most_disliked')">
-                        <i class="fas fa-thumbs-down"></i> الأكثر سوءاً
+                    <div style="display: flex; justify-content: center; gap: 10px; font-size: 1.1rem;">
+                        <span style="color: white;">نقاط الخصم:</span>
+                        <span id="oppFinalScore" style="color: var(--green); font-weight: bold;">0</span>
                     </div>
                 </div>
+
+                <button class="btn-main btn-play" style="width: 100%; border-radius: 15px;" onclick="location.reload()">خروج للقائمة</button>
             </div>
         </div>
-        <div id="reviewsListContainer" style="width: 100%; max-width: 450px;"></div>
-    </div>
 
-    <div class="full-overlay" id="archiveOverlay">
-        <i class="fas fa-arrow-right close-overlay" onclick="toggleOverlay('archiveOverlay')"></i>
-        <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; width: 100%; text-align: center;">أرشيف التحميلات</div>
-        <div id="fullHistoryContainer" style="width: 100%; max-width: 550px;"></div>
-    </div>
-
-    <div class="brand">WeStars</div>
-
-    <div class="container">
-        <div class="input-group">
-            <input type="text" id="urlInput" class="input-box" placeholder="...الصق الرابط هنا">
-            <i class="fas fa-paste paste-btn" onclick="pasteLink()"></i>
-        </div>
-        <button class="main-btn" onclick="processVideo()">
-            <span id="btnText">استخراج الفيديو</span>
-            <i class="far fa-star star-loader" id="starLoader"></i>
-        </button>
-        <div id="resultCard" class="video-card">
-            <div class="video-preview">
-                <video id="videoPlayer" controls playsinline></video>
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="avatar-circle"><img id="gameOppAvatar" src="" style="width:100%;height:100%"></div>
+                <div style="display: flex; flex-direction: column;">
+                    <span id="gameOppName" style="font-weight:600;">الخصم</span>
+                    <span style="font-size:0.75rem; color:var(--purple); font-weight: bold;">XP 850</span>
+                </div>
             </div>
-            <div class="actions">
-                <button onclick="downloadNow()" class="btn-action btn-download" style="background:var(--accent);"><i class="fas fa-download"></i> حفظ </button>
-                <button onclick="copyLink()" class="btn-action btn-copy" style="background:var(--input-border); color:var(--text);"><i class="fas fa-copy"></i> نسخ</button>
-                <button onclick="location.reload()" class="btn-action btn-reset" style="background:var(--input-border);"><i class="fas fa-redo"></i> جديد</button>
-            </div>
+            <div class="round-indicator" id="roundTxt">الجولة 1/3</div>
         </div>
-        <div class="history-section" id="historySection">
-            <div class="history-header">
-                <h3>آخر التحميلات:</h3>
-                <i class="fas fa-box-archive archive-trigger" onclick="toggleOverlay('archiveOverlay')" title="الأرشيف"></i>
+
+        <div class="arena">
+            <div class="card-box"><div class="card"><img class="blur-img" id="oppCardImg" src=""></div><div class="label">بطاقة الخصم</div></div>
+            <div class="card-box"><div class="card" style="border-color: var(--purple);"><img id="myCardImg" src="https://picsum.photos/seed/99/300/400"></div><div class="label">بطاقتك</div></div>
+        </div>
+
+        <div class="chat-section">
+            <div class="voice-controls">
+                <button class="correct-btn" onclick="handleCorrectClick()">صحيح</button>
+                <button class="voice-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                </button>
+                <button class="voice-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                </button>
             </div>
-            <div id="mainHistoryList"></div>
+            <div class="chat-messages" id="chatBox"></div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="اكتب تخمينك هنا...">
+            <button class="send-btn" onclick="sendMessage()">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
         </div>
     </div>
 
-    <div id="customAlert">
-        <i id="alertIcon" class="fas fa-info-circle"></i>
-        <span id="alertMsg"></span>
+    <div id="profileModal" class="modal">
+        <div class="card-content">
+            <div style="position: absolute; top: 20px; left: 20px; color: var(--purple); cursor: pointer;" onclick="openEdit()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+            <img id="cardAvatar" src="" class="profile-pic-large">
+            <h2 id="cardName" style="margin: 0;">لاعب جديد</h2>
+            <div class="level-info-card">
+                <span id="cardLevelLabel" style="font-weight: bold; color: white; display: block; margin-bottom: 5px;">المستوى 1</span>
+                <div class="level-mini-bar" style="width: 100%; height: 8px; margin: 10px 0;"><div id="cardProgress" class="level-progress-fill"></div></div>
+                <span id="xpRemaining" style="font-size: 0.7rem; color: var(--dim);">يتبقى 500 XP للمستوى التالي</span>
+            </div>
+            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+                <div><div id="totalWins" style="font-weight: bold; color: var(--purple); font-size: 1.2rem;">0</div><div style="font-size: 0.75rem; color: var(--dim);">فوز</div></div>
+                <div><div id="totalXP" style="font-weight: bold; color: var(--purple); font-size: 1.2rem;">0</div><div style="font-size: 0.75rem; color: var(--dim);">إجمالي XP</div></div>
+            </div>
+            <div style="margin-top: 25px; color: var(--dim); font-size: 0.9rem; cursor: pointer;" onclick="closeAll()">إغلاق النافذة</div>
+        </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <div id="editModal" class="modal">
+        <div class="card-content">
+            <h3>تعديل البيانات</h3>
+            <div style="position: relative; display: inline-block; margin-bottom: 20px;">
+                <img id="editPreviewAvatar" src="" class="profile-pic-large" style="opacity: 0.7;">
+                <input type="file" id="fileInp" accept="image/*" onchange="autoSaveImage(event)" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+                <div style="font-size: 0.7rem; color: var(--purple);">اضغط لتغيير الصورة</div>
+            </div>
+            <input type="text" id="nameInput" style="width:100%; padding:15px; background:#08080a; border:1px solid #333; color:#fff; border-radius:15px; text-align:center; margin-bottom:15px" maxlength="12">
+            <button class="save-btn" onclick="saveName()">حفظ</button>
+            <div style="margin-top: 25px; color: var(--dim); font-size: 0.9rem; cursor: pointer;" onclick="closeAll()">إلغاء</div>
+        </div>
+    </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://westrts-d4078-default-rtdb.firebaseio.com/" };
+        // الربط المباشر برابط الفايربيس الخاص بك
+        const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const auth = firebase.auth();
-        const provider = new firebase.auth.GoogleAuthProvider();
 
-        let editingReviewId = null;
-        let reviewToDeleteId = null;
-        let currentReviewsData = [];
+        let userData = { name: "لاعب جديد", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
+        const XP_PER_LEVEL = 500;
+        let currentRound = 1, myPoints = 0, oppPoints = 0, searchTimer, foundOpp = null;
 
-        // دالة إرسال التعليق المحسنة (تسجيل الدخول بجوجل)
-        async function handleNewReview() {
-            const starInput = document.querySelector('input[name="user_star"]:checked');
-            const commentInput = document.getElementById('userReviewText');
-            
-            if(!starInput || !commentInput.value.trim()) { 
-                notify("يرجى اختيار النجوم وكتابة تعليق", "error"); 
-                return; 
+        function updateUI() {
+            const level = Math.floor(userData.xp / XP_PER_LEVEL) + 1;
+            const curXP = userData.xp % XP_PER_LEVEL;
+            const progress = (curXP / XP_PER_LEVEL) * 100;
+
+            document.getElementById('headerName').innerText = userData.name;
+            document.getElementById('cardName').innerText = userData.name;
+            document.getElementById('headerLevelText').innerText = "المستوى " + level;
+            document.getElementById('cardLevelLabel').innerText = "المستوى " + level;
+            document.getElementById('xpRemaining').innerText = `يتبقى ${XP_PER_LEVEL - curXP} XP للمستوى التالي`;
+            document.getElementById('totalXP').innerText = userData.xp;
+            document.getElementById('totalWins').innerText = userData.wins;
+            document.getElementById('miniProgress').style.width = progress + "%";
+            document.getElementById('cardProgress').style.width = progress + "%";
+            document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
+            document.getElementById('mySearchName').innerText = userData.name;
+        }
+
+        function autoSaveImage(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => { userData.avatar = ev.target.result; saveToStorage(); updateUI(); };
+                reader.readAsDataURL(file);
             }
+        }
 
-            try {
-                let user = auth.currentUser;
-                
-                // إذا لم يكن مسجل الدخول، افتح نافذة جوجل
-                if (!user) {
-                    notify("جاري تسجيل الدخول بجوجل...");
-                    const result = await auth.signInWithPopup(provider);
-                    user = result.user;
+        function saveName() {
+            const val = document.getElementById('nameInput').value.trim();
+            if(val) { userData.name = val; saveToStorage(); updateUI(); closeAll(); }
+        }
+
+        function startLudoSearch() {
+            document.getElementById('searchingOverlay').style.display = 'flex';
+            let count = 0;
+            const opponents = [{n:"سيف الإسلام", s:"7"}, {n:"مريم خالد", s:"12"}, {n:"المحترف 007", s:"9"}];
+            searchTimer = setInterval(() => {
+                const rand = opponents[Math.floor(Math.random() * opponents.length)];
+                foundOpp = { n: rand.n, img: `https://api.dicebear.com/7.x/avataaars/svg?seed=${rand.s}` };
+                document.getElementById('oppAvatarSearch').src = foundOpp.img;
+                document.getElementById('oppNameSearch').innerText = foundOpp.n;
+                if(++count > 15) {
+                    clearInterval(searchTimer);
+                    document.getElementById('statusMsg').innerText = "تم العثور على الخصم!";
+                    setTimeout(() => {
+                        document.getElementById('searchingOverlay').style.display = 'none';
+                        document.getElementById('mainMenuView').classList.remove('active-view');
+                        document.getElementById('gamePlayView').classList.add('active-view');
+                        document.getElementById('gameOppName').innerText = foundOpp.n;
+                        document.getElementById('gameOppAvatar').src = foundOpp.img;
+                        initGame();
+                    }, 1200);
                 }
-
-                const newReview = { 
-                    uid: user.uid,
-                    stars: parseInt(starInput.value), 
-                    text: commentInput.value.trim(), 
-                    date: new Date().toLocaleDateString('ar-EG'), 
-                    timestamp: Date.now(), 
-                    likes: 0, 
-                    dislikes: 0, 
-                    userAvatar: user.photoURL, // صورة جوجل الحقيقية
-                    userName: user.displayName // اسم جوجل الحقيقي
-                };
-
-                await db.ref('reviews').push(newReview);
-                
-                commentInput.value = ""; 
-                if(starInput) starInput.checked = false; 
-                notify(`شكراً ${user.displayName.split(' ')[0]}! تم النشر ✨`);
-
-            } catch (error) {
-                console.error(error);
-                if(error.code === 'auth/popup-closed-by-user') {
-                    notify("تم إلغاء تسجيل الدخول", "error");
-                } else {
-                    notify("حدث خطأ أثناء الإرسال", "error");
-                }
-            }
+            }, 140);
         }
 
-        // جلب البيانات ومزامنتها
-        db.ref('reviews').on('value', (snapshot) => {
-            currentReviewsData = [];
-            snapshot.forEach((child) => { 
-                let data = child.val(); 
-                data.id = child.key; 
-                currentReviewsData.push(data); 
-            });
-            currentReviewsData.sort((a, b) => b.timestamp - a.timestamp);
-            renderReviews(currentReviewsData);
-        });
+        function initGame() { currentRound = 1; myPoints = 0; oppPoints = 0; document.getElementById('chatBox').innerHTML = ''; getNextSystemImage(); showTransition(1); }
 
-        function renderReviews(reviews) {
-            const container = document.getElementById('reviewsListContainer');
-            const currentUser = auth.currentUser;
-
-            if(!reviews || reviews.length === 0) { 
-                container.innerHTML = '<p style="text-align:center; opacity:0.5;">لا توجد تعليقات بعد</p>'; 
-                return; 
-            }
-
-            container.innerHTML = reviews.map(r => {
-                const myStatus = localStorage.getItem(`interact_${r.id}`);
-                const isMyReview = currentUser && r.uid === currentUser.uid;
-                
-                return `
-                <div class="review-card-ui">
-                    ${isMyReview ? `
-                    <div class="review-menu-trigger" onclick="toggleReviewMenu('${r.id}')">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </div>
-                    <div class="review-options-menu" id="menu-${r.id}">
-                        <button class="menu-item" onclick="openEditSheet('${r.id}', '${r.text.replace(/'/g, "\\'")}')">
-                            <i class="fas fa-edit"></i> تعديل
-                        </button>
-                        <button class="menu-item delete" onclick="openConfirmModal('${r.id}')">
-                            <i class="fas fa-trash"></i> حذف
-                        </button>
-                    </div>
-                    ` : ''}
-                    <div class="review-user-info">
-                        <img src="${r.userAvatar || 'https://via.placeholder.com/40'}" class="review-avatar" onerror="this.src='https://ui-avatars.com/api/?name='+encodeURIComponent('${r.userName}')">
-                        <div class="review-user-details">
-                            <span class="review-username">${r.userName || 'مستخدم مجهول'}</span>
-                            <div class="review-stars-ui">${"★".repeat(r.stars)}${"☆".repeat(5-r.stars)}</div>
-                        </div>
-                    </div>
-                    <div class="review-text">${r.text}</div>
-                    <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:8px;">${r.date}</div>
-                    <div class="review-actions">
-                        <button class="action-btn like ${myStatus === 'like' ? 'active-like' : ''}" onclick="handleInteraction('${r.id}', 'like')">
-                            <i class="${myStatus === 'like' ? 'fas' : 'far'} fa-thumbs-up"></i>
-                            <span>${r.likes || 0}</span>
-                        </button>
-                        <button class="action-btn dislike ${myStatus === 'dislike' ? 'active-dislike' : ''}" onclick="handleInteraction('${r.id}', 'dislike')">
-                            <i class="${myStatus === 'dislike' ? 'fas' : 'far'} fa-thumbs-down"></i>
-                            <span>${r.dislikes || 0}</span>
-                        </button>
-                    </div>
-                </div>
-            `}).join('');
-        }
-
-        // الدوال المساعدة للفرز والتفاعل
-        function toggleSortMenu(e) { e.stopPropagation(); document.getElementById('sortMenu').classList.toggle('active'); }
-        
-        function sortReviews(type) {
-            if (type === 'newest') currentReviewsData.sort((a, b) => b.timestamp - a.timestamp);
-            else if (type === 'most_liked') currentReviewsData.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-            else if (type === 'most_disliked') currentReviewsData.sort((a, b) => (b.dislikes || 0) - (a.dislikes || 0));
-            renderReviews(currentReviewsData);
-            document.getElementById('sortMenu').classList.remove('active');
-            notify("تم تحديث الترتيب");
-        }
-
-        function handleInteraction(id, type) {
-            const interactionKey = `interact_${id}`;
-            const previousType = localStorage.getItem(interactionKey);
-            const reviewRef = db.ref('reviews/' + id);
-            
-            reviewRef.transaction((currentData) => {
-                if (currentData) {
-                    if (previousType === type) {
-                        if (type === 'like') currentData.likes = Math.max(0, (currentData.likes || 0) - 1);
-                        else currentData.dislikes = Math.max(0, (currentData.dislikes || 0) - 1);
-                        localStorage.removeItem(interactionKey);
-                    } else {
-                        if (previousType === 'like') currentData.likes = Math.max(0, (currentData.likes || 0) - 1);
-                        else if (previousType === 'dislike') currentData.dislikes = Math.max(0, (currentData.dislikes || 0) - 1);
-                        if (type === 'like') currentData.likes = (currentData.likes || 0) + 1;
-                        else currentData.dislikes = (currentData.dislikes || 0) + 1;
-                        localStorage.setItem(interactionKey, type);
-                    }
-                }
-                return currentData;
+        function getNextSystemImage() {
+            db.ref('bank_images').once('value').then((snapshot) => {
+                const imgs = []; snapshot.forEach(c => imgs.push(c.val()));
+                if(imgs.length > 0) document.getElementById('oppCardImg').src = imgs[Math.floor(Math.random()*imgs.length)].url;
             });
         }
 
-        function toggleReviewMenu(id) {
-            document.querySelectorAll('.review-options-menu').forEach(m => {
-                if(m.id !== 'menu-' + id) m.classList.remove('show');
-            });
-            document.getElementById('menu-' + id).classList.toggle('show');
+        function showTransition(r, isFinal=false, cb) {
+            const trans = document.getElementById('roundTransition');
+            document.getElementById('transOppName').innerText = `${foundOpp.n} : ${oppPoints}`;
+            document.getElementById('transMyName').innerText = `انت : ${myPoints}`;
+            document.getElementById('transRoundTxt').innerText = isFinal ? "النتيجة النهائية" : `الجولة ${r}`;
+            trans.style.display = 'flex';
+            const bars = document.querySelectorAll('.trans-bar');
+            bars[0].className = 'trans-bar top slide-in-top'; bars[1].className = 'trans-bar mid slide-in-mid'; bars[2].className = 'trans-bar bottom slide-in-bottom';
+            setTimeout(() => { bars[0].classList.replace('slide-in-top', 'slide-out-top'); bars[1].classList.replace('slide-in-mid', 'slide-out-mid'); bars[2].classList.replace('slide-in-bottom', 'slide-out-bottom'); }, 4500);
+            setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 5000);
         }
 
-        function openConfirmModal(id) {
-            reviewToDeleteId = id;
-            document.getElementById('confirmModal').classList.add('active');
-        }
-
-        function closeConfirmModal() {
-            document.getElementById('confirmModal').classList.remove('active');
-            reviewToDeleteId = null;
-        }
-
-        document.getElementById('confirmDeleteBtn').onclick = function() {
-            if(reviewToDeleteId) {
-                db.ref('reviews/' + reviewToDeleteId).remove().then(() => {
-                    notify("تم الحذف بنجاح");
-                    closeConfirmModal();
-                });
-            }
-        };
-
-        function openEditSheet(id, currentText) {
-            editingReviewId = id;
-            document.getElementById('editCommentInput').value = currentText;
-            document.getElementById('editSheet').classList.add('active');
-            document.getElementById('sheetOverlay').classList.add('active');
-        }
-
-        function closeEditSheet() {
-            document.getElementById('editSheet').classList.remove('active');
-            document.getElementById('sheetOverlay').classList.remove('active');
-            editingReviewId = null;
-        }
-
-        function saveEditedReview() {
-            const newText = document.getElementById('editCommentInput').value.trim();
-            if(!newText) return;
-            db.ref('reviews/' + editingReviewId).update({ text: newText }).then(() => {
-                notify("تم التعديل ✨");
-                closeEditSheet();
-            });
-        }
-
-        // بقية دوال الموقع (الثيم، الفيديو، اللعبة) كما هي مع تحسينات طفيفة
-        function toggleOverlay(id) { document.getElementById(id).classList.toggle('active'); }
-        function toggleTheme() {
-            const isDark = document.body.getAttribute('data-theme') === 'dark';
-            document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-            document.getElementById('themeBtn').innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-        }
-
-        function notify(msg, type = 'success') {
-            const alert = document.getElementById('customAlert');
-            document.getElementById('alertMsg').innerText = msg;
-            alert.classList.add('show');
-            setTimeout(() => alert.classList.remove('show'), 3000);
-        }
-
-        async function pasteLink() { const text = await navigator.clipboard.readText(); document.getElementById('urlInput').value = text; }
-        
-        async function processVideo() {
-            const url = document.getElementById('urlInput').value;
-            if(!url) return notify("ضع الرابط أولاً", "error");
-            document.getElementById('btnText').style.display = 'none';
-            document.getElementById('starLoader').style.display = 'block';
-            try {
-                let apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`;
-                const res = await fetch(apiUrl);
-                const json = await res.json();
-                const videoUrl = json.data?.play;
-                if(videoUrl) {
-                    document.getElementById('videoPlayer').src = videoUrl;
-                    document.getElementById('resultCard').style.display = 'block';
-                    notify("تم استخراج الفيديو ✨");
-                } else { throw new Error(); }
-            } catch (e) { notify("الرابط غير مدعوم حالياً", "error"); }
-            finally {
-                document.getElementById('btnText').style.display = 'block';
-                document.getElementById('starLoader').style.display = 'none';
+        function handleCorrectClick() {
+            oppPoints += 100;
+            if(currentRound < 3) {
+                currentRound++;
+                showTransition(currentRound, false, () => { document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`; getNextSystemImage(); });
+            } else { 
+                showTransition(3, true, () => { 
+                    document.getElementById('myFinalScore').innerText = myPoints; 
+                    document.getElementById('oppFinalScore').innerText = oppPoints; 
+                    document.getElementById('resultsModal').style.display = 'flex'; 
+                }); 
             }
         }
 
-        // لعبة المضرب (مختصرة للسرعة)
-        const gCanvas = document.getElementById("gameCanvas");
-        const gCtx = gCanvas.getContext("2d");
-        let gRunning = false, gScore = 0;
-        function openGame() { document.getElementById('gameWrapper').style.display = 'block'; initGame(); }
-        function closeGame() { gRunning = false; document.getElementById('gameWrapper').style.display = 'none'; }
-        function initGame() { gCanvas.width = window.innerWidth; gCanvas.height = window.innerHeight; }
-        function startGame() { gRunning = true; gScore = 0; document.getElementById('gameStartMenu').style.display = 'none'; }
-        
-        window.onclick = function(e) {
-            if (!e.target.closest('.sort-dropdown-wrapper')) document.getElementById('sortMenu').classList.remove('active');
+        function sendMessage() {
+            const inp = document.getElementById('userInput');
+            if(!inp.value.trim()) return;
+            const m = document.createElement('div'); m.className = 'msg'; m.textContent = inp.value;
+            document.getElementById('chatBox').appendChild(m);
+            inp.value = ""; document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+        }
+
+        function openEdit() { document.getElementById('profileModal').style.display = 'none'; document.getElementById('editModal').style.display = 'flex'; document.getElementById('nameInput').value = userData.name; }
+        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+        function openProfile() { document.getElementById('profileModal').style.display = 'flex'; }
+        function saveToStorage() { localStorage.setItem('guessGameUser', JSON.stringify(userData)); }
+        function stopSearch() { clearInterval(searchTimer); document.getElementById('searchingOverlay').style.display = 'none'; }
+
+        window.onload = () => {
+            const saved = localStorage.getItem('guessGameUser');
+            if(saved) userData = JSON.parse(saved);
+            updateUI();
         };
     </script>
 </body>
