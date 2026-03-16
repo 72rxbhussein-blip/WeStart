@@ -96,7 +96,6 @@
                 <div id="headerName" style="font-weight: 700; font-size: 1.15rem;">لاعب جديد</div>
                 <div id="headerLevelText" style="font-size: 0.75rem; color: var(--purple);">المستوى 1</div>
                 <div class="level-mini-bar"><div id="miniProgress" class="level-progress-fill"></div></div>
-                <div style="font-size: 0.65rem; color: var(--dim);">XP: <span id="xpText">0</span></div>
             </div>
         </div>
         <div class="main-hero">
@@ -162,7 +161,7 @@
                 <div class="avatar-circle"><img id="gameOppAvatar" src="" style="width:100%;height:100%"></div>
                 <div style="display: flex; flex-direction: column;">
                     <span id="gameOppName" style="font-weight:600;">الخصم</span>
-                    <span style="font-size:0.75rem; color:var(--purple); font-weight: bold;">XP: <span id="oppXPDisplay">---</span></span>
+                    <span id="gameOppXP" style="font-size:0.75rem; color:var(--purple); font-weight: bold;">XP 0</span>
                 </div>
             </div>
             <div class="round-indicator" id="roundTxt">الجولة 1/3</div>
@@ -233,36 +232,40 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // 1️⃣ متغيرات اللعبة الأساسية
         let userData = { name: "لاعب جديد", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
-        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null;
-        let playerId = "player_" + Math.random().toString(36).substr(2, 9);
+        const XP_PER_LEVEL = 500;
         let roomId = null;
-        let isHost = false;
+        let playerId = "p" + Date.now();
+        let playerRole = null;
+        let currentRound = 1;
+        let myPoints = 0;
+        let oppPoints = 0;
+        let foundOpp = null;
 
-        // 5️⃣ عرض النقاط والمستوى من قاعدة البيانات
-        function listenToPlayerData() {
-            db.ref("players/" + playerId).on("value", (snap) => {
-                const data = snap.val();
-                if (!data) return;
-                userData.xp = data.xp || 0;
-                userData.wins = data.wins || 0;
-                userData.name = data.name || userData.name;
-                
-                document.getElementById("xpText").innerText = userData.xp;
-                updateUI();
-            });
-        }
+        // تحميل البيانات المحفوظة
+        window.onload = () => {
+            const saved = localStorage.getItem('guessGameUser');
+            if(saved) {
+                userData = JSON.parse(saved);
+                // تحديث المعرف إذا كان موجوداً مسبقاً للحفاظ على الحساب
+                if(userData.id) playerId = userData.id;
+                else userData.id = playerId;
+            }
+            updateUI();
+            registerPlayer();
+        };
 
         function updateUI() {
-            const level = updateLevel(userData.xp);
-            const curXP = userData.xp % 500;
-            const progress = (curXP / 500) * 100;
+            const level = Math.floor(userData.xp / XP_PER_LEVEL) + 1;
+            const curXP = userData.xp % XP_PER_LEVEL;
+            const progress = (curXP / XP_PER_LEVEL) * 100;
 
             document.getElementById('headerName').innerText = userData.name;
             document.getElementById('cardName').innerText = userData.name;
             document.getElementById('headerLevelText').innerText = "المستوى " + level;
             document.getElementById('cardLevelLabel').innerText = "المستوى " + level;
-            document.getElementById('xpRemaining').innerText = `يتبقى ${500 - curXP} XP للمستوى التالي`;
+            document.getElementById('xpRemaining').innerText = `يتبقى ${XP_PER_LEVEL - curXP} XP للمستوى التالي`;
             document.getElementById('totalXP').innerText = userData.xp;
             document.getElementById('totalWins').innerText = userData.wins;
             document.getElementById('miniProgress').style.width = progress + "%";
@@ -271,176 +274,228 @@
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        // 7️⃣ رفع المستوى
-        function updateLevel(xp) {
-            return Math.floor(xp / 500) + 1;
+        // 2️⃣ تسجيل اللاعب في Firebase
+        function registerPlayer() {
+            db.ref("players/" + playerId).update({
+                name: userData.name,
+                avatar: userData.avatar,
+                xp: userData.xp,
+                wins: userData.wins
+            });
         }
 
-        function saveToStorage() {
-            db.ref("players/" + playerId).update(userData);
-            localStorage.setItem('guessGameUser_id', playerId);
+        // 3️⃣ بدء البحث عن لاعب
+        function startLudoSearch() {
+            document.getElementById('searchingOverlay').style.display = 'flex';
+            document.getElementById('statusMsg').innerText = "يتم البحث عن منافس...";
+
+            db.ref("waitingPlayers/" + playerId).set({
+                id: playerId,
+                name: userData.name,
+                avatar: userData.avatar,
+                xp: userData.xp
+            });
+
+            db.ref("waitingPlayers").on("value", (snap) => {
+                const players = snap.val();
+                if (!players) return;
+
+                const ids = Object.keys(players);
+                if (ids.length >= 2) {
+                    let opponentId = ids.find(id => id != playerId);
+                    if (opponentId) {
+                        db.ref("waitingPlayers").off(); // توقف عن الاستماع
+                        createRoom(playerId, opponentId, players);
+                    }
+                }
+            });
+            listenForRoom();
         }
 
+        // 4️⃣ إنشاء غرفة المباراة
+        function createRoom(p1, p2, players) {
+            const newRoomId = "room" + Date.now();
+            db.ref("rooms/" + newRoomId).set({
+                player1: players[p1],
+                player2: players[p2],
+                round: 1,
+                reveal: null
+            }).then(() => {
+                db.ref("waitingPlayers/" + p1).remove();
+                db.ref("waitingPlayers/" + p2).remove();
+            });
+        }
+
+        // 5️⃣ دخول المباراة (الاستماع للغرفة)
+        function listenForRoom() {
+            db.ref("rooms").on("value", (snap) => {
+                const rooms = snap.val();
+                if (!rooms) return;
+
+                for (let id in rooms) {
+                    let r = rooms[id];
+                    if (r.player1.id == playerId || r.player2.id == playerId) {
+                        roomId = id;
+                        playerRole = (r.player1.id == playerId) ? "player1" : "player2";
+                        foundOpp = (playerRole == "player1") ? r.player2 : r.player1;
+                        db.ref("rooms").off(); // توقف عن البحث بمجرد دخول غرفة
+                        startGame();
+                        break;
+                    }
+                }
+            });
+        }
+
+        // 6️⃣ بدء اللعبة
+        function startGame() {
+            document.getElementById('searchingOverlay').style.display = 'none';
+            document.getElementById('mainMenuView').classList.remove('active-view');
+            document.getElementById('gamePlayView').classList.add('active-view');
+
+            document.getElementById('gameOppName').innerText = foundOpp.name;
+            document.getElementById('gameOppAvatar').src = foundOpp.avatar;
+            document.getElementById('gameOppXP').innerText = "XP " + (foundOpp.xp || 0);
+
+            // المضيف فقط هو من يحدد الصور لكل جولة لضمان التزامن
+            if (playerRole == "player1") {
+                startRound();
+            }
+            listenRound();
+            listenReveal();
+        }
+
+        // 7️⃣ بدء الجولة (اختيار صور مختلفة)
+        function startRound() {
+            db.ref("bank_images").once("value").then(snap => {
+                let imgs = [];
+                snap.forEach(c => { imgs.push(c.val().url); });
+
+                if (imgs.length < 2) {
+                    // صور احتياطية في حال خلو قاعدة البيانات
+                    imgs = ["https://via.placeholder.com/300?text=Img1", "https://via.placeholder.com/300?text=Img2"];
+                }
+
+                let i1 = Math.floor(Math.random() * imgs.length);
+                let i2;
+                do { i2 = Math.floor(Math.random() * imgs.length); } while (i1 === i2);
+
+                db.ref("rooms/" + roomId + "/roundData").set({
+                    player1Img: imgs[i1],
+                    player2Img: imgs[i2],
+                    roundNum: currentRound
+                });
+                // تصغير قيمة reveal لبدء جولة جديدة
+                db.ref("rooms/" + roomId + "/reveal").set(null);
+            });
+        }
+
+        // 8️⃣ عرض الصور لكل لاعب (مزامنة)
+        function listenRound() {
+            db.ref("rooms/" + roomId + "/roundData").on("value", (snap) => {
+                const data = snap.val();
+                if (!data) return;
+
+                currentRound = data.roundNum;
+                document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
+
+                if (playerRole == "player1") {
+                    document.getElementById("myCardImg").src = data.player1Img;
+                    document.getElementById("oppCardImg").src = data.player2Img;
+                } else {
+                    document.getElementById("myCardImg").src = data.player2Img;
+                    document.getElementById("oppCardImg").src = data.player1Img;
+                }
+                document.getElementById("oppCardImg").classList.add("blur-img");
+            });
+        }
+
+        // 9️⃣ زر صحيح
+        function handleCorrectClick() {
+            db.ref("rooms/" + roomId + "/reveal").set({
+                winner: playerId,
+                time: Date.now()
+            });
+        }
+
+        // 🔟 كشف الصورة عند الاثنين والمزامنة
+        function listenReveal() {
+            db.ref("rooms/" + roomId + "/reveal").on("value", (snap) => {
+                const data = snap.val();
+                if (!data) return;
+
+                document.getElementById("oppCardImg").classList.remove("blur-img");
+                
+                // حساب النقاط محلياً
+                if (data.winner == playerId) myPoints += 100;
+                else oppPoints += 100;
+
+                setTimeout(() => {
+                    nextRound();
+                }, 3000);
+            });
+        }
+
+        // 1️⃣1️⃣ الجولة التالية
+        function nextRound() {
+            if (currentRound < 3) {
+                if (playerRole == "player1") {
+                    currentRound++;
+                    startRound();
+                }
+            } else {
+                finishGame();
+            }
+        }
+
+        // 1️⃣2️⃣ نهاية المباراة وحفظ البيانات
+        function finishGame() {
+            document.getElementById('myFinalScore').innerText = myPoints;
+            document.getElementById('oppFinalScore').innerText = oppPoints;
+            document.getElementById('resultsModal').style.display = 'flex';
+
+            if (myPoints > oppPoints) {
+                userData.wins = (userData.wins || 0) + 1;
+                userData.xp = (userData.xp || 0) + 200;
+                
+                // تحديث Firebase
+                db.ref("players/" + playerId).update({
+                    wins: userData.wins,
+                    xp: userData.xp
+                });
+                saveToStorage();
+                updateUI();
+            }
+            
+            // المضيف يقوم بحذف الغرفة بعد انتهاء المباراة بمدة
+            if (playerRole == "player1") {
+                setTimeout(() => db.ref("rooms/" + roomId).remove(), 5000);
+            }
+        }
+
+        // وظائف إضافية
         function autoSaveImage(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (ev) => { userData.avatar = ev.target.result; saveToStorage(); updateUI(); };
+                reader.onload = (ev) => { 
+                    userData.avatar = ev.target.result; 
+                    saveToStorage(); 
+                    updateUI(); 
+                    registerPlayer();
+                };
                 reader.readAsDataURL(file);
             }
         }
 
         function saveName() {
             const val = document.getElementById('nameInput').value.trim();
-            if(val) { userData.name = val; saveToStorage(); updateUI(); closeAll(); }
-        }
-
-        // --- البحث وبدء الغرفة ---
-        function startLudoSearch() {
-            document.getElementById('searchingOverlay').style.display = 'flex';
-            const waitingRef = db.ref("waitingPlayers/" + playerId);
-            waitingRef.set({ id: playerId, name: userData.name, avatar: userData.avatar, xp: userData.xp });
-
-            db.ref("waitingPlayers").limitToFirst(2).on("value", (snap) => {
-                const players = snap.val();
-                if (players && Object.keys(players).length === 2) {
-                    const ids = Object.keys(players);
-                    roomId = ids.sort().join("_");
-                    isHost = (ids[0] === playerId);
-                    
-                    let opponentId = ids.find(id => id !== playerId);
-                    foundOpp = players[opponentId];
-
-                    db.ref("waitingPlayers").off();
-                    db.ref("waitingPlayers/" + playerId).remove();
-                    
-                    startRealGame();
-                }
-            });
-        }
-
-        function startRealGame() {
-            document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
-            document.getElementById('oppNameSearch').innerText = foundOpp.name;
-            document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
-
-            setTimeout(() => {
-                document.getElementById('searchingOverlay').style.display = 'none';
-                document.getElementById('mainMenuView').classList.remove('active-view');
-                document.getElementById('gamePlayView').classList.add('active-view');
-                document.getElementById('gameOppName').innerText = foundOpp.name;
-                document.getElementById('gameOppAvatar').src = foundOpp.avatar;
-                document.getElementById('oppXPDisplay').innerText = foundOpp.xp || 0;
-                
-                setupGameListeners();
-                if (isHost) startRound(roomId);
-            }, 1500);
-        }
-
-        // 1️⃣ صور مختلفة لكل لاعب (دمج في السيستم)
-        function startRound(roomId) {
-            db.ref("bank_images").once("value").then(snap => {
-                const imgs = [];
-                snap.forEach(c => { imgs.push(c.val().url); });
-                if (imgs.length < 2) return;
-
-                let myIndex = Math.floor(Math.random() * imgs.length);
-                let oppIndex;
-                do { oppIndex = Math.floor(Math.random() * imgs.length); } while (myIndex === oppIndex);
-
-                const roundData = {
-                    myImg: imgs[myIndex],
-                    oppImg: imgs[oppIndex],
-                    roundNum: currentRound
-                };
-                db.ref("rooms/" + roomId + "/correct").set(null);
-                db.ref("rooms/" + roomId + "/roundData").set(roundData);
-            });
-        }
-
-        function setupGameListeners() {
-            // 2️⃣ عرض الصور لكل لاعب
-            db.ref("rooms/" + roomId + "/roundData").on("value", (snap) => {
-                const data = snap.val();
-                if (!data) return;
-
-                // إذا كنت المضيف ترى myImg كصورتك، وإذا كنت الضيف ترى oppImg كصورتك (أو العكس حسب الرغبة)
-                // المنطق هنا: Host ياخذ myImg والـ Guest ياخذ oppImg لضمان الاختلاف
-                if (isHost) {
-                    document.getElementById("myCardImg").src = data.myImg;
-                    document.getElementById("oppCardImg").src = data.oppImg;
-                } else {
-                    document.getElementById("myCardImg").src = data.oppImg;
-                    document.getElementById("oppCardImg").src = data.myImg;
-                }
-                document.getElementById("oppCardImg").classList.add('blur-img');
-                showTransition(currentRound);
-            });
-
-            // 3️⃣ عند الضغط "صحيح" (المستمع)
-            db.ref("rooms/" + roomId + "/correct").on("value", (snap) => {
-                const winnerId = snap.val();
-                if (!winnerId) return;
-
-                document.getElementById("oppCardImg").classList.remove('blur-img');
-                if (winnerId === playerId) myPoints++; else oppPoints++;
-                
-                setTimeout(() => {
-                    startNextRound();
-                }, 2000);
-            });
-        }
-
-        // 3️⃣ عند الضغط "صحيح" (الفعل)
-        function handleCorrectClick() {
-            db.ref("rooms/" + roomId + "/correct").set(playerId);
-        }
-
-        // 4️⃣ بدء جولة جديدة
-        function startNextRound() {
-            currentRound++;
-            if (currentRound <= 3) {
-                document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
-                if (isHost) startRound(roomId);
-            } else {
-                finishGame();
+            if(val) { 
+                userData.name = val; 
+                saveToStorage(); 
+                updateUI(); 
+                registerPlayer();
+                closeAll(); 
             }
-        }
-
-        // 6️⃣ عند الفوز والانتهاء
-        function finishGame() {
-            if (myPoints > oppPoints) {
-                db.ref("players/" + playerId + "/wins").transaction(v => (v || 0) + 1);
-                db.ref("players/" + playerId + "/xp").transaction(v => (v || 0) + 200);
-            }
-
-            document.getElementById('myFinalScore').innerText = myPoints;
-            document.getElementById('oppFinalScore').innerText = oppPoints;
-            document.getElementById('resultsModal').style.display = 'flex';
-            
-            // تنظيف الغرفة بعد الانتهاء
-            if (isHost) db.ref("rooms/" + roomId).remove();
-        }
-
-        function showTransition(r) {
-            const trans = document.getElementById('roundTransition');
-            document.getElementById('transOppName').innerText = `${foundOpp.name} : ${oppPoints}`;
-            document.getElementById('transMyName').innerText = `انت : ${myPoints}`;
-            document.getElementById('transRoundTxt').innerText = `الجولة ${r}`;
-            
-            trans.style.display = 'flex';
-            const bars = document.querySelectorAll('.trans-bar');
-            bars[0].className = 'trans-bar top slide-in-top'; 
-            bars[1].className = 'trans-bar mid slide-in-mid'; 
-            bars[2].className = 'trans-bar bottom slide-in-bottom';
-
-            setTimeout(() => { 
-                bars[0].classList.replace('slide-in-top', 'slide-out-top'); 
-                bars[1].classList.replace('slide-in-mid', 'slide-out-mid'); 
-                bars[2].classList.replace('slide-in-bottom', 'slide-out-bottom'); 
-            }, 2500);
-
-            setTimeout(() => { trans.style.display='none'; }, 3000);
         }
 
         function sendMessage() {
@@ -448,27 +503,21 @@
             if(!inp.value.trim()) return;
             const m = document.createElement('div'); m.className = 'msg'; m.textContent = inp.value;
             document.getElementById('chatBox').appendChild(m);
-            inp.value = ""; 
-            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+            inp.value = ""; document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
         }
 
         function openEdit() { document.getElementById('profileModal').style.display = 'none'; document.getElementById('editModal').style.display = 'flex'; document.getElementById('nameInput').value = userData.name; }
         function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
         function openProfile() { document.getElementById('profileModal').style.display = 'flex'; }
+        function saveToStorage() { localStorage.setItem('guessGameUser', JSON.stringify(userData)); }
         
         function stopSearch() { 
             db.ref("waitingPlayers/" + playerId).remove();
             db.ref("waitingPlayers").off();
             document.getElementById('searchingOverlay').style.display = 'none'; 
         }
-
-        window.onload = () => {
-            const savedId = localStorage.getItem('guessGameUser_id');
-            if(savedId) playerId = savedId;
-            listenToPlayerData();
-            updateUI();
-        };
     </script>
 </body>
 </html>
-                                    
+                                            setTimeout(() => {
+                    
