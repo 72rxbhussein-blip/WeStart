@@ -48,17 +48,15 @@
         /* --- الأنيماشين والتحولات --- */
         #roundTransition { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.92); flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
         .trans-bar { width: 200%; height: 65px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem; box-shadow: 0 0 40px rgba(0,0,0,0.9); position: relative; overflow: hidden; transform: rotate(-8deg); }
-        .trans-bar::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shine 2s infinite; }
-        @keyframes shine { 100% { left: 200%; } }
         .trans-bar.top, .trans-bar.bottom { background: #1a1a20; color: var(--purple); border-top: 2px solid var(--purple); border-bottom: 2px solid var(--purple); }
         .trans-bar.mid { background: var(--purple); color: #000; margin: 15px 0; }
         
         .slide-in-top { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
         .slide-in-mid { animation: slideInRight 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.1s; }
         .slide-in-bottom { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.2s; }
-        .slide-out-top { animation: slideOutLeft 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards !important; }
-        .slide-out-mid { animation: slideOutRight 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards !important; }
-        .slide-out-bottom { animation: slideOutLeft 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards !important; }
+        .slide-out-top { animation: slideOutLeft 0.5s forwards !important; }
+        .slide-out-mid { animation: slideOutRight 0.5s forwards !important; }
+        .slide-out-bottom { animation: slideOutLeft 0.5s forwards !important; }
         
         @keyframes slideInLeft { from { transform: rotate(-8deg) translateX(-150%); } to { transform: rotate(-8deg) translateX(0); } }
         @keyframes slideInRight { from { transform: rotate(-8deg) translateX(150%); } to { transform: rotate(-8deg) translateX(0); } }
@@ -93,7 +91,6 @@
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
         .card-content { background: var(--surface); width: 85%; max-width: 300px; padding: 35px 25px; border-radius: 35px; border: 1px solid rgba(188, 111, 241, 0.3); text-align: center; position: relative; animation: pop 0.3s ease; }
-        @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .profile-pic-large { width: 95px; height: 95px; border-radius: 50%; border: 3px solid var(--purple); margin: 0 auto 15px; object-fit: cover; display: block; }
         .level-info-card { background: #0d0d12; padding: 15px; border-radius: 20px; margin: 15px 0; border: 1px solid #2d2d35; }
         .save-btn { width: 100%; background: var(--purple); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; }
@@ -208,11 +205,6 @@
             <div class="level-info-card">
                 <span id="cardLevelLabel" style="font-weight: bold; color: white; display: block; margin-bottom: 5px;">المستوى 1</span>
                 <div class="level-mini-bar" style="width: 100%; height: 8px; margin: 10px 0;"><div id="cardProgress" class="level-progress-fill"></div></div>
-                <span id="xpRemaining" style="font-size: 0.7rem; color: var(--dim);">يتبقى 500 XP للمستوى التالي</span>
-            </div>
-            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
-                <div><div id="totalWins" style="font-weight: bold; color: var(--purple); font-size: 1.2rem;">0</div><div style="font-size: 0.75rem; color: var(--dim);">فوز</div></div>
-                <div><div id="totalXP" style="font-weight: bold; color: var(--purple); font-size: 1.2rem;">0</div><div style="font-size: 0.75rem; color: var(--dim);">إجمالي XP</div></div>
             </div>
             <button class="save-btn" style="background:#333; margin-top: 20px;" onclick="closeAll()">إغلاق</button>
         </div>
@@ -228,7 +220,6 @@
             </div>
             <input type="text" id="nameInput" style="width:100%; padding:15px; background:#08080a; border:1px solid #333; color:#fff; border-radius:15px; text-align:center; margin-bottom:15px" maxlength="12">
             <button class="save-btn" onclick="saveName()">حفظ التعديلات</button>
-            <div style="margin-top: 20px; color: var(--dim); cursor: pointer;" onclick="closeAll()">إلغاء</div>
         </div>
     </div>
 
@@ -237,32 +228,26 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let userData = { name: "لاعب " + Math.floor(Math.random()*100), avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
-        const XP_PER_LEVEL = 500;
+        let userData = { name: "لاعب " + Math.floor(Math.random()*100), avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0 };
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
-
         let localStream, peerConnection;
         let isMicOn = false, isSpeakerOn = true;
         const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
         function updateUI() {
-            const level = Math.floor(userData.xp / XP_PER_LEVEL) + 1;
-            const curXP = userData.xp % XP_PER_LEVEL;
-            const progress = (curXP / XP_PER_LEVEL) * 100;
+            const level = Math.floor(userData.xp / 500) + 1;
+            const progress = ((userData.xp % 500) / 500) * 100;
             document.getElementById('headerName').innerText = userData.name;
             document.getElementById('cardName').innerText = userData.name;
             document.getElementById('headerLevelText').innerText = "المستوى " + level;
-            document.getElementById('cardLevelLabel').innerText = "المستوى " + level;
             document.getElementById('miniProgress').style.width = progress + "%";
-            document.getElementById('cardProgress').style.width = progress + "%";
             document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        // --- نظام البحث عن "لاعب حقيقي متصل الآن" ---
         function startLudoSearch() {
             document.getElementById('searchingOverlay').style.display = 'flex';
-            currentPlayerId = "user_" + Date.now();
+            currentPlayerId = "user_" + Date.now() + "_" + Math.floor(Math.random()*1000);
             
             const myRef = db.ref("waitingPlayers/" + currentPlayerId);
             myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, timestamp: firebase.database.ServerValue.TIMESTAMP });
@@ -273,9 +258,9 @@
                 if (!players) return;
                 
                 const now = Date.now();
+                // البحث عن لاعب حقيقي بشرط ألا يكون هو "أنا" وبشرط الحداثة
                 const activeIds = Object.keys(players).filter(id => {
-                    // فقط اللاعبين الذين بدأوا البحث في آخر 30 ثانية (لاعبين حقيقيين حاليين)
-                    return id !== currentPlayerId && (now - players[id].timestamp < 30000);
+                    return id !== currentPlayerId && (now - players[id].timestamp < 10000);
                 });
 
                 if (activeIds.length > 0) {
@@ -289,7 +274,7 @@
         }
 
         function prepareGame(oppId) {
-            document.getElementById('statusMsg').innerText = "تم العثور على منافس حقيقي!";
+            document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
             document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
 
@@ -308,10 +293,11 @@
         }
 
         async function initVoiceChat(roomId) {
+            if(peerConnection) peerConnection.close();
             peerConnection = new RTCPeerConnection(rtcConfig);
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localStream.getAudioTracks()[0].enabled = false;
+                localStream.getAudioTracks()[0].enabled = isMicOn;
                 localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
             } catch (e) { console.error("المايك غير متاح"); }
 
@@ -359,21 +345,29 @@
             document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn);
         }
 
-        // --- منطق اللعبة المصلح تماماً ---
+        // --- نظام مزامنة اللعبة بالكامل (ثابت لكل الجولات) ---
         function initGameLogic() {
             currentRound = 1; myPoints = 0; oppPoints = 0;
-            document.getElementById('chatBox').innerHTML = '';
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
-            // اللاعب الأصغر في المعرف (ID) هو المسؤول عن إنشاء الجولة الأولى فوراً
+            // تهيئة بيانات الغرفة من قبل اللاعب الأول فقط
             if (currentPlayerId < foundOpp.id) {
-                setupSharedImages(1);
+                setupRoundData(1);
             }
 
+            // مستمع واحد دائم لكل التغييرات في الغرفة
             roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
 
+                // 1. مزامنة الجولة الحالية
+                if (data.round && data.round !== currentRound) {
+                    currentRound = data.round;
+                    showTransition(currentRound, false);
+                }
+                document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
+
+                // 2. مزامنة الصور (لكل الجولات)
                 if (data.cards) {
                     const myCard = (currentPlayerId < foundOpp.id) ? data.cards.img1 : data.cards.img2;
                     const oppCard = (currentPlayerId < foundOpp.id) ? data.cards.img2 : data.cards.img1;
@@ -381,23 +375,20 @@
                     document.getElementById('oppCardImg').src = oppCard;
                 }
 
+                // 3. مزامنة الكشف (Blur)
                 if (data.reveal) {
                     document.getElementById('oppCardImg').classList.remove('blur-img');
                 } else {
                     document.getElementById('oppCardImg').classList.add('blur-img');
                 }
 
-                if (data.round && data.round !== currentRound) {
-                    currentRound = data.round;
-                    document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
-                    showTransition(currentRound, false);
-                }
-
+                // 4. مزامنة النقاط
                 if (data.scores) {
                     myPoints = data.scores[currentPlayerId] || 0;
                     oppPoints = data.scores[foundOpp.id] || 0;
                 }
 
+                // 5. مزامنة نهاية اللعبة
                 if (data.gameState === 'finished') {
                     showTransition(3, true, () => {
                         document.getElementById('myFinalScore').innerText = myPoints;
@@ -410,12 +401,15 @@
             showTransition(1);
         }
 
-        function setupSharedImages(roundNum) {
+        function setupRoundData(roundNum) {
             db.ref('bank_images').once('value').then((snap) => {
                 const imgs = []; snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
                 if(imgs.length > 1) {
+                    // اختيار عشوائي للصور
                     const r1 = Math.floor(Math.random()*imgs.length);
-                    const r2 = (r1 + 1) % imgs.length;
+                    let r2 = Math.floor(Math.random()*imgs.length);
+                    while(r1 === r2) r2 = Math.floor(Math.random()*imgs.length);
+                    
                     db.ref(`rooms/${currentGameRoom}`).update({
                         cards: { img1: imgs[r1], img2: imgs[r2] },
                         reveal: false,
@@ -432,38 +426,47 @@
             myPoints += 100;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
+            // إرسال تحديث الكشف والنقاط للكل
             const updates = {};
             updates[`scores/${currentPlayerId}`] = myPoints;
             updates['reveal'] = true;
             roomRef.update(updates);
 
+            // الانتقال للجولة التالية بعد 3 ثوانٍ
             setTimeout(() => {
-                if(currentRound < 3) {
-                    if (currentPlayerId < foundOpp.id) {
-                        setupSharedImages(currentRound + 1);
+                roomRef.once('value').then(snap => {
+                    const data = snap.val();
+                    if(data.round < 3) {
+                        // المسؤول فقط يغير البيانات
+                        if (currentPlayerId < foundOpp.id) {
+                            setupRoundData(data.round + 1);
+                        }
+                    } else {
+                        roomRef.update({ gameState: 'finished' });
                     }
-                } else {
-                    roomRef.update({ gameState: 'finished' });
-                }
+                });
             }, 3000);
         }
 
         function showTransition(r, isFinal=false, cb) {
             const trans = document.getElementById('roundTransition');
-            document.getElementById('transOppName').innerText = `${foundOpp.name} : ${oppPoints}`;
+            document.getElementById('transOppName').innerText = `${foundOpp ? foundOpp.name : 'الخصم'} : ${oppPoints}`;
             document.getElementById('transMyName').innerText = `أنت : ${myPoints}`;
-            document.getElementById('transRoundTxt').innerText = isFinal ? "النتيجة" : `الجولة ${r}`;
+            document.getElementById('transRoundTxt').innerText = isFinal ? "النتيجة النهائية" : `الجولة ${r}`;
+            
             trans.style.display = 'flex';
             const bars = document.querySelectorAll('.trans-bar');
             bars[0].className = 'trans-bar top slide-in-top'; 
             bars[1].className = 'trans-bar mid slide-in-mid'; 
             bars[2].className = 'trans-bar bottom slide-in-bottom';
+
             setTimeout(() => {
-                bars[0].classList.replace('slide-in-top', 'slide-out-top'); 
-                bars[1].classList.replace('slide-in-mid', 'slide-out-mid'); 
-                bars[2].classList.replace('slide-in-bottom', 'slide-out-bottom'); 
-            }, 3000);
-            setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 3600);
+                bars[0].classList.add('slide-out-top'); 
+                bars[1].classList.add('slide-out-mid'); 
+                bars[2].classList.add('slide-out-bottom'); 
+            }, 2500);
+
+            setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 3000);
         }
 
         function sendMessage() {
