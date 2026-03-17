@@ -324,8 +324,7 @@
             });
             myRef.onDisconnect().remove();
 
-            // البحث فقط عن لاعب أخر حالته "waiting" وغير الشخص الحالي
-            db.ref("waitingPlayers").limitToLast(10).on("value", (snapshot) => {
+            db.ref("waitingPlayers").on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
                 
@@ -335,7 +334,6 @@
                     let oppId = activeIds[0];
                     foundOpp = players[oppId];
                     
-                    // منع التعارض: أول لاعب يجد الأخر يغير حالتهما فوراً
                     db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
                     db.ref("waitingPlayers/" + oppId).update({ status: "matched" });
                     
@@ -426,24 +424,30 @@
         }
 
         function setupRoundData(r) {
-            // جلب الصور من مسار bank_images في قاعدة بياناتك الخاصة
-            db.ref('bank_images').once('value').then(snapshot => {
-                const images = snapshot.val();
-                if (images) {
-                    // تحويل الكائن إلى مصفوفة روابط
-                    const imageLinks = Object.values(images);
-                    if (imageLinks.length >= 2) {
-                        const r1 = Math.floor(Math.random() * imageLinks.length);
-                        let r2 = Math.floor(Math.random() * imageLinks.length);
-                        while(r1 === r2) r2 = Math.floor(Math.random() * imageLinks.length);
-                        
-                        db.ref(`rooms/${currentGameRoom}`).update({ 
-                            cards: {img1: imageLinks[r1], img2: imageLinks[r2]}, 
-                            reveal: false, 
-                            round: r 
-                        });
-                    }
+            // جلب الصور من بنك الصور في فايربيس
+            db.ref('bank_images').once('value').then(snap => {
+                let images = [];
+                snap.forEach(child => {
+                    let val = child.val();
+                    images.push(typeof val === 'string' ? val : val.url);
+                });
+
+                if(images.length < 2) {
+                    images = [
+                        "https://images.unsplash.com/photo-1541963463532-d68292c34b19",
+                        "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"
+                    ];
                 }
+
+                const r1 = Math.floor(Math.random()*images.length);
+                let r2 = Math.floor(Math.random()*images.length);
+                while(r1===r2) r2 = Math.floor(Math.random()*images.length);
+                
+                db.ref(`rooms/${currentGameRoom}`).update({ 
+                    cards: {img1: images[r1], img2: images[r2]}, 
+                    reveal: false, 
+                    round: r 
+                });
             });
         }
 
