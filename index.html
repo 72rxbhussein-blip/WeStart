@@ -191,7 +191,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
-        <audio id="remoteAudio" autoplay></audio>
+        <audio id="remoteAudio" autoplay playsinline></audio>
     </div>
 
     <div id="exitModal" class="modal">
@@ -232,6 +232,7 @@
             </div>
             <img id="cardAvatar" src="" class="profile-pic-large">
             <h2 id="cardName" style="margin: 0;">لاعب جديد</h2>
+            
             <div class="level-info-card" style="background:#0d0d12; padding:15px; border-radius:20px; margin:15px 0; border: 1px solid #2d2d35;">
                 <span id="cardLevelLabel" style="font-weight: bold; color: white; display: block; margin-bottom: 5px;">المستوى 1</span>
                 <div class="level-mini-bar" style="width: 100%; height: 10px; margin: 10px 0;">
@@ -239,6 +240,7 @@
                 </div>
                 <div id="xpRemaining" style="font-size: 0.65rem; color: var(--dim);">يتبقى 250 XP للمستوى التالي</div>
             </div>
+
             <div class="stats-grid">
                 <div class="stat-item"><span id="statWins" class="stat-val">0</span><span class="stat-lbl">فوز</span></div>
                 <div class="stat-item"><span id="statXP" class="stat-val">0</span><span class="stat-lbl">إجمالي XP</span></div>
@@ -265,19 +267,248 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let userData = { name: "لاعب " + Math.floor(Math.random()*100), avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
-        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null, isTransitioning = false;
+        let userData = { 
+            name: "لاعب " + Math.floor(Math.random()*100), 
+            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
+            xp: 0, wins: 0 
+        };
 
-        // متغيرات WebRTC للصوت
-        let localStream;
+        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
+        let isTransitioning = false;
+
+        // --- نظام الصوت المطور ---
         let peerConnection;
-        const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+        let localStream;
+        const rtcConfig = { 
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:19302" }
+            ] 
+        };
+
+        async function initVoiceChat() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                document.getElementById('micBtn').classList.add('active-mic');
+                setupPeerConnection();
+            } catch (err) {
+                console.error("المايك معطل أو محظور:", err);
+            }
+        }
+
+        async function setupPeerConnection() {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+            
+            // إضافة مسار الصوت
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            // استقبال صوت الخصم
+            peerConnection.ontrack = (event) => {
+                const remoteAudio = document.getElementById('remoteAudio');
+                if (event.streams && event.streams[0]) {
+                    remoteAudio.srcObject = event.streams[0];
+                }
+            };
+
+            // إرسال عناوين الشبكة (ICE)
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    db.ref(`rooms/${currentGameRoom}/ice/${currentPlayerId}`).push(JSON.stringify(event.candidate));
+                }
+            };
+
+            // اللاعب الأول ينشئ العرض (Offer)
+            if (currentPlayerId < foundOpp.id) {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                db.ref(`rooms/${currentGameRoom}/sdp/${currentPlayerId}`).set(JSON.stringify(offer));
+            }
+
+            listenForVoiceSignaling();
+        }
+
+        function listenForVoiceSignaling() {
+            const oppId = foundOpp.id;
+
+            // الاستماع للعروض والردود (SDP)
+            db.ref(`rooms/${currentGameRoom}/sdp/${oppId}`).on('value', async (snap) => {
+                const data = snap.val();
+                if (!data) return;
+                const desc = JSON.parse(data);
+
+                if (desc.type === 'offer') {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    db.ref(`rooms/${currentGameRoom}/sdp/${currentPlayerId}`).set(JSON.stringify(answer));
+                } else if (desc.type === 'answer') {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
+                }
+            });
+
+            // الاستماع لعناوين الشبكة
+            db.ref(`rooms/${currentGameRoom}/ice/${oppId}`).on('child_added', (snap) => {
+                const candidate = JSON.parse(snap.val());
+                peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            });
+        }
+
+        function toggleMic() {
+            if (localStream) {
+                const track = localStream.getAudioTracks()[0];
+                track.enabled = !track.enabled;
+                document.getElementById('micBtn').classList.toggle('active-mic', track.enabled);
+            }
+        }
+
+        function toggleSpeaker() {
+            const remoteAudio = document.getElementById('remoteAudio');
+            remoteAudio.muted = !remoteAudio.muted;
+            document.getElementById('speakerBtn').classList.toggle('muted-speaker', remoteAudio.muted);
+        }
+
+        // --- منطق اللعبة المعتاد ---
+        function startLudoSearch() {
+            document.getElementById('searchingOverlay').style.display = 'flex';
+            currentPlayerId = "u_" + Math.random().toString(36).substr(2, 5);
+            
+            const myRef = db.ref("waitingPlayers/" + currentPlayerId);
+            myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, status: "waiting" });
+            myRef.onDisconnect().remove();
+
+            db.ref("waitingPlayers").on("value", (snap) => {
+                const players = snap.val();
+                if (!players) return;
+                const opps = Object.keys(players).filter(id => id !== currentPlayerId && players[id].status === "waiting");
+                if (opps.length > 0) {
+                    foundOpp = players[opps[0]];
+                    db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
+                    db.ref("waitingPlayers").off();
+                    prepareGame();
+                }
+            });
+        }
+
+        function prepareGame() {
+            document.getElementById('statusMsg').innerText = "تم العثور على خصم!";
+            setTimeout(() => {
+                document.getElementById('searchingOverlay').style.display = 'none';
+                document.getElementById('mainMenuView').classList.remove('active-view');
+                document.getElementById('gamePlayView').classList.add('active-view');
+                document.getElementById('gameOppName').innerText = foundOpp.name;
+                document.getElementById('gameOppAvatar').src = foundOpp.avatar;
+                currentGameRoom = [currentPlayerId, foundOpp.id].sort().join("_");
+                initGameLogic();
+                initVoiceChat(); // تفعيل المايك فور البدء
+            }, 1500);
+        }
+
+        function initGameLogic() {
+            const roomRef = db.ref(`rooms/${currentGameRoom}`);
+            if (currentPlayerId < foundOpp.id) {
+                roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
+                setupRoundData(1);
+            }
+
+            roomRef.on('value', (snap) => {
+                const data = snap.val();
+                if (!data) return;
+                if (data.gameState === 'closed') location.reload();
+                if (data.round && data.round !== currentRound) {
+                    currentRound = data.round;
+                    showTransition(currentRound);
+                }
+                document.getElementById('roundTxt').innerText = `${currentRound}/3`;
+                if (data.cards) {
+                    const isFirst = currentPlayerId < foundOpp.id;
+                    document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
+                    document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
+                }
+                document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
+                if (data.scores) {
+                    myPoints = data.scores[currentPlayerId] || 0;
+                    oppPoints = data.scores[foundOpp.id] || 0;
+                }
+                if (data.gameState === 'finished') endGameResults();
+            });
+
+            db.ref(`rooms/${currentGameRoom}/messages`).on('child_added', (snap) => {
+                const msg = snap.val();
+                const m = document.createElement('div');
+                m.className = msg.senderId === currentPlayerId ? 'msg msg-me' : 'msg msg-opp';
+                m.textContent = msg.text;
+                document.getElementById('chatBox').appendChild(m);
+                document.getElementById('chatBox').scrollTop = 9999;
+            });
+            showTransition(1);
+        }
+
+        function setupRoundData(r) {
+            const imgs = [
+                "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba",
+                "https://images.unsplash.com/photo-1501820488136-72669149e0d4",
+                "https://images.unsplash.com/photo-1495360010541-f48722b34f7d",
+                "https://images.unsplash.com/photo-1517849845537-4d257902454a"
+            ];
+            const r1 = Math.floor(Math.random()*imgs.length);
+            let r2 = Math.floor(Math.random()*imgs.length);
+            while(r1===r2) r2 = Math.floor(Math.random()*imgs.length);
+            db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: imgs[r1], img2: imgs[r2]}, reveal: false, round: r });
+        }
+
+        function handleCorrectClick() {
+            if (isTransitioning) return;
+            const roomRef = db.ref(`rooms/${currentGameRoom}`);
+            roomRef.once('value').then(s => {
+                const d = s.val();
+                const newScore = (d.scores && d.scores[foundOpp.id] ? d.scores[foundOpp.id] : 0) + 50;
+                const up = {};
+                up[`scores/${foundOpp.id}`] = newScore;
+                up['reveal'] = true;
+                roomRef.update(up).then(() => {
+                    setTimeout(() => {
+                        if (d.round < 3) {
+                            if (currentPlayerId < foundOpp.id) setupRoundData(d.round + 1);
+                        } else { roomRef.update({ gameState: 'finished' }); }
+                    }, 2500);
+                });
+            });
+        }
+
+        function endGameResults() {
+            if (myPoints > oppPoints) userData.wins += 1;
+            userData.xp += myPoints;
+            saveToStorage(); updateUI();
+            document.getElementById('myFinalScore').innerText = myPoints;
+            document.getElementById('oppFinalScore').innerText = oppPoints;
+            document.getElementById('resultsModal').style.display = 'flex';
+        }
+
+        function showTransition(r) {
+            const trans = document.getElementById('roundTransition');
+            document.getElementById('transOppName').innerText = `الخصم : ${oppPoints}`;
+            document.getElementById('transMyName').innerText = `أنت : ${myPoints}`;
+            document.getElementById('transRoundTxt').innerText = `الجولة ${r}`;
+            trans.style.display = 'flex';
+            setTimeout(() => {
+                document.querySelectorAll('.trans-bar').forEach((b,i) => {
+                    b.className = i===1 ? 'trans-bar mid slide-in-mid' : (i===0 ? 'trans-bar top slide-in-top' : 'trans-bar bottom slide-in-bottom');
+                });
+            }, 50);
+            setTimeout(() => trans.style.display='none', 2800);
+        }
+
+        function sendMessage() {
+            const inp = document.getElementById('userInput');
+            if (!inp.value.trim()) return;
+            db.ref(`rooms/${currentGameRoom}/messages`).push({ senderId: currentPlayerId, text: inp.value });
+            inp.value = "";
+        }
 
         function getLevelInfo(xp) {
             const level = Math.floor(xp / 250) + 1;
-            const xpInLevel = xp % 250;
-            const progress = (xpInLevel / 250) * 100;
-            return { level, xpInLevel, progress, remaining: 250 - xpInLevel };
+            const progress = ((xp % 250) / 250) * 100;
+            return { level, progress, remaining: 250 - (xp % 250) };
         }
 
         function updateUI() {
@@ -295,246 +526,20 @@
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        function startLudoSearch() {
-            document.getElementById('searchingOverlay').style.display = 'flex';
-            currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
-            const myRef = db.ref("waitingPlayers/" + currentPlayerId);
-            myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, status: "waiting", timestamp: firebase.database.ServerValue.TIMESTAMP });
-            myRef.onDisconnect().remove();
-            db.ref("waitingPlayers").on("value", (snapshot) => {
-                const players = snapshot.val();
-                if (!players) return;
-                const activeIds = Object.keys(players).filter(id => id !== currentPlayerId && players[id].status === "waiting");
-                if (activeIds.length > 0) {
-                    let oppId = activeIds[0];
-                    foundOpp = players[oppId];
-                    db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
-                    db.ref("waitingPlayers/" + oppId).update({ status: "matched" });
-                    db.ref("waitingPlayers").off();
-                    prepareGame(oppId);
-                }
-            });
-        }
-
-        function cancelSearch() { if (currentPlayerId) db.ref("waitingPlayers/" + currentPlayerId).remove(); location.reload(); }
-
-        function prepareGame(oppId) {
-            document.getElementById('statusMsg').innerText = "تم العثور على منافس حقيقي!";
-            document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
-            document.getElementById('oppNameSearch').innerText = foundOpp.name;
-            setTimeout(() => {
-                document.getElementById('searchingOverlay').style.display = 'none';
-                document.getElementById('mainMenuView').classList.remove('active-view');
-                document.getElementById('gamePlayView').classList.add('active-view');
-                document.getElementById('gameOppName').innerText = foundOpp.name;
-                document.getElementById('gameOppAvatar').src = foundOpp.avatar;
-                document.getElementById('gameOppXP').innerText = "XP " + foundOpp.xp;
-                currentGameRoom = [currentPlayerId, oppId].sort().join("_");
-                initGameLogic();
-                initVoiceChat(); // تفعيل الصوت عند بدء اللعبة
-            }, 2000);
-        }
-
-        async function initVoiceChat() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                document.getElementById('micBtn').classList.add('active-mic');
-                setupPeerConnection();
-            } catch (err) {
-                console.error("خطأ في المايك: ", err);
-                alert("يرجى السماح بالوصول للمايك لتعمل الميزة الصوتية");
-            }
-        }
-
-        function setupPeerConnection() {
-            peerConnection = new RTCPeerConnection(rtcConfig);
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            peerConnection.ontrack = (event) => {
-                document.getElementById('remoteAudio').srcObject = event.streams[0];
-            };
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    db.ref(`rooms/${currentGameRoom}/ice/${currentPlayerId}`).push(event.candidate.toJSON());
-                }
-            };
-            if (currentPlayerId < foundOpp.id) {
-                createOffer();
-            }
-            listenToRTC();
-        }
-
-        async function createOffer() {
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            db.ref(`rooms/${currentGameRoom}/offers/${currentPlayerId}`).set(offer.sdp);
-        }
-
-        function listenToRTC() {
-            const oppId = foundOpp.id;
-            db.ref(`rooms/${currentGameRoom}/offers/${oppId}`).on('value', async (snap) => {
-                const sdp = snap.val();
-                if (sdp && !peerConnection.currentRemoteDescription) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp }));
-                    const answer = await peerConnection.createAnswer();
-                    await peerConnection.setLocalDescription(answer);
-                    db.ref(`rooms/${currentGameRoom}/answers/${currentPlayerId}`).set(answer.sdp);
-                }
-            });
-            db.ref(`rooms/${currentGameRoom}/answers/${oppId}`).on('value', async (snap) => {
-                const sdp = snap.val();
-                if (sdp && !peerConnection.currentRemoteDescription) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp }));
-                }
-            });
-            db.ref(`rooms/${currentGameRoom}/ice/${oppId}`).on('child_added', (snap) => {
-                const candidate = new RTCIceCandidate(snap.val());
-                peerConnection.addIceCandidate(candidate);
-            });
-        }
-
-        function toggleMic() {
-            if (localStream) {
-                const audioTrack = localStream.getAudioTracks()[0];
-                audioTrack.enabled = !audioTrack.enabled;
-                document.getElementById('micBtn').classList.toggle('active-mic', audioTrack.enabled);
-            }
-        }
-
-        function toggleSpeaker() {
-            const audio = document.getElementById('remoteAudio');
-            audio.muted = !audio.muted;
-            document.getElementById('speakerBtn').classList.toggle('muted-speaker', audio.muted);
-        }
-
-        function initGameLogic() {
-            currentRound = 1; myPoints = 0; oppPoints = 0;
-            const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            if (currentPlayerId < foundOpp.id) {
-                roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
-                setupRoundData(1);
-            }
-            roomRef.on('value', (snap) => {
-                const data = snap.val();
-                if (!data) return;
-                if (data.gameState === 'closed') { location.reload(); return; }
-                if (data.round && data.round !== currentRound) {
-                    currentRound = data.round;
-                    showTransition(currentRound);
-                }
-                document.getElementById('roundTxt').innerText = `${currentRound}/3`;
-                if (data.cards) {
-                    const isFirst = currentPlayerId < foundOpp.id;
-                    document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
-                    document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
-                }
-                document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
-                if (data.scores) {
-                    myPoints = data.scores[currentPlayerId] || 0;
-                    oppPoints = data.scores[foundOpp.id] || 0;
-                }
-                if (data.gameState === 'finished') { endGameResults(); }
-            });
-            const chatRef = db.ref(`rooms/${currentGameRoom}/messages`);
-            chatRef.off();
-            document.getElementById('chatBox').innerHTML = "";
-            chatRef.on('child_added', (snap) => {
-                const msg = snap.val();
-                const m = document.createElement('div');
-                m.className = msg.senderId === currentPlayerId ? 'msg msg-me' : 'msg msg-opp';
-                m.textContent = msg.text;
-                document.getElementById('chatBox').appendChild(m);
-                document.getElementById('chatBox').scrollTop = 10000;
-            });
-            showTransition(1);
-        }
-
-        function setupRoundData(r) {
-            db.ref('bank_images').once('value').then(snap => {
-                let images = [];
-                snap.forEach(child => { let val = child.val(); images.push(typeof val === 'string' ? val : val.url); });
-                if(images.length < 2) images = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
-                const r1 = Math.floor(Math.random()*images.length);
-                let r2 = Math.floor(Math.random()*images.length);
-                while(r1===r2) r2 = Math.floor(Math.random()*images.length);
-                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: images[r1], img2: images[r2]}, reveal: false, round: r });
-            });
-        }
-
-        function handleCorrectClick() {
-            if (isTransitioning) return;
-            isTransitioning = true;
-            const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            roomRef.once('value').then(s => {
-                const d = s.val();
-                const newOppPoints = (d.scores && d.scores[foundOpp.id] ? d.scores[foundOpp.id] : 0) + 50;
-                const updates = {};
-                updates[`scores/${foundOpp.id}`] = newOppPoints;
-                updates['reveal'] = true;
-                roomRef.update(updates).then(() => {
-                    setTimeout(() => {
-                        if (d.round < 3) {
-                            if (currentPlayerId < foundOpp.id) setupRoundData(d.round + 1);
-                            isTransitioning = false;
-                        } else { roomRef.update({ gameState: 'finished' }); }
-                    }, 3000);
-                });
-            });
-        }
-
-        function endGameResults() {
-            if (myPoints > oppPoints) userData.wins += 1;
-            userData.xp += myPoints;
-            saveToStorage(); updateUI();
-            document.getElementById('myFinalScore').innerText = myPoints;
-            document.getElementById('oppFinalScore').innerText = oppPoints;
-            document.getElementById('resultsModal').style.display = 'flex';
-        }
-
-        function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
-        function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
-        function forceExit() {
-            if (currentGameRoom) db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { location.reload(); });
-            else location.reload();
-        }
-
-        function showTransition(r) {
-            const trans = document.getElementById('roundTransition');
-            document.getElementById('transOppName').innerText = `${foundOpp ? foundOpp.name : 'الخصم'} : ${oppPoints}`;
-            document.getElementById('transMyName').innerText = `أنت : ${myPoints}`;
-            document.getElementById('transRoundTxt').innerText = `الجولة ${r}`;
-            trans.style.display = 'flex';
-            const bars = document.querySelectorAll('.trans-bar');
-            bars.forEach(b => b.style.animation = 'none');
-            setTimeout(() => {
-                bars[0].className = 'trans-bar top slide-in-top'; 
-                bars[1].className = 'trans-bar mid slide-in-mid'; 
-                bars[2].className = 'trans-bar bottom slide-in-bottom';
-            }, 50);
-            setTimeout(() => {
-                bars[0].classList.add('slide-out-top'); 
-                bars[1].classList.add('slide-out-mid'); 
-                bars[2].classList.add('slide-out-bottom'); 
-            }, 2500);
-            setTimeout(() => trans.style.display='none', 3000);
-        }
-
-        function sendMessage() {
-            const inp = document.getElementById('userInput');
-            if (!inp.value.trim() || !currentGameRoom) return;
-            db.ref(`rooms/${currentGameRoom}/messages`).push({ senderId: currentPlayerId, text: inp.value });
-            inp.value = "";
-        }
-
         function saveToStorage() { localStorage.setItem('guessGameUser_v3', JSON.stringify(userData)); }
         function openProfile() { updateUI(); document.getElementById('profileModal').style.display='flex'; }
         function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-        function saveName() { userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
         function openEdit() { document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
+        function saveName() { userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
         function autoSaveImage(e) {
             const reader = new FileReader();
             reader.onload = (ev) => { userData.avatar = ev.target.result; saveToStorage(); updateUI(); };
             reader.readAsDataURL(e.target.files[0]);
         }
+        function cancelSearch() { location.reload(); }
+        function confirmExit() { document.getElementById('exitModal').style.display='flex'; }
+        function closeExitModal() { document.getElementById('exitModal').style.display='none'; }
+        function forceExit() { location.reload(); }
 
         window.onload = () => {
             const stored = localStorage.getItem('guessGameUser_v3');
@@ -544,4 +549,4 @@
     </script>
 </body>
 </html>
-
+                
