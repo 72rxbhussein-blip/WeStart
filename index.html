@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تحدي التخمين - النسخة الاحترافية الكاملة</title>
+    <title>تحدي التخمين - النسخة الكاملة جداً</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     
     <style>
-        :root { --bg: #08080a; --purple: #bc6ff1; --surface: #16161d; --text: #e2e8f0; --dim: #64748b; --red: #ff4757; --green: #2ecc71; }
+        :root { --bg: #08080a; --purple: #bc6ff1; --surface: #16161d; --text: #e2e8f0; --dim: #64748b; --red: #ff4d4d; --green: #2ecc71; }
         * { box-sizing: border-box; font-family: 'IBM Plex Sans Arabic', sans-serif; outline: none; -webkit-tap-highlight-color: transparent; }
         
         body, html { 
@@ -51,24 +51,23 @@
         .trans-bar.top, .trans-bar.bottom { background: #1a1a20; color: var(--purple); border-top: 2px solid var(--purple); border-bottom: 2px solid var(--purple); }
         .trans-bar.mid { background: var(--purple); color: #000; margin: 15px 0; }
         
-        @keyframes slideInLeft { from { transform: rotate(-8deg) translateX(-150%); } to { transform: rotate(-8deg) translateX(0); } }
-        @keyframes slideInRight { from { transform: rotate(-8deg) translateX(150%); } to { transform: rotate(-8deg) translateX(0); } }
-        @keyframes slideOutLeft { to { transform: rotate(-8deg) translateX(-200%); opacity: 0; } }
-        @keyframes slideOutRight { to { transform: rotate(-8deg) translateX(200%); opacity: 0; } }
-
         .slide-in-top { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
         .slide-in-mid { animation: slideInRight 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.1s; }
         .slide-in-bottom { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.2s; }
         .slide-out-top { animation: slideOutLeft 0.5s forwards !important; }
         .slide-out-mid { animation: slideOutRight 0.5s forwards !important; }
         .slide-out-bottom { animation: slideOutLeft 0.5s forwards !important; }
+        
+        @keyframes slideInLeft { from { transform: rotate(-8deg) translateX(-150%); } to { transform: rotate(-8deg) translateX(0); } }
+        @keyframes slideInRight { from { transform: rotate(-8deg) translateX(150%); } to { transform: rotate(-8deg) translateX(0); } }
+        @keyframes slideOutLeft { to { transform: rotate(-8deg) translateX(-200%); opacity: 0; } }
+        @keyframes slideOutRight { to { transform: rotate(-8deg) translateX(200%); opacity: 0; } }
 
         /* --- واجهة اللعبة --- */
-        .header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d2d35; flex-shrink: 0; position: relative; }
+        .header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d2d35; flex-shrink: 0; }
         .avatar-circle { width: 45px; height: 45px; border-radius: 50%; background: #333; border: 2px solid var(--purple); overflow: hidden; }
-        .round-indicator { position: absolute; left: 50%; transform: translateX(-50%); background: #2d2d35; padding: 4px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--purple); font-weight: bold; }
-        .exit-btn { background: #1a1a20; border: 1px solid #333; color: var(--red); padding: 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
+        .round-indicator { background: #2d2d35; padding: 4px 12px; border-radius: 10px; font-size: 0.8rem; color: var(--purple); font-weight: bold; }
+        
         .arena { flex-shrink: 0; padding: 20px 10px; display: flex; justify-content: center; gap: 15px; }
         .card-box { flex: 1; max-width: 145px; text-align: center; }
         .card { aspect-ratio: 3/4; background: #1a1a20; border-radius: 20px; border: 1px solid #333; overflow: hidden; }
@@ -76,40 +75,25 @@
         .blur-img { filter: blur(30px) brightness(0.6); }
 
         .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .voice-controls { position: absolute; top: 0; left: 0; right: 0; padding: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; background: linear-gradient(to bottom, #1a1a20 60%, transparent); }
-        .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
-        .voice-btn.active-mic { background: var(--purple); border-color: var(--purple); box-shadow: 0 0 15px var(--purple); }
-        .voice-btn.muted-speaker { background: var(--red); opacity: 0.6; }
-        .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
         
-        .chat-messages { flex: 1; padding: 65px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: none; }
-        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; word-wrap: break-word; }
-        .msg-me { background: var(--purple); color: #000; align-self: flex-start; border-bottom-right-radius: 4px; }
-        .msg-opp { background: #2d2d35; color: #fff; align-self: flex-end; border-bottom-left-radius: 4px; }
+        .voice-controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; }
+        .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .voice-btn.active-mic { background: var(--red); border-color: var(--red); box-shadow: 0 0 10px var(--red); }
+        .voice-btn.muted-speaker { background: var(--dim); opacity: 0.6; }
+        
+        .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; scrollbar-width: none; }
+        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; background: var(--purple); color: #000; align-self: flex-start; }
         
         .input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 15px 25px; background: #16161d; display: flex; gap: 10px; border-top: 1px solid #2d2d35; z-index: 1000; }
         input[type="text"] { flex: 1; background: #2d2d35; border: none; padding: 12px; border-radius: 12px; color: white; outline: none; }
         .send-btn { background: var(--purple); border: none; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        /* --- القوائم والمنبثقات --- */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
-        .card-content { background: var(--surface); width: 85%; max-width: 320px; padding: 35px 25px; border-radius: 35px; border: 1px solid rgba(188, 111, 241, 0.3); text-align: center; position: relative; }
+        .card-content { background: var(--surface); width: 85%; max-width: 300px; padding: 35px 25px; border-radius: 35px; border: 1px solid rgba(188, 111, 241, 0.3); text-align: center; position: relative; animation: pop 0.3s ease; }
         .profile-pic-large { width: 95px; height: 95px; border-radius: 50%; border: 3px solid var(--purple); margin: 0 auto 15px; object-fit: cover; display: block; }
-        
-        .stats-grid { display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #2d2d35; padding-top: 20px; }
-        .stat-item { text-align: center; }
-        .stat-val { display: block; font-size: 1.4rem; font-weight: 800; color: var(--purple); }
-        .stat-lbl { font-size: 0.7rem; color: var(--dim); }
-
-        .custom-btn { width: 100%; padding: 14px; border-radius: 15px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; margin-top: 15px; display: block; }
-        .btn-save-custom { background: var(--purple); color: white; box-shadow: 0 4px 15px rgba(188, 111, 241, 0.3); }
-        .btn-close-custom { background: #2d2d35; color: #fff; border: 1px solid #3d3d45; }
-
-        .confirm-box { background: var(--surface); padding: 30px; border-radius: 25px; text-align: center; width: 80%; max-width: 300px; border: 1px solid #333; }
-        .confirm-btns { display: flex; gap: 15px; margin-top: 25px; }
-        .btn-confirm { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-yes { background: var(--red); color: white; }
-        .btn-no { background: #333; color: white; }
+        .level-info-card { background: #0d0d12; padding: 15px; border-radius: 20px; margin: 15px 0; border: 1px solid #2d2d35; }
+        .save-btn { width: 100%; background: var(--purple); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -146,8 +130,8 @@
                 <div id="oppNameSearch" style="margin-top:10px; font-weight:700; font-size:0.9rem; color:#ff4757">جاري البحث..</div>
             </div>
         </div>
-        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">جارِ البحث عن منافس حقيقي...</p>
-        <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="cancelSearch()">إلغاء البحث</button>
+        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">يتم البحث عن منافس حقيقي...</p>
+        <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="stopSearch()">إلغاء البحث</button>
     </div>
 
     <div id="gamePlayView" class="game-view">
@@ -155,6 +139,26 @@
             <div class="trans-bar top" id="transOppName">الخصم : 0</div>
             <div class="trans-bar mid" id="transRoundTxt">الجولة 1</div>
             <div class="trans-bar bottom" id="transMyName">انت : 0</div>
+        </div>
+
+        <div id="resultsModal" class="modal">
+            <div class="card-content" style="background: var(--bg); border:none;">
+                <div id="trophyIcon" style="margin-bottom: 20px;">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 5H18V4C18 2.89543 17.1046 2 16 2H8C6.89543 2 6 2.89543 6 4V5H5C3.34315 5 2 6.34315 2 8V9C2 10.6569 3.34315 12 5 12H6.17071C6.60235 13.6703 7.84411 15.0116 9.46231 15.6552C9.8009 16.7417 10.8119 17.5 12 17.5C13.1881 17.5 14.1991 16.7417 14.5377 15.6552C16.1559 15.0116 17.3976 13.6703 17.8293 12H19C20.6569 12 22 10.6569 22 9V8C22 6.34315 20.6569 5 19 5ZM5 10C4.44772 10 4 9.55228 4 9V8C4 7.44772 4.44772 7 5 7H6V10H5ZM19 10H18V7H19C19.5523 7 20 7.44772 20 8V9C20 9.55228 19.5523 10 19 10ZM13 20H15C15.5523 20 16 20.4477 16 21C16 21.5523 15.5523 22 15 22H9C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20H11V18H13V20Z" fill="#FFD700"/></svg>
+                </div>
+                <h2 style="margin: 0; color: white; font-weight: 700;">انتهى التحدي</h2>
+                <div style="margin: 30px 0;">
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 1.1rem;">
+                        <span style="color: white;">نقاطك:</span>
+                        <span id="myFinalScore" style="color: var(--purple); font-weight: bold;">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 10px; font-size: 1.1rem;">
+                        <span style="color: white;">نقاط الخصم:</span>
+                        <span id="oppFinalScore" style="color: var(--green); font-weight: bold;">0</span>
+                    </div>
+                </div>
+                <button class="btn-main btn-play" style="width: 100%; border-radius: 15px;" onclick="location.reload()">خروج للقائمة</button>
+            </div>
         </div>
 
         <div class="header">
@@ -165,10 +169,7 @@
                     <span id="gameOppXP" style="font-size:0.75rem; color:var(--purple); font-weight: bold;">XP 0</span>
                 </div>
             </div>
-            <div class="round-indicator" id="roundTxt">1/3</div>
-            <div class="exit-btn" onclick="confirmExit()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-            </div>
+            <div class="round-indicator" id="roundTxt">الجولة 1/3</div>
         </div>
 
         <div class="arena">
@@ -183,6 +184,7 @@
                 <button class="voice-btn" id="speakerBtn" onclick="toggleSpeaker()">🔊</button>
             </div>
             <div class="chat-messages" id="chatBox"></div>
+            <audio id="remoteAudio" autoplay playsinline></audio>
         </div>
 
         <div class="input-area">
@@ -190,38 +192,6 @@
             <button class="send-btn" onclick="sendMessage()">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
-        </div>
-        <audio id="remoteAudio" autoplay playsinline></audio>
-    </div>
-
-    <div id="exitModal" class="modal">
-        <div class="confirm-box">
-            <h3 style="margin: 0; color: white;">هل أنت متأكد!</h3>
-            <p style="color: var(--dim); font-size: 0.9rem; margin-top: 10px;">سيتم انهاء المباراة!</p>
-            <div class="confirm-btns">
-                <button class="btn-confirm btn-yes" onclick="forceExit()">نعم</button>
-                <button class="btn-confirm btn-no" onclick="closeExitModal()">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="resultsModal" class="modal">
-        <div class="card-content" style="background: var(--bg); border:none;">
-            <div style="margin-bottom: 20px;">
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="none"><path d="M19 5H18V4C18 2.89543 17.1046 2 16 2H8C6.89543 2 6 2.89543 6 4V5H5C3.34315 5 2 6.34315 2 8V9C2 10.6569 3.34315 12 5 12H6.17071C6.60235 13.6703 7.84411 15.0116 9.46231 15.6552C9.8009 16.7417 10.8119 17.5 12 17.5C13.1881 17.5 14.1991 16.7417 14.5377 15.6552C16.1559 15.0116 17.3976 13.6703 17.8293 12H19C20.6569 12 22 10.6569 22 9V8C22 6.34315 20.6569 5 19 5ZM5 10C4.44772 10 4 9.55228 4 9V8C4 7.44772 4.44772 7 5 7H6V10H5ZM19 10H18V7H19C19.5523 7 20 7.44772 20 8V9C20 9.55228 19.5523 10 19 10ZM13 20H15C15.5523 20 16 20.4477 16 21C16 21.5523 15.5523 22 15 22H9C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20H11V18H13V20Z" fill="#FFD700"/></svg>
-            </div>
-            <h2 style="margin: 0; color: white; font-weight: 700;">انتهى التحدي</h2>
-            <div style="margin: 30px 0;">
-                <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 1.1rem;">
-                    <span style="color: white;">نقاطك:</span>
-                    <span id="myFinalScore" style="color: var(--purple); font-weight: bold;">0</span>
-                </div>
-                <div style="display: flex; justify-content: center; gap: 10px; font-size: 1.1rem;">
-                    <span style="color: white;">نقاط الخصم:</span>
-                    <span id="oppFinalScore" style="color: var(--green); font-weight: bold;">0</span>
-                </div>
-            </div>
-            <button class="btn-main btn-play" style="width: 100%; border-radius: 15px;" onclick="location.reload()">خروج للقائمة</button>
         </div>
     </div>
 
@@ -232,20 +202,11 @@
             </div>
             <img id="cardAvatar" src="" class="profile-pic-large">
             <h2 id="cardName" style="margin: 0;">لاعب جديد</h2>
-            
-            <div class="level-info-card" style="background:#0d0d12; padding:15px; border-radius:20px; margin:15px 0; border: 1px solid #2d2d35;">
+            <div class="level-info-card">
                 <span id="cardLevelLabel" style="font-weight: bold; color: white; display: block; margin-bottom: 5px;">المستوى 1</span>
-                <div class="level-mini-bar" style="width: 100%; height: 10px; margin: 10px 0;">
-                    <div id="cardProgress" class="level-progress-fill"></div>
-                </div>
-                <div id="xpRemaining" style="font-size: 0.65rem; color: var(--dim);">يتبقى 250 XP للمستوى التالي</div>
+                <div class="level-mini-bar" style="width: 100%; height: 8px; margin: 10px 0;"><div id="cardProgress" class="level-progress-fill"></div></div>
             </div>
-
-            <div class="stats-grid">
-                <div class="stat-item"><span id="statWins" class="stat-val">0</span><span class="stat-lbl">فوز</span></div>
-                <div class="stat-item"><span id="statXP" class="stat-val">0</span><span class="stat-lbl">إجمالي XP</span></div>
-            </div>
-            <button class="custom-btn btn-close-custom" onclick="closeAll()">إغلاق النافذة</button>
+            <button class="save-btn" style="background:#333; margin-top: 20px;" onclick="closeAll()">إغلاق</button>
         </div>
     </div>
 
@@ -258,7 +219,7 @@
                 <div style="font-size: 0.7rem; color: var(--purple);">اضغط لتغيير الصورة</div>
             </div>
             <input type="text" id="nameInput" style="width:100%; padding:15px; background:#08080a; border:1px solid #333; color:#fff; border-radius:15px; text-align:center; margin-bottom:15px" maxlength="12">
-            <button class="custom-btn btn-save-custom" onclick="saveName()">حفظ التعديلات</button>
+            <button class="save-btn" onclick="saveName()">حفظ التعديلات</button>
         </div>
     </div>
 
@@ -267,286 +228,304 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let userData = { 
-            name: "لاعب " + Math.floor(Math.random()*100), 
-            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-            xp: 0, wins: 0 
-        };
-
+        let userData = { name: "لاعب " + Math.floor(Math.random()*100), avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0 };
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
-        let isTransitioning = false;
+        
+        // متغيرات الصوت
+        let localStream, peerConnection;
+        let isMicOn = true, isSpeakerOn = true; 
+        const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
 
-        // --- نظام الصوت المطور ---
-        let peerConnection;
-        let localStream;
-        const rtcConfig = { 
-            iceServers: [
-                { urls: "stun:stun.l.google.com:19302" },
-                { urls: "stun:stun1.l.google.com:19302" }
-            ] 
-        };
-
-        async function initVoiceChat() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                document.getElementById('micBtn').classList.add('active-mic');
-                setupPeerConnection();
-            } catch (err) {
-                console.error("المايك معطل أو محظور:", err);
-            }
+        function updateUI() {
+            const level = Math.floor(userData.xp / 500) + 1;
+            const progress = ((userData.xp % 500) / 500) * 100;
+            document.getElementById('headerName').innerText = userData.name;
+            document.getElementById('cardName').innerText = userData.name;
+            document.getElementById('headerLevelText').innerText = "المستوى " + level;
+            document.getElementById('miniProgress').style.width = progress + "%";
+            document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
+            document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        async function setupPeerConnection() {
-            peerConnection = new RTCPeerConnection(rtcConfig);
-            
-            // إضافة مسار الصوت
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-            // استقبال صوت الخصم
-            peerConnection.ontrack = (event) => {
-                const remoteAudio = document.getElementById('remoteAudio');
-                if (event.streams && event.streams[0]) {
-                    remoteAudio.srcObject = event.streams[0];
-                }
-            };
-
-            // إرسال عناوين الشبكة (ICE)
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    db.ref(`rooms/${currentGameRoom}/ice/${currentPlayerId}`).push(JSON.stringify(event.candidate));
-                }
-            };
-
-            // اللاعب الأول ينشئ العرض (Offer)
-            if (currentPlayerId < foundOpp.id) {
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                db.ref(`rooms/${currentGameRoom}/sdp/${currentPlayerId}`).set(JSON.stringify(offer));
-            }
-
-            listenForVoiceSignaling();
-        }
-
-        function listenForVoiceSignaling() {
-            const oppId = foundOpp.id;
-
-            // الاستماع للعروض والردود (SDP)
-            db.ref(`rooms/${currentGameRoom}/sdp/${oppId}`).on('value', async (snap) => {
-                const data = snap.val();
-                if (!data) return;
-                const desc = JSON.parse(data);
-
-                if (desc.type === 'offer') {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
-                    const answer = await peerConnection.createAnswer();
-                    await peerConnection.setLocalDescription(answer);
-                    db.ref(`rooms/${currentGameRoom}/sdp/${currentPlayerId}`).set(JSON.stringify(answer));
-                } else if (desc.type === 'answer') {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
-                }
-            });
-
-            // الاستماع لعناوين الشبكة
-            db.ref(`rooms/${currentGameRoom}/ice/${oppId}`).on('child_added', (snap) => {
-                const candidate = JSON.parse(snap.val());
-                peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-            });
-        }
-
-        function toggleMic() {
-            if (localStream) {
-                const track = localStream.getAudioTracks()[0];
-                track.enabled = !track.enabled;
-                document.getElementById('micBtn').classList.toggle('active-mic', track.enabled);
-            }
-        }
-
-        function toggleSpeaker() {
-            const remoteAudio = document.getElementById('remoteAudio');
-            remoteAudio.muted = !remoteAudio.muted;
-            document.getElementById('speakerBtn').classList.toggle('muted-speaker', remoteAudio.muted);
-        }
-
-        // --- منطق اللعبة المعتاد ---
         function startLudoSearch() {
             document.getElementById('searchingOverlay').style.display = 'flex';
-            currentPlayerId = "u_" + Math.random().toString(36).substr(2, 5);
+            currentPlayerId = "user_" + Date.now() + "_" + Math.floor(Math.random()*1000);
             
             const myRef = db.ref("waitingPlayers/" + currentPlayerId);
-            myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, status: "waiting" });
+            myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, timestamp: firebase.database.ServerValue.TIMESTAMP });
             myRef.onDisconnect().remove();
 
-            db.ref("waitingPlayers").on("value", (snap) => {
-                const players = snap.val();
+            db.ref("waitingPlayers").on("value", (snapshot) => {
+                const players = snapshot.val();
                 if (!players) return;
-                const opps = Object.keys(players).filter(id => id !== currentPlayerId && players[id].status === "waiting");
-                if (opps.length > 0) {
-                    foundOpp = players[opps[0]];
-                    db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
+                
+                const now = Date.now();
+                const activeIds = Object.keys(players).filter(id => {
+                    return id !== currentPlayerId && (now - players[id].timestamp < 10000);
+                });
+
+                if (activeIds.length > 0) {
+                    let oppId = activeIds[0];
+                    foundOpp = players[oppId];
                     db.ref("waitingPlayers").off();
-                    prepareGame();
+                    db.ref("waitingPlayers/" + currentPlayerId).remove();
+                    prepareGame(oppId);
                 }
             });
         }
 
-        function prepareGame() {
-            document.getElementById('statusMsg').innerText = "تم العثور على خصم!";
+        function prepareGame(oppId) {
+            document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
+            document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
+            document.getElementById('oppNameSearch').innerText = foundOpp.name;
+
             setTimeout(() => {
                 document.getElementById('searchingOverlay').style.display = 'none';
                 document.getElementById('mainMenuView').classList.remove('active-view');
                 document.getElementById('gamePlayView').classList.add('active-view');
                 document.getElementById('gameOppName').innerText = foundOpp.name;
                 document.getElementById('gameOppAvatar').src = foundOpp.avatar;
-                currentGameRoom = [currentPlayerId, foundOpp.id].sort().join("_");
-                initGameLogic();
-                initVoiceChat(); // تفعيل المايك فور البدء
-            }, 1500);
+                document.getElementById('gameOppXP').innerText = "XP " + foundOpp.xp;
+
+                currentGameRoom = [currentPlayerId, oppId].sort().join("_");
+                
+                // تفعيل الصوت أولاً
+                initVoiceChat(currentGameRoom); 
+                // تفعيل منطق اللعبة
+                initGameLogic();       
+            }, 2000);
         }
 
-        function initGameLogic() {
-            const roomRef = db.ref(`rooms/${currentGameRoom}`);
+        // --- نظام الصوت الموثوق ---
+        async function initVoiceChat(roomId) {
+            if(peerConnection) peerConnection.close();
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // تفعيل المايك افتراضياً عند البدء
+                localStream.getAudioTracks()[0].enabled = true;
+                document.getElementById('micBtn').classList.add('active-mic');
+                
+                localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+            } catch (e) { 
+                console.error("المايك غير متاح أو تم رفض الإذن"); 
+            }
+
+            peerConnection.ontrack = (e) => { 
+                const remoteAudio = document.getElementById('remoteAudio');
+                remoteAudio.srcObject = e.streams[0];
+                remoteAudio.play().catch(err => console.log("تحتاج لتفاعل المستخدم لتشغيل الصوت"));
+            };
+
+            peerConnection.onicecandidate = (e) => {
+                if (e.candidate) {
+                    db.ref(`calls/${roomId}/candidates/${currentPlayerId}`).push(e.candidate.toJSON());
+                }
+            };
+
+            const roomRef = db.ref(`calls/${roomId}`);
+
+            // اللاعب الأول ينشئ العرض (Offer)
             if (currentPlayerId < foundOpp.id) {
-                roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                roomRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
+            }
+
+            // الاستماع للردود والعروض
+            roomRef.on('value', async (snap) => {
+                const data = snap.val();
+                if (!data) return;
+
+                // اللاعب الثاني يستقبل العرض ويرسل الرد (Answer)
+                if (data.offer && currentPlayerId > foundOpp.id && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
+                }
+
+                // اللاعب الأول يستقبل الرد (Answer)
+                if (data.answer && currentPlayerId < foundOpp.id && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                }
+            });
+
+            // تبادل الـ ICE Candidates لضمان تجاوز جدران الحماية
+            db.ref(`calls/${roomId}/candidates/${foundOpp.id}`).on('child_added', (snap) => {
+                const candidate = new RTCIceCandidate(snap.val());
+                peerConnection.addIceCandidate(candidate).catch(e => console.error(e));
+            });
+        }
+
+        function toggleMic() {
+            if (!localStream) return;
+            isMicOn = !isMicOn;
+            localStream.getAudioTracks()[0].enabled = isMicOn;
+            document.getElementById('micBtn').classList.toggle('active-mic', isMicOn);
+        }
+
+        function toggleSpeaker() {
+            isSpeakerOn = !isSpeakerOn;
+            document.getElementById('remoteAudio').muted = !isSpeakerOn;
+            document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn);
+        }
+
+        // --- نظام مزامنة اللعبة ---
+        function initGameLogic() {
+            currentRound = 1; myPoints = 0; oppPoints = 0;
+            const roomRef = db.ref(`rooms/${currentGameRoom}`);
+            
+            if (currentPlayerId < foundOpp.id) {
                 setupRoundData(1);
             }
 
             roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
-                if (data.gameState === 'closed') location.reload();
+
                 if (data.round && data.round !== currentRound) {
                     currentRound = data.round;
-                    showTransition(currentRound);
+                    showTransition(currentRound, false);
                 }
-                document.getElementById('roundTxt').innerText = `${currentRound}/3`;
+                document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
+
                 if (data.cards) {
-                    const isFirst = currentPlayerId < foundOpp.id;
-                    document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
-                    document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
+                    const myCard = (currentPlayerId < foundOpp.id) ? data.cards.img1 : data.cards.img2;
+                    const oppCard = (currentPlayerId < foundOpp.id) ? data.cards.img2 : data.cards.img1;
+                    document.getElementById('myCardImg').src = myCard;
+                    document.getElementById('oppCardImg').src = oppCard;
                 }
-                document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
+
+                if (data.reveal) {
+                    document.getElementById('oppCardImg').classList.remove('blur-img');
+                } else {
+                    document.getElementById('oppCardImg').classList.add('blur-img');
+                }
+
                 if (data.scores) {
                     myPoints = data.scores[currentPlayerId] || 0;
                     oppPoints = data.scores[foundOpp.id] || 0;
                 }
-                if (data.gameState === 'finished') endGameResults();
+
+                if (data.gameState === 'finished') {
+                    showTransition(3, true, () => {
+                        document.getElementById('myFinalScore').innerText = myPoints;
+                        document.getElementById('oppFinalScore').innerText = oppPoints;
+                        document.getElementById('resultsModal').style.display = 'flex';
+                    });
+                }
             });
 
-            db.ref(`rooms/${currentGameRoom}/messages`).on('child_added', (snap) => {
-                const msg = snap.val();
-                const m = document.createElement('div');
-                m.className = msg.senderId === currentPlayerId ? 'msg msg-me' : 'msg msg-opp';
-                m.textContent = msg.text;
-                document.getElementById('chatBox').appendChild(m);
-                document.getElementById('chatBox').scrollTop = 9999;
-            });
             showTransition(1);
         }
 
-        function setupRoundData(r) {
-            const imgs = [
+        function setupRoundData(roundNum) {
+            // بنك الصور الافتراضي في حال عدم وجود bank_images في Firebase
+            const defaultImgs = [
                 "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba",
                 "https://images.unsplash.com/photo-1501820488136-72669149e0d4",
                 "https://images.unsplash.com/photo-1495360010541-f48722b34f7d",
                 "https://images.unsplash.com/photo-1517849845537-4d257902454a"
             ];
-            const r1 = Math.floor(Math.random()*imgs.length);
-            let r2 = Math.floor(Math.random()*imgs.length);
-            while(r1===r2) r2 = Math.floor(Math.random()*imgs.length);
-            db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: imgs[r1], img2: imgs[r2]}, reveal: false, round: r });
-        }
 
-        function handleCorrectClick() {
-            if (isTransitioning) return;
-            const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            roomRef.once('value').then(s => {
-                const d = s.val();
-                const newScore = (d.scores && d.scores[foundOpp.id] ? d.scores[foundOpp.id] : 0) + 50;
-                const up = {};
-                up[`scores/${foundOpp.id}`] = newScore;
-                up['reveal'] = true;
-                roomRef.update(up).then(() => {
-                    setTimeout(() => {
-                        if (d.round < 3) {
-                            if (currentPlayerId < foundOpp.id) setupRoundData(d.round + 1);
-                        } else { roomRef.update({ gameState: 'finished' }); }
-                    }, 2500);
+            db.ref('bank_images').once('value').then((snap) => {
+                let imgs = []; 
+                snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
+                
+                if(imgs.length < 2) imgs = defaultImgs;
+
+                const r1 = Math.floor(Math.random()*imgs.length);
+                let r2 = Math.floor(Math.random()*imgs.length);
+                while(r1 === r2) r2 = Math.floor(Math.random()*imgs.length);
+                
+                db.ref(`rooms/${currentGameRoom}`).update({
+                    cards: { img1: imgs[r1], img2: imgs[r2] },
+                    reveal: false,
+                    round: roundNum
                 });
             });
         }
 
-        function endGameResults() {
-            if (myPoints > oppPoints) userData.wins += 1;
-            userData.xp += myPoints;
-            saveToStorage(); updateUI();
-            document.getElementById('myFinalScore').innerText = myPoints;
-            document.getElementById('oppFinalScore').innerText = oppPoints;
-            document.getElementById('resultsModal').style.display = 'flex';
+        function handleCorrectClick() {
+            const cardImg = document.getElementById('oppCardImg');
+            if (!cardImg.classList.contains('blur-img')) return;
+
+            myPoints += 100;
+            const roomRef = db.ref(`rooms/${currentGameRoom}`);
+            
+            const updates = {};
+            updates[`scores/${currentPlayerId}`] = myPoints;
+            updates['reveal'] = true;
+            roomRef.update(updates);
+
+            setTimeout(() => {
+                roomRef.once('value').then(snap => {
+                    const data = snap.val();
+                    if(data.round < 3) {
+                        if (currentPlayerId < foundOpp.id) {
+                            setupRoundData(data.round + 1);
+                        }
+                    } else {
+                        roomRef.update({ gameState: 'finished' });
+                    }
+                });
+            }, 3000);
         }
 
-        function showTransition(r) {
+        function showTransition(r, isFinal=false, cb) {
             const trans = document.getElementById('roundTransition');
-            document.getElementById('transOppName').innerText = `الخصم : ${oppPoints}`;
+            document.getElementById('transOppName').innerText = `${foundOpp ? foundOpp.name : 'الخصم'} : ${oppPoints}`;
             document.getElementById('transMyName').innerText = `أنت : ${myPoints}`;
-            document.getElementById('transRoundTxt').innerText = `الجولة ${r}`;
+            document.getElementById('transRoundTxt').innerText = isFinal ? "النتيجة النهائية" : `الجولة ${r}`;
+            
             trans.style.display = 'flex';
+            const bars = document.querySelectorAll('.trans-bar');
+            bars[0].className = 'trans-bar top slide-in-top'; 
+            bars[1].className = 'trans-bar mid slide-in-mid'; 
+            bars[2].className = 'trans-bar bottom slide-in-bottom';
+
             setTimeout(() => {
-                document.querySelectorAll('.trans-bar').forEach((b,i) => {
-                    b.className = i===1 ? 'trans-bar mid slide-in-mid' : (i===0 ? 'trans-bar top slide-in-top' : 'trans-bar bottom slide-in-bottom');
-                });
-            }, 50);
-            setTimeout(() => trans.style.display='none', 2800);
+                bars[0].classList.add('slide-out-top'); 
+                bars[1].classList.add('slide-out-mid'); 
+                bars[2].classList.add('slide-out-bottom'); 
+            }, 2500);
+
+            setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 3000);
         }
 
         function sendMessage() {
             const inp = document.getElementById('userInput');
-            if (!inp.value.trim()) return;
-            db.ref(`rooms/${currentGameRoom}/messages`).push({ senderId: currentPlayerId, text: inp.value });
+            if(!inp.value.trim()) return;
+            const m = document.createElement('div'); m.className = 'msg'; m.textContent = inp.value;
+            document.getElementById('chatBox').appendChild(m);
+            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
             inp.value = "";
         }
 
-        function getLevelInfo(xp) {
-            const level = Math.floor(xp / 250) + 1;
-            const progress = ((xp % 250) / 250) * 100;
-            return { level, progress, remaining: 250 - (xp % 250) };
-        }
-
-        function updateUI() {
-            const info = getLevelInfo(userData.xp);
-            document.getElementById('headerName').innerText = userData.name;
-            document.getElementById('cardName').innerText = userData.name;
-            document.getElementById('headerLevelText').innerText = "المستوى " + info.level;
-            document.getElementById('cardLevelLabel').innerText = "المستوى " + info.level;
-            document.getElementById('miniProgress').style.width = info.progress + "%";
-            document.getElementById('cardProgress').style.width = info.progress + "%";
-            document.getElementById('xpRemaining').innerText = `يتبقى ${info.remaining} XP للمستوى التالي`;
-            document.getElementById('statWins').innerText = userData.wins;
-            document.getElementById('statXP').innerText = userData.xp;
-            document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
-            document.getElementById('mySearchName').innerText = userData.name;
-        }
-
-        function saveToStorage() { localStorage.setItem('guessGameUser_v3', JSON.stringify(userData)); }
-        function openProfile() { updateUI(); document.getElementById('profileModal').style.display='flex'; }
-        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-        function openEdit() { document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
-        function saveName() { userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
         function autoSaveImage(e) {
             const reader = new FileReader();
             reader.onload = (ev) => { userData.avatar = ev.target.result; saveToStorage(); updateUI(); };
             reader.readAsDataURL(e.target.files[0]);
         }
-        function cancelSearch() { location.reload(); }
-        function confirmExit() { document.getElementById('exitModal').style.display='flex'; }
-        function closeExitModal() { document.getElementById('exitModal').style.display='none'; }
-        function forceExit() { location.reload(); }
+
+        function saveName() {
+            const n = document.getElementById('nameInput').value;
+            if(n) { userData.name = n; saveToStorage(); updateUI(); closeAll(); }
+        }
+
+        function openEdit() { document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
+        function openProfile() { document.getElementById('profileModal').style.display='flex'; }
+        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
+        function saveToStorage() { localStorage.setItem('guessUser', JSON.stringify(userData)); }
+        function stopSearch() { location.reload(); }
 
         window.onload = () => {
-            const stored = localStorage.getItem('guessGameUser_v3');
-            if (stored) userData = JSON.parse(stored);
+            const s = localStorage.getItem('guessUser');
+            if(s) userData = JSON.parse(s);
             updateUI();
         };
     </script>
 </body>
 </html>
-                
