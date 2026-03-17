@@ -426,21 +426,24 @@
         }
 
         function setupRoundData(r) {
-            const sampleImages = [
-                "https://images.unsplash.com/photo-1541963463532-d68292c34b19",
-                "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d",
-                "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-                "https://images.unsplash.com/photo-1508919892451-4a83f94a4c5d",
-                "https://images.unsplash.com/photo-1469474968028-56623f02e42e"
-            ];
-            const r1 = Math.floor(Math.random()*sampleImages.length);
-            let r2 = Math.floor(Math.random()*sampleImages.length);
-            while(r1===r2) r2 = Math.floor(Math.random()*sampleImages.length);
-            
-            db.ref(`rooms/${currentGameRoom}`).update({ 
-                cards: {img1: sampleImages[r1], img2: sampleImages[r2]}, 
-                reveal: false, 
-                round: r 
+            // جلب الصور من مسار bank_images في قاعدة بياناتك الخاصة
+            db.ref('bank_images').once('value').then(snapshot => {
+                const images = snapshot.val();
+                if (images) {
+                    // تحويل الكائن إلى مصفوفة روابط
+                    const imageLinks = Object.values(images);
+                    if (imageLinks.length >= 2) {
+                        const r1 = Math.floor(Math.random() * imageLinks.length);
+                        let r2 = Math.floor(Math.random() * imageLinks.length);
+                        while(r1 === r2) r2 = Math.floor(Math.random() * imageLinks.length);
+                        
+                        db.ref(`rooms/${currentGameRoom}`).update({ 
+                            cards: {img1: imageLinks[r1], img2: imageLinks[r2]}, 
+                            reveal: false, 
+                            round: r 
+                        });
+                    }
+                }
             });
         }
 
