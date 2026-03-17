@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تحدي التخمين - النسخة الكاملة جداً</title>
+    <title>تحدي التخمين - النسخة الاحترافية</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     
     <style>
-        :root { --bg: #08080a; --purple: #bc6ff1; --surface: #16161d; --text: #e2e8f0; --dim: #64748b; --red: #ff4d4d; --green: #2ecc71; }
+        :root { --bg: #08080a; --purple: #bc6ff1; --surface: #16161d; --text: #e2e8f0; --dim: #64748b; --red: #ff4757; --green: #2ecc71; }
         * { box-sizing: border-box; font-family: 'IBM Plex Sans Arabic', sans-serif; outline: none; -webkit-tap-highlight-color: transparent; }
         
         body, html { 
@@ -64,10 +64,20 @@
         @keyframes slideOutRight { to { transform: rotate(-8deg) translateX(200%); opacity: 0; } }
 
         /* --- واجهة اللعبة --- */
-        .header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d2d35; flex-shrink: 0; }
+        .header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d2d35; flex-shrink: 0; position: relative; }
         .avatar-circle { width: 45px; height: 45px; border-radius: 50%; background: #333; border: 2px solid var(--purple); overflow: hidden; }
-        .round-indicator { background: #2d2d35; padding: 4px 12px; border-radius: 10px; font-size: 0.8rem; color: var(--purple); font-weight: bold; }
         
+        /* تحسين مكان رقم الجولة في الوسط */
+        .round-indicator { 
+            position: absolute; left: 50%; transform: translateX(-50%);
+            background: #2d2d35; padding: 4px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--purple); font-weight: bold; 
+        }
+        
+        .exit-btn { 
+            background: #1a1a20; border: 1px solid #333; color: var(--red); 
+            padding: 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+
         .arena { flex-shrink: 0; padding: 20px 10px; display: flex; justify-content: center; gap: 15px; }
         .card-box { flex: 1; max-width: 145px; text-align: center; }
         .card { aspect-ratio: 3/4; background: #1a1a20; border-radius: 20px; border: 1px solid #333; overflow: hidden; }
@@ -83,7 +93,6 @@
         
         .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
         
-        /* تعديل الـ Padding لضمان ظهور الرسائل تحت الأزرار */
         .chat-messages { flex: 1; padding: 65px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: none; }
         
         .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; word-wrap: break-word; }
@@ -174,7 +183,12 @@
                     <span id="gameOppXP" style="font-size:0.75rem; color:var(--purple); font-weight: bold;">XP 0</span>
                 </div>
             </div>
-            <div class="round-indicator" id="roundTxt">الجولة 1/3</div>
+            
+            <div class="round-indicator" id="roundTxt">1/3</div>
+
+            <div class="exit-btn" onclick="location.reload()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+            </div>
         </div>
 
         <div class="arena">
@@ -237,7 +251,7 @@
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
         let localStream, peerConnection;
         let isMicOn = false, isSpeakerOn = true;
-        let isTransitioning = false; // قفل لمنع القلتشات في الجولات
+        let isTransitioning = false;
         const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
         function updateUI() {
@@ -355,7 +369,7 @@
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
             if (currentPlayerId < foundOpp.id) {
-                roomRef.remove(); // تصفير الغرفة قبل البدء
+                roomRef.remove();
                 setupRoundData(1);
             }
 
@@ -367,7 +381,7 @@
                     currentRound = data.round;
                     showTransition(currentRound, false);
                 }
-                document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
+                document.getElementById('roundTxt').innerText = `${currentRound}/3`;
 
                 if (data.cards) {
                     const myCard = (currentPlayerId < foundOpp.id) ? data.cards.img1 : data.cards.img2;
@@ -419,8 +433,7 @@
                 snap.forEach(c => { if(c.val() && c.val().url) imgs.push(c.val().url); });
                 
                 if(imgs.length < 2) {
-                    // في حال كان البنك فارغاً، نستخدم صور افتراضية منعاً للتعليق
-                    imgs.push("https://via.placeholder.com/300x400?text=Image1", "https://via.placeholder.com/300x400?text=Image2");
+                    imgs.push("https://via.placeholder.com/300x400?text=Guess1", "https://via.placeholder.com/300x400?text=Guess2");
                 }
 
                 const r1 = Math.floor(Math.random()*imgs.length);
@@ -430,29 +443,30 @@
                 db.ref(`rooms/${currentGameRoom}`).update({
                     cards: { img1: imgs[r1], img2: imgs[r2] },
                     reveal: false,
-                    round: roundNum,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                    round: roundNum
                 });
             });
         }
 
+        // --- تعديل منطق النقاط: الضغط على "صحيح" يعطي 50 نقطة للخصم ---
         function handleCorrectClick() {
             if (isTransitioning) return;
             const cardImg = document.getElementById('oppCardImg');
             if (!cardImg.classList.contains('blur-img')) return;
 
             isTransitioning = true;
-            myPoints += 100;
+            
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            
-            const updates = {};
-            updates[`scores/${currentPlayerId}`] = myPoints;
-            updates['reveal'] = true;
-            
-            roomRef.update(updates).then(() => {
-                setTimeout(() => {
-                    roomRef.once('value').then(snap => {
-                        const data = snap.val();
+            roomRef.once('value').then(snap => {
+                const data = snap.val();
+                let currentOppPoints = (data.scores && data.scores[foundOpp.id]) ? data.scores[foundOpp.id] : 0;
+                
+                const updates = {};
+                updates[`scores/${foundOpp.id}`] = currentOppPoints + 50; // الخصم يحصل على 50 نقطة
+                updates['reveal'] = true;
+                
+                roomRef.update(updates).then(() => {
+                    setTimeout(() => {
                         if(data.round < 3) {
                             if (currentPlayerId < foundOpp.id) {
                                 setupRoundData(data.round + 1);
@@ -461,8 +475,8 @@
                         } else {
                             roomRef.update({ gameState: 'finished' });
                         }
-                    });
-                }, 3000);
+                    }, 3000);
+                });
             });
         }
 
@@ -524,11 +538,10 @@
         window.onload = () => {
             const s = localStorage.getItem('guessUser');
             if(s) {
-                try { userData = JSON.parse(s); } catch(e) { console.error("Error parsing user data"); }
+                try { userData = JSON.parse(s); } catch(e) { }
             }
             updateUI();
         };
     </script>
 </body>
 </html>
-  
