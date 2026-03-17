@@ -76,17 +76,19 @@
 
         .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        .voice-controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; }
+        .voice-controls { position: absolute; top: 0; left: 0; right: 0; padding: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; background: linear-gradient(to bottom, #1a1a20 60%, transparent); }
         .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
         .voice-btn.active-mic { background: var(--red); border-color: var(--red); box-shadow: 0 0 10px var(--red); }
         .voice-btn.muted-speaker { background: var(--dim); opacity: 0.6; }
         
         .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; scrollbar-width: none; }
         
-        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; }
-        .msg-me { background: var(--purple); color: #000; align-self: flex-start; }
-        .msg-opp { background: #2d2d35; color: #fff; align-self: flex-end; }
+        /* تعديل الـ Padding لضمان ظهور الرسائل تحت الأزرار */
+        .chat-messages { flex: 1; padding: 65px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: none; }
+        
+        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; word-wrap: break-word; }
+        .msg-me { background: var(--purple); color: #000; align-self: flex-start; border-bottom-right-radius: 4px; }
+        .msg-opp { background: #2d2d35; color: #fff; align-self: flex-end; border-bottom-left-radius: 4px; }
         
         .input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 15px 25px; background: #16161d; display: flex; gap: 10px; border-top: 1px solid #2d2d35; z-index: 1000; }
         input[type="text"] { flex: 1; background: #2d2d35; border: none; padding: 12px; border-radius: 12px; color: white; outline: none; }
@@ -235,6 +237,7 @@
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
         let localStream, peerConnection;
         let isMicOn = false, isSpeakerOn = true;
+        let isTransitioning = false; // قفل لمنع القلتشات في الجولات
         const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
         function updateUI() {
@@ -262,7 +265,7 @@
                 
                 const now = Date.now();
                 const activeIds = Object.keys(players).filter(id => {
-                    return id !== currentPlayerId && (now - players[id].timestamp < 10000);
+                    return id !== currentPlayerId && (now - (players[id].timestamp || 0) < 10000);
                 });
 
                 if (activeIds.length > 0) {
@@ -348,10 +351,11 @@
         }
 
         function initGameLogic() {
-            currentRound = 1; myPoints = 0; oppPoints = 0;
+            currentRound = 1; myPoints = 0; oppPoints = 0; isTransitioning = false;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
             if (currentPlayerId < foundOpp.id) {
+                roomRef.remove(); // تصفير الغرفة قبل البدء
                 setupRoundData(1);
             }
 
@@ -392,12 +396,11 @@
                 }
             });
 
-            // --- ربط المراسلة الحقيقية بـ Firebase ---
             const chatRef = db.ref(`rooms/${currentGameRoom}/messages`);
-            chatRef.off(); // تنظيف أي مستمع قديم
-            document.getElementById('chatBox').innerHTML = ""; // تفريغ صندوق الشات
+            chatRef.off();
+            document.getElementById('chatBox').innerHTML = "";
 
-            chatRef.limitToLast(20).on('child_added', (snap) => {
+            chatRef.limitToLast(25).on('child_added', (snap) => {
                 const msgData = snap.val();
                 const isMe = msgData.senderId === currentPlayerId;
                 const m = document.createElement('div');
@@ -412,45 +415,55 @@
 
         function setupRoundData(roundNum) {
             db.ref('bank_images').once('value').then((snap) => {
-                const imgs = []; snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
-                if(imgs.length > 1) {
-                    const r1 = Math.floor(Math.random()*imgs.length);
-                    let r2 = Math.floor(Math.random()*imgs.length);
-                    while(r1 === r2) r2 = Math.floor(Math.random()*imgs.length);
-                    
-                    db.ref(`rooms/${currentGameRoom}`).update({
-                        cards: { img1: imgs[r1], img2: imgs[r2] },
-                        reveal: false,
-                        round: roundNum
-                    });
+                const imgs = []; 
+                snap.forEach(c => { if(c.val() && c.val().url) imgs.push(c.val().url); });
+                
+                if(imgs.length < 2) {
+                    // في حال كان البنك فارغاً، نستخدم صور افتراضية منعاً للتعليق
+                    imgs.push("https://via.placeholder.com/300x400?text=Image1", "https://via.placeholder.com/300x400?text=Image2");
                 }
+
+                const r1 = Math.floor(Math.random()*imgs.length);
+                let r2 = Math.floor(Math.random()*imgs.length);
+                while(r1 === r2) r2 = Math.floor(Math.random()*imgs.length);
+                
+                db.ref(`rooms/${currentGameRoom}`).update({
+                    cards: { img1: imgs[r1], img2: imgs[r2] },
+                    reveal: false,
+                    round: roundNum,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
             });
         }
 
         function handleCorrectClick() {
+            if (isTransitioning) return;
             const cardImg = document.getElementById('oppCardImg');
             if (!cardImg.classList.contains('blur-img')) return;
 
+            isTransitioning = true;
             myPoints += 100;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
             const updates = {};
             updates[`scores/${currentPlayerId}`] = myPoints;
             updates['reveal'] = true;
-            roomRef.update(updates);
-
-            setTimeout(() => {
-                roomRef.once('value').then(snap => {
-                    const data = snap.val();
-                    if(data.round < 3) {
-                        if (currentPlayerId < foundOpp.id) {
-                            setupRoundData(data.round + 1);
+            
+            roomRef.update(updates).then(() => {
+                setTimeout(() => {
+                    roomRef.once('value').then(snap => {
+                        const data = snap.val();
+                        if(data.round < 3) {
+                            if (currentPlayerId < foundOpp.id) {
+                                setupRoundData(data.round + 1);
+                            }
+                            isTransitioning = false;
+                        } else {
+                            roomRef.update({ gameState: 'finished' });
                         }
-                    } else {
-                        roomRef.update({ gameState: 'finished' });
-                    }
-                });
-            }, 3000);
+                    });
+                }, 3000);
+            });
         }
 
         function showTransition(r, isFinal=false, cb) {
@@ -471,10 +484,12 @@
                 bars[2].classList.add('slide-out-bottom'); 
             }, 2500);
 
-            setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 3000);
+            setTimeout(() => { 
+                trans.style.display='none'; 
+                if(cb) cb(); 
+            }, 3000);
         }
 
-        // --- وظيفة إرسال الرسالة الحقيقية ---
         function sendMessage() {
             const inp = document.getElementById('userInput');
             const text = inp.value.trim();
@@ -508,9 +523,12 @@
 
         window.onload = () => {
             const s = localStorage.getItem('guessUser');
-            if(s) userData = JSON.parse(s);
+            if(s) {
+                try { userData = JSON.parse(s); } catch(e) { console.error("Error parsing user data"); }
+            }
             updateUI();
         };
     </script>
 </body>
 </html>
+  
