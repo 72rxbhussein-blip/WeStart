@@ -102,32 +102,9 @@
         .stat-val { display: block; font-size: 1.4rem; font-weight: 800; color: var(--purple); }
         .stat-lbl { font-size: 0.7rem; color: var(--dim); }
 
-        /* الأزرار المعدلة بتصميم جميل */
-        .custom-btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 15px;
-            border: none;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: 15px;
-            display: block;
-        }
-        .btn-save-custom {
-            background: var(--purple);
-            color: white;
-            box-shadow: 0 4px 15px rgba(188, 111, 241, 0.3);
-        }
-        .btn-save-custom:active { transform: scale(0.97); }
-        
-        .btn-close-custom {
-            background: #2d2d35;
-            color: #fff;
-            border: 1px solid #3d3d45;
-        }
-        .btn-close-custom:active { transform: scale(0.97); }
+        .custom-btn { width: 100%; padding: 14px; border-radius: 15px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; margin-top: 15px; display: block; }
+        .btn-save-custom { background: var(--purple); color: white; box-shadow: 0 4px 15px rgba(188, 111, 241, 0.3); }
+        .btn-close-custom { background: #2d2d35; color: #fff; border: 1px solid #3d3d45; }
 
         /* نافذة تأكيد الخروج */
         .confirm-box { background: var(--surface); padding: 30px; border-radius: 25px; text-align: center; width: 80%; max-width: 300px; border: 1px solid #333; }
@@ -171,8 +148,8 @@
                 <div id="oppNameSearch" style="margin-top:10px; font-weight:700; font-size:0.9rem; color:#ff4757">جاري البحث..</div>
             </div>
         </div>
-        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">جارِ البحث عن منافس...</p>
-        <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="location.reload()">إلغاء البحث</button>
+        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">جارِ البحث عن منافس حقيقي...</p>
+        <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="cancelSearch()">إلغاء البحث</button>
     </div>
 
     <div id="gamePlayView" class="game-view">
@@ -208,7 +185,6 @@
                 <button class="voice-btn" id="speakerBtn" onclick="toggleSpeaker()">🔊</button>
             </div>
             <div class="chat-messages" id="chatBox"></div>
-            <audio id="remoteAudio" autoplay></audio>
         </div>
 
         <div class="input-area">
@@ -300,7 +276,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // بيانات المستخدم الافتراضية
         let userData = { 
             name: "لاعب " + Math.floor(Math.random()*100), 
             avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
@@ -309,10 +284,8 @@
         };
 
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
-        let localStream, peerConnection, isMicOn = false, isSpeakerOn = true, isTransitioning = false;
-        const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+        let isTransitioning = false;
 
-        // نظام المستويات الديناميكي
         function getLevelInfo(xp) {
             const level = Math.floor(xp / 250) + 1;
             const xpInLevel = xp % 250;
@@ -329,41 +302,56 @@
             document.getElementById('miniProgress').style.width = info.progress + "%";
             document.getElementById('cardProgress').style.width = info.progress + "%";
             document.getElementById('xpRemaining').innerText = `يتبقى ${info.remaining} XP للمستوى التالي`;
-            
             document.getElementById('statWins').innerText = userData.wins;
             document.getElementById('statXP').innerText = userData.xp;
-
             document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        // --- نظام البحث (بدون حذف لمنع الروبوتات) ---
+        // --- نظام البحث المصلح (بحث حقيقي عن لاعبين متصلين) ---
         function startLudoSearch() {
             document.getElementById('searchingOverlay').style.display = 'flex';
-            currentPlayerId = "user_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+            currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
             
             const myRef = db.ref("waitingPlayers/" + currentPlayerId);
-            myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            myRef.set({ 
+                id: currentPlayerId, 
+                name: userData.name, 
+                avatar: userData.avatar, 
+                xp: userData.xp, 
+                status: "waiting",
+                timestamp: firebase.database.ServerValue.TIMESTAMP 
+            });
             myRef.onDisconnect().remove();
 
-            db.ref("waitingPlayers").on("value", (snapshot) => {
+            // البحث فقط عن لاعب أخر حالته "waiting" وغير الشخص الحالي
+            db.ref("waitingPlayers").limitToLast(10).on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
                 
-                const activeIds = Object.keys(players).filter(id => id !== currentPlayerId);
+                const activeIds = Object.keys(players).filter(id => id !== currentPlayerId && players[id].status === "waiting");
 
                 if (activeIds.length > 0) {
                     let oppId = activeIds[0];
                     foundOpp = players[oppId];
+                    
+                    // منع التعارض: أول لاعب يجد الأخر يغير حالتهما فوراً
+                    db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
+                    db.ref("waitingPlayers/" + oppId).update({ status: "matched" });
+                    
                     db.ref("waitingPlayers").off();
-                    db.ref("waitingPlayers/" + currentPlayerId).remove();
                     prepareGame(oppId);
                 }
             });
         }
 
+        function cancelSearch() {
+            if (currentPlayerId) db.ref("waitingPlayers/" + currentPlayerId).remove();
+            location.reload();
+        }
+
         function prepareGame(oppId) {
-            document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
+            document.getElementById('statusMsg').innerText = "تم العثور على منافس حقيقي!";
             document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
 
@@ -385,7 +373,7 @@
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
             if (currentPlayerId < foundOpp.id) {
-                roomRef.set({ round: 1, gameState: 'active', scores: {} });
+                roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
                 setupRoundData(1);
             }
 
@@ -393,7 +381,6 @@
                 const data = snap.val();
                 if (!data) return;
 
-                // تزامن الخروج الفوري
                 if (data.gameState === 'closed') {
                     location.reload();
                     return;
@@ -423,7 +410,6 @@
                 }
             });
 
-            // نظام المحادثة
             const chatRef = db.ref(`rooms/${currentGameRoom}/messages`);
             chatRef.off();
             document.getElementById('chatBox').innerHTML = "";
@@ -440,17 +426,24 @@
         }
 
         function setupRoundData(r) {
-            db.ref('bank_images').once('value').then(snap => {
-                let imgs = []; snap.forEach(c => imgs.push(c.val().url));
-                if (imgs.length < 2) imgs = ["https://via.placeholder.com/300", "https://via.placeholder.com/301"];
-                const r1 = Math.floor(Math.random()*imgs.length);
-                let r2 = Math.floor(Math.random()*imgs.length);
-                while(r1===r2) r2 = Math.floor(Math.random()*imgs.length);
-                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: imgs[r1], img2: imgs[r2]}, reveal: false, round: r });
+            const sampleImages = [
+                "https://images.unsplash.com/photo-1541963463532-d68292c34b19",
+                "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d",
+                "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
+                "https://images.unsplash.com/photo-1508919892451-4a83f94a4c5d",
+                "https://images.unsplash.com/photo-1469474968028-56623f02e42e"
+            ];
+            const r1 = Math.floor(Math.random()*sampleImages.length);
+            let r2 = Math.floor(Math.random()*sampleImages.length);
+            while(r1===r2) r2 = Math.floor(Math.random()*sampleImages.length);
+            
+            db.ref(`rooms/${currentGameRoom}`).update({ 
+                cards: {img1: sampleImages[r1], img2: sampleImages[r2]}, 
+                reveal: false, 
+                round: r 
             });
         }
 
-        // منطق النقاط المتبادل (50 نقطة للخصم عند ضغطك صحيح)
         function handleCorrectClick() {
             if (isTransitioning) return;
             isTransitioning = true;
@@ -475,19 +468,16 @@
             });
         }
 
-        // إنهاء المباراة وتحديث الإحصائيات
         function endGameResults() {
             if (myPoints > oppPoints) userData.wins += 1;
             userData.xp += myPoints;
             saveToStorage();
             updateUI();
-            
             document.getElementById('myFinalScore').innerText = myPoints;
             document.getElementById('oppFinalScore').innerText = oppPoints;
             document.getElementById('resultsModal').style.display = 'flex';
         }
 
-        // نافذة تأكيد الخروج
         function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
         function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
         function forceExit() {
@@ -503,9 +493,12 @@
             document.getElementById('transRoundTxt').innerText = `الجولة ${r}`;
             trans.style.display = 'flex';
             const bars = document.querySelectorAll('.trans-bar');
-            bars[0].className = 'trans-bar top slide-in-top'; 
-            bars[1].className = 'trans-bar mid slide-in-mid'; 
-            bars[2].className = 'trans-bar bottom slide-in-bottom';
+            bars.forEach(b => b.style.animation = 'none');
+            setTimeout(() => {
+                bars[0].className = 'trans-bar top slide-in-top'; 
+                bars[1].className = 'trans-bar mid slide-in-mid'; 
+                bars[2].className = 'trans-bar bottom slide-in-bottom';
+            }, 50);
             setTimeout(() => {
                 bars[0].classList.add('slide-out-top'); 
                 bars[1].classList.add('slide-out-mid'); 
@@ -516,12 +509,11 @@
 
         function sendMessage() {
             const inp = document.getElementById('userInput');
-            if (!inp.value.trim()) return;
+            if (!inp.value.trim() || !currentGameRoom) return;
             db.ref(`rooms/${currentGameRoom}/messages`).push({ senderId: currentPlayerId, text: inp.value });
             inp.value = "";
         }
 
-        // حفظ البيانات
         function saveToStorage() { localStorage.setItem('guessGameUser_v3', JSON.stringify(userData)); }
         function openProfile() { updateUI(); document.getElementById('profileModal').style.display='flex'; }
         function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
@@ -539,9 +531,8 @@
             updateUI();
         };
 
-        // وظائف الصوت (متروكة كما في الكود الأصلي لعدم التخريب)
-        function toggleMic() { isMicOn = !isMicOn; document.getElementById('micBtn').classList.toggle('active-mic', isMicOn); }
-        function toggleSpeaker() { isSpeakerOn = !isSpeakerOn; document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn); }
+        function toggleMic() { document.getElementById('micBtn').classList.toggle('active-mic'); }
+        function toggleSpeaker() { document.getElementById('speakerBtn').classList.toggle('muted-speaker'); }
     </script>
 </body>
 </html>
