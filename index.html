@@ -78,8 +78,8 @@
         .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .voice-controls { position: absolute; top: 0; left: 0; right: 0; padding: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; background: linear-gradient(to bottom, #1a1a20 60%, transparent); }
         .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
-        .voice-btn.active-mic { background: var(--red); border-color: var(--red); box-shadow: 0 0 10px var(--red); }
-        .voice-btn.muted-speaker { background: var(--dim); opacity: 0.6; }
+        .voice-btn.active-mic { background: var(--purple); border-color: var(--purple); box-shadow: 0 0 15px var(--purple); }
+        .voice-btn.muted-speaker { background: var(--red); opacity: 0.6; }
         .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
         
         .chat-messages { flex: 1; padding: 65px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: none; }
@@ -96,7 +96,6 @@
         .card-content { background: var(--surface); width: 85%; max-width: 320px; padding: 35px 25px; border-radius: 35px; border: 1px solid rgba(188, 111, 241, 0.3); text-align: center; position: relative; }
         .profile-pic-large { width: 95px; height: 95px; border-radius: 50%; border: 3px solid var(--purple); margin: 0 auto 15px; object-fit: cover; display: block; }
         
-        /* تصميم الإحصائيات مثل الصورة */
         .stats-grid { display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #2d2d35; padding-top: 20px; }
         .stat-item { text-align: center; }
         .stat-val { display: block; font-size: 1.4rem; font-weight: 800; color: var(--purple); }
@@ -106,7 +105,6 @@
         .btn-save-custom { background: var(--purple); color: white; box-shadow: 0 4px 15px rgba(188, 111, 241, 0.3); }
         .btn-close-custom { background: #2d2d35; color: #fff; border: 1px solid #3d3d45; }
 
-        /* نافذة تأكيد الخروج */
         .confirm-box { background: var(--surface); padding: 30px; border-radius: 25px; text-align: center; width: 80%; max-width: 300px; border: 1px solid #333; }
         .confirm-btns { display: flex; gap: 15px; margin-top: 25px; }
         .btn-confirm { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
@@ -193,6 +191,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
+        <audio id="remoteAudio" autoplay></audio>
     </div>
 
     <div id="exitModal" class="modal">
@@ -233,7 +232,6 @@
             </div>
             <img id="cardAvatar" src="" class="profile-pic-large">
             <h2 id="cardName" style="margin: 0;">لاعب جديد</h2>
-            
             <div class="level-info-card" style="background:#0d0d12; padding:15px; border-radius:20px; margin:15px 0; border: 1px solid #2d2d35;">
                 <span id="cardLevelLabel" style="font-weight: bold; color: white; display: block; margin-bottom: 5px;">المستوى 1</span>
                 <div class="level-mini-bar" style="width: 100%; height: 10px; margin: 10px 0;">
@@ -241,18 +239,10 @@
                 </div>
                 <div id="xpRemaining" style="font-size: 0.65rem; color: var(--dim);">يتبقى 250 XP للمستوى التالي</div>
             </div>
-
             <div class="stats-grid">
-                <div class="stat-item">
-                    <span id="statWins" class="stat-val">0</span>
-                    <span class="stat-lbl">فوز</span>
-                </div>
-                <div class="stat-item">
-                    <span id="statXP" class="stat-val">0</span>
-                    <span class="stat-lbl">إجمالي XP</span>
-                </div>
+                <div class="stat-item"><span id="statWins" class="stat-val">0</span><span class="stat-lbl">فوز</span></div>
+                <div class="stat-item"><span id="statXP" class="stat-val">0</span><span class="stat-lbl">إجمالي XP</span></div>
             </div>
-
             <button class="custom-btn btn-close-custom" onclick="closeAll()">إغلاق النافذة</button>
         </div>
     </div>
@@ -271,20 +261,17 @@
     </div>
 
     <script>
-        // تكوين Firebase
         const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let userData = { 
-            name: "لاعب " + Math.floor(Math.random()*100), 
-            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-            xp: 0, 
-            wins: 0 
-        };
+        let userData = { name: "لاعب " + Math.floor(Math.random()*100), avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0, wins: 0 };
+        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null, isTransitioning = false;
 
-        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
-        let isTransitioning = false;
+        // متغيرات WebRTC للصوت
+        let localStream;
+        let peerConnection;
+        const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
         function getLevelInfo(xp) {
             const level = Math.floor(xp / 250) + 1;
@@ -308,51 +295,33 @@
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        // --- نظام البحث المصلح (بحث حقيقي عن لاعبين متصلين) ---
         function startLudoSearch() {
             document.getElementById('searchingOverlay').style.display = 'flex';
             currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
-            
             const myRef = db.ref("waitingPlayers/" + currentPlayerId);
-            myRef.set({ 
-                id: currentPlayerId, 
-                name: userData.name, 
-                avatar: userData.avatar, 
-                xp: userData.xp, 
-                status: "waiting",
-                timestamp: firebase.database.ServerValue.TIMESTAMP 
-            });
+            myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, status: "waiting", timestamp: firebase.database.ServerValue.TIMESTAMP });
             myRef.onDisconnect().remove();
-
             db.ref("waitingPlayers").on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
-                
                 const activeIds = Object.keys(players).filter(id => id !== currentPlayerId && players[id].status === "waiting");
-
                 if (activeIds.length > 0) {
                     let oppId = activeIds[0];
                     foundOpp = players[oppId];
-                    
                     db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
                     db.ref("waitingPlayers/" + oppId).update({ status: "matched" });
-                    
                     db.ref("waitingPlayers").off();
                     prepareGame(oppId);
                 }
             });
         }
 
-        function cancelSearch() {
-            if (currentPlayerId) db.ref("waitingPlayers/" + currentPlayerId).remove();
-            location.reload();
-        }
+        function cancelSearch() { if (currentPlayerId) db.ref("waitingPlayers/" + currentPlayerId).remove(); location.reload(); }
 
         function prepareGame(oppId) {
             document.getElementById('statusMsg').innerText = "تم العثور على منافس حقيقي!";
             document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
-
             setTimeout(() => {
                 document.getElementById('searchingOverlay').style.display = 'none';
                 document.getElementById('mainMenuView').classList.remove('active-view');
@@ -360,54 +329,111 @@
                 document.getElementById('gameOppName').innerText = foundOpp.name;
                 document.getElementById('gameOppAvatar').src = foundOpp.avatar;
                 document.getElementById('gameOppXP').innerText = "XP " + foundOpp.xp;
-
                 currentGameRoom = [currentPlayerId, oppId].sort().join("_");
-                initGameLogic();       
+                initGameLogic();
+                initVoiceChat(); // تفعيل الصوت عند بدء اللعبة
             }, 2000);
+        }
+
+        async function initVoiceChat() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                document.getElementById('micBtn').classList.add('active-mic');
+                setupPeerConnection();
+            } catch (err) {
+                console.error("خطأ في المايك: ", err);
+                alert("يرجى السماح بالوصول للمايك لتعمل الميزة الصوتية");
+            }
+        }
+
+        function setupPeerConnection() {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            peerConnection.ontrack = (event) => {
+                document.getElementById('remoteAudio').srcObject = event.streams[0];
+            };
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    db.ref(`rooms/${currentGameRoom}/ice/${currentPlayerId}`).push(event.candidate.toJSON());
+                }
+            };
+            if (currentPlayerId < foundOpp.id) {
+                createOffer();
+            }
+            listenToRTC();
+        }
+
+        async function createOffer() {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            db.ref(`rooms/${currentGameRoom}/offers/${currentPlayerId}`).set(offer.sdp);
+        }
+
+        function listenToRTC() {
+            const oppId = foundOpp.id;
+            db.ref(`rooms/${currentGameRoom}/offers/${oppId}`).on('value', async (snap) => {
+                const sdp = snap.val();
+                if (sdp && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp }));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    db.ref(`rooms/${currentGameRoom}/answers/${currentPlayerId}`).set(answer.sdp);
+                }
+            });
+            db.ref(`rooms/${currentGameRoom}/answers/${oppId}`).on('value', async (snap) => {
+                const sdp = snap.val();
+                if (sdp && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp }));
+                }
+            });
+            db.ref(`rooms/${currentGameRoom}/ice/${oppId}`).on('child_added', (snap) => {
+                const candidate = new RTCIceCandidate(snap.val());
+                peerConnection.addIceCandidate(candidate);
+            });
+        }
+
+        function toggleMic() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                audioTrack.enabled = !audioTrack.enabled;
+                document.getElementById('micBtn').classList.toggle('active-mic', audioTrack.enabled);
+            }
+        }
+
+        function toggleSpeaker() {
+            const audio = document.getElementById('remoteAudio');
+            audio.muted = !audio.muted;
+            document.getElementById('speakerBtn').classList.toggle('muted-speaker', audio.muted);
         }
 
         function initGameLogic() {
             currentRound = 1; myPoints = 0; oppPoints = 0;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            
             if (currentPlayerId < foundOpp.id) {
                 roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
                 setupRoundData(1);
             }
-
             roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
-
-                if (data.gameState === 'closed') {
-                    location.reload();
-                    return;
-                }
-
+                if (data.gameState === 'closed') { location.reload(); return; }
                 if (data.round && data.round !== currentRound) {
                     currentRound = data.round;
                     showTransition(currentRound);
                 }
                 document.getElementById('roundTxt').innerText = `${currentRound}/3`;
-
                 if (data.cards) {
                     const isFirst = currentPlayerId < foundOpp.id;
                     document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
                     document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
                 }
-
                 document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
-
                 if (data.scores) {
                     myPoints = data.scores[currentPlayerId] || 0;
                     oppPoints = data.scores[foundOpp.id] || 0;
                 }
-
-                if (data.gameState === 'finished') {
-                    endGameResults();
-                }
+                if (data.gameState === 'finished') { endGameResults(); }
             });
-
             const chatRef = db.ref(`rooms/${currentGameRoom}/messages`);
             chatRef.off();
             document.getElementById('chatBox').innerHTML = "";
@@ -419,35 +445,18 @@
                 document.getElementById('chatBox').appendChild(m);
                 document.getElementById('chatBox').scrollTop = 10000;
             });
-
             showTransition(1);
         }
 
         function setupRoundData(r) {
-            // جلب الصور من بنك الصور في فايربيس
             db.ref('bank_images').once('value').then(snap => {
                 let images = [];
-                snap.forEach(child => {
-                    let val = child.val();
-                    images.push(typeof val === 'string' ? val : val.url);
-                });
-
-                if(images.length < 2) {
-                    images = [
-                        "https://images.unsplash.com/photo-1541963463532-d68292c34b19",
-                        "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"
-                    ];
-                }
-
+                snap.forEach(child => { let val = child.val(); images.push(typeof val === 'string' ? val : val.url); });
+                if(images.length < 2) images = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
                 const r1 = Math.floor(Math.random()*images.length);
                 let r2 = Math.floor(Math.random()*images.length);
                 while(r1===r2) r2 = Math.floor(Math.random()*images.length);
-                
-                db.ref(`rooms/${currentGameRoom}`).update({ 
-                    cards: {img1: images[r1], img2: images[r2]}, 
-                    reveal: false, 
-                    round: r 
-                });
+                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: images[r1], img2: images[r2]}, reveal: false, round: r });
             });
         }
 
@@ -461,15 +470,12 @@
                 const updates = {};
                 updates[`scores/${foundOpp.id}`] = newOppPoints;
                 updates['reveal'] = true;
-                
                 roomRef.update(updates).then(() => {
                     setTimeout(() => {
                         if (d.round < 3) {
                             if (currentPlayerId < foundOpp.id) setupRoundData(d.round + 1);
                             isTransitioning = false;
-                        } else {
-                            roomRef.update({ gameState: 'finished' });
-                        }
+                        } else { roomRef.update({ gameState: 'finished' }); }
                     }, 3000);
                 });
             });
@@ -478,8 +484,7 @@
         function endGameResults() {
             if (myPoints > oppPoints) userData.wins += 1;
             userData.xp += myPoints;
-            saveToStorage();
-            updateUI();
+            saveToStorage(); updateUI();
             document.getElementById('myFinalScore').innerText = myPoints;
             document.getElementById('oppFinalScore').innerText = oppPoints;
             document.getElementById('resultsModal').style.display = 'flex';
@@ -488,9 +493,8 @@
         function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
         function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
         function forceExit() {
-            if (currentGameRoom) {
-                db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { location.reload(); });
-            } else { location.reload(); }
+            if (currentGameRoom) db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { location.reload(); });
+            else location.reload();
         }
 
         function showTransition(r) {
@@ -537,9 +541,7 @@
             if (stored) userData = JSON.parse(stored);
             updateUI();
         };
-
-        function toggleMic() { document.getElementById('micBtn').classList.toggle('active-mic'); }
-        function toggleSpeaker() { document.getElementById('speakerBtn').classList.toggle('muted-speaker'); }
     </script>
 </body>
 </html>
+
