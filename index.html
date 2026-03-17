@@ -3,97 +3,382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تحدي التخمين - النسخة الكاملة جداً</title>
+    <title>تحدي التخمين - النسخة الاحترافية الكاملة</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     
     <style>
-        :root { --bg: #08080a; --purple: #bc6ff1; --surface: #16161d; --text: #e2e8f0; --dim: #64748b; --red: #ff4d4d; --green: #2ecc71; }
-        * { box-sizing: border-box; font-family: 'IBM Plex Sans Arabic', sans-serif; outline: none; -webkit-tap-highlight-color: transparent; }
+        :root { 
+            --bg: #08080a; 
+            --purple: #bc6ff1; 
+            --surface: #16161d; 
+            --text: #e2e8f0; 
+            --dim: #64748b; 
+            --red: #ff4d4d; 
+            --green: #2ecc71; 
+            --gold: #ffd700;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            font-family: 'IBM Plex Sans Arabic', sans-serif; 
+            outline: none; 
+            -webkit-tap-highlight-color: transparent; 
+        }
         
         body, html { 
-            background: var(--bg); color: var(--text); margin: 0; height: 100dvh; width: 100%;
-            overflow: hidden; display: flex; flex-direction: column; position: fixed;
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            height: 100dvh; 
+            width: 100%;
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            position: fixed;
         }
 
         .game-view { display: none; height: 100%; width: 100%; flex-direction: column; }
         .active-view { display: flex; }
 
-        /* --- قائمة البداية --- */
-        #mainMenuView { background: radial-gradient(circle at top right, #1a1a2e 0%, #08080a 100%); }
-        .top-bar { width: 100%; padding: 25px; display: flex; align-items: center; gap: 12px; cursor: pointer; z-index: 10; }
-        .my-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--purple); background: #222; overflow: hidden; object-fit: cover; }
-        .level-mini-bar { width: 100px; height: 4px; background: #2d2d35; border-radius: 2px; margin-top: 5px; overflow: hidden; }
-        .level-progress-fill { height: 100%; background: var(--purple); width: 0%; transition: 0.8s ease-out; }
+        /* --- قائمة البداية (Main Menu) --- */
+        #mainMenuView { 
+            background: radial-gradient(circle at top right, #1a1a2e 0%, #08080a 100%); 
+        }
+        .top-bar { 
+            width: 100%; 
+            padding: 25px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            cursor: pointer; 
+            z-index: 10; 
+        }
+        .my-avatar { 
+            width: 55px; 
+            height: 55px; 
+            border-radius: 50%; 
+            border: 2px solid var(--purple); 
+            background: #222; 
+            overflow: hidden; 
+            object-fit: cover; 
+        }
+        .level-mini-bar { 
+            width: 100px; 
+            height: 4px; 
+            background: #2d2d35; 
+            border-radius: 2px; 
+            margin-top: 5px; 
+            overflow: hidden; 
+        }
+        .level-progress-fill { 
+            height: 100%; 
+            background: var(--purple); 
+            width: 0%; 
+            transition: 0.8s ease-out; 
+        }
         
-        .main-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; }
-        .game-logo { font-size: 3rem; font-weight: 800; color: white; margin-bottom: 5px; text-shadow: 0 0 20px rgba(188, 111, 241, 0.5); }
-        .game-tagline { color: var(--dim); font-size: 1rem; margin-bottom: 50px; }
+        .main-hero { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+            width: 100%; 
+        }
+        .game-logo { 
+            font-size: 3.5rem; 
+            font-weight: 800; 
+            color: white; 
+            margin-bottom: 5px; 
+            text-shadow: 0 0 20px rgba(188, 111, 241, 0.5); 
+        }
+        .game-tagline { 
+            color: var(--dim); 
+            font-size: 1.1rem; 
+            margin-bottom: 50px; 
+        }
         
-        .menu-options { width: 85%; max-width: 340px; display: flex; flex-direction: column; gap: 18px; }
-        .btn-main { width: 100%; padding: 18px; border-radius: 20px; border: none; font-size: 1.15rem; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; gap: 12px; }
-        .btn-play { background: var(--purple); color: white; box-shadow: 0 10px 25px rgba(188, 111, 241, 0.25); }
-        .btn-secondary { background: var(--surface); color: white; border: 1px solid #2d2d35; }
+        .menu-options { 
+            width: 85%; 
+            max-width: 340px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 18px; 
+        }
+        .btn-main { 
+            width: 100%; 
+            padding: 18px; 
+            border-radius: 22px; 
+            border: none; 
+            font-size: 1.15rem; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+        }
+        .btn-play { 
+            background: var(--purple); 
+            color: white; 
+            box-shadow: 0 10px 25px rgba(188, 111, 241, 0.25); 
+        }
+        .btn-secondary { 
+            background: var(--surface); 
+            color: white; 
+            border: 1px solid #2d2d35; 
+        }
 
-        /* --- شاشة البحث --- */
-        #searchingOverlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e 0%, #08080a 100%); }
-        .vs-container { display: flex; align-items: center; gap: 30px; margin-bottom: 40px; }
-        .ludo-box { text-align: center; width: 115px; }
-        .ludo-avatar { width: 105px; height: 105px; border-radius: 25px; border: 3px solid var(--purple); object-fit: cover; background: #222; position: relative; z-index: 2; }
-        .pulse-ring { position: absolute; inset: 0; border: 3px solid var(--purple); border-radius: 25px; animation: pulse-anim 1.5s infinite; }
-        @keyframes pulse-anim { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
-        .vs-badge { font-size: 2.8rem; font-weight: 900; color: #ff4757; font-style: italic; text-shadow: 0 0 15px rgba(255, 71, 87, 0.4); }
+        /* --- شاشة البحث عن منافس حقيقي --- */
+        #searchingOverlay { 
+            position: fixed; 
+            inset: 0; 
+            background: var(--bg); 
+            z-index: 9999; 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            background: radial-gradient(circle, #1a1a2e 0%, #08080a 100%); 
+        }
+        .vs-container { 
+            display: flex; 
+            align-items: center; 
+            gap: 30px; 
+            margin-bottom: 40px; 
+        }
+        .ludo-box { 
+            text-align: center; 
+            width: 115px; 
+        }
+        .ludo-avatar { 
+            width: 105px; 
+            height: 105px; 
+            border-radius: 25px; 
+            border: 3px solid var(--purple); 
+            object-fit: cover; 
+            background: #222; 
+            position: relative; 
+            z-index: 2; 
+        }
+        .pulse-ring { 
+            position: absolute; 
+            inset: 0; 
+            border: 3px solid var(--purple); 
+            border-radius: 25px; 
+            animation: pulse-anim 1.5s infinite; 
+        }
+        @keyframes pulse-anim { 
+            0% { transform: scale(1); opacity: 0.8; } 
+            100% { transform: scale(1.8); opacity: 0; } 
+        }
+        .vs-badge { 
+            font-size: 2.8rem; 
+            font-weight: 900; 
+            color: #ff4757; 
+            font-style: italic; 
+            text-shadow: 0 0 15px rgba(255, 71, 87, 0.4); 
+        }
 
-        /* --- الأنيماشين والتحولات --- */
-        #roundTransition { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.92); flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
-        .trans-bar { width: 200%; height: 65px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem; box-shadow: 0 0 40px rgba(0,0,0,0.9); position: relative; overflow: hidden; transform: rotate(-8deg); }
+        /* --- تأثيرات الجولات والانتقال --- */
+        #roundTransition { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            z-index: 9999; 
+            background: rgba(0, 0, 0, 0.95); 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            backdrop-filter: blur(15px); 
+        }
+        .trans-bar { 
+            width: 150%; 
+            height: 70px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 800; 
+            font-size: 1.6rem; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.9); 
+            position: relative; 
+            overflow: hidden; 
+            transform: rotate(-8deg); 
+        }
         .trans-bar.top, .trans-bar.bottom { background: #1a1a20; color: var(--purple); border-top: 2px solid var(--purple); border-bottom: 2px solid var(--purple); }
-        .trans-bar.mid { background: var(--purple); color: #000; margin: 15px 0; }
+        .trans-bar.mid { background: var(--purple); color: #000; margin: 20px 0; }
         
         .slide-in-top { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
         .slide-in-mid { animation: slideInRight 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.1s; }
         .slide-in-bottom { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.2s; }
-        .slide-out-top { animation: slideOutLeft 0.5s forwards !important; }
-        .slide-out-mid { animation: slideOutRight 0.5s forwards !important; }
-        .slide-out-bottom { animation: slideOutLeft 0.5s forwards !important; }
+        .slide-out-top { animation: slideOutLeft 0.6s ease-in forwards; }
+        .slide-out-mid { animation: slideOutRight 0.6s ease-in forwards; }
+        .slide-out-bottom { animation: slideOutLeft 0.6s ease-in forwards; }
         
         @keyframes slideInLeft { from { transform: rotate(-8deg) translateX(-150%); } to { transform: rotate(-8deg) translateX(0); } }
         @keyframes slideInRight { from { transform: rotate(-8deg) translateX(150%); } to { transform: rotate(-8deg) translateX(0); } }
         @keyframes slideOutLeft { to { transform: rotate(-8deg) translateX(-200%); opacity: 0; } }
         @keyframes slideOutRight { to { transform: rotate(-8deg) translateX(200%); opacity: 0; } }
 
-        /* --- واجهة اللعبة --- */
-        .header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d2d35; flex-shrink: 0; }
-        .avatar-circle { width: 45px; height: 45px; border-radius: 50%; background: #333; border: 2px solid var(--purple); overflow: hidden; }
-        .round-indicator { background: #2d2d35; padding: 4px 12px; border-radius: 10px; font-size: 0.8rem; color: var(--purple); font-weight: bold; }
+        /* --- واجهة اللعب الأساسية --- */
+        .header { 
+            padding: 15px 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border-bottom: 1px solid #2d2d35; 
+            flex-shrink: 0; 
+            background: rgba(8, 8, 10, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        .avatar-circle { width: 48px; height: 48px; border-radius: 50%; background: #333; border: 2px solid var(--purple); overflow: hidden; }
+        .round-indicator { background: #2d2d35; padding: 6px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--purple); font-weight: bold; }
         
-        .arena { flex-shrink: 0; padding: 20px 10px; display: flex; justify-content: center; gap: 15px; }
-        .card-box { flex: 1; max-width: 145px; text-align: center; }
-        .card { aspect-ratio: 3/4; background: #1a1a20; border-radius: 20px; border: 1px solid #333; overflow: hidden; }
-        .card img { width: 100%; height: 100%; object-fit: cover; transition: filter 0.5s ease; }
-        .blur-img { filter: blur(30px) brightness(0.6); }
+        .arena { flex-shrink: 0; padding: 25px 10px; display: flex; justify-content: center; gap: 20px; }
+        .card-box { flex: 1; max-width: 155px; text-align: center; }
+        .card { aspect-ratio: 3/4; background: #1a1a20; border-radius: 24px; border: 1px solid #333; overflow: hidden; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card img { width: 100%; height: 100%; object-fit: cover; transition: filter 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .blur-img { filter: blur(40px) brightness(0.4); }
+        .label { margin-top: 10px; font-size: 0.75rem; color: var(--dim); font-weight: 600; }
 
-        .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .chat-section { 
+            flex: 1; 
+            background: #1a1a20; 
+            margin: 0 15px; 
+            border-radius: 30px 30px 0 0; 
+            border: 1px solid rgba(188, 111, 241, 0.15); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            position: relative; 
+        }
         
-        .voice-controls { position: absolute; top: 15px; left: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; }
-        .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
-        .voice-btn.active-mic { background: var(--red); border-color: var(--red); box-shadow: 0 0 10px var(--red); }
+        .voice-controls { 
+            position: absolute; 
+            top: 15px; 
+            left: 15px; 
+            display: flex; 
+            gap: 10px; 
+            z-index: 100; 
+            align-items: center; 
+        }
+        .voice-btn { 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; 
+            border: 1px solid #333; 
+            background: #16161d; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        .voice-btn.active-mic { background: var(--red); border-color: var(--red); box-shadow: 0 0 15px var(--red); }
         .voice-btn.muted-speaker { background: var(--dim); opacity: 0.6; }
         
-        .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; scrollbar-width: none; }
-        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; background: var(--purple); color: #000; align-self: flex-start; }
-        
-        .input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 15px 25px; background: #16161d; display: flex; gap: 10px; border-top: 1px solid #2d2d35; z-index: 1000; }
-        input[type="text"] { flex: 1; background: #2d2d35; border: none; padding: 12px; border-radius: 12px; color: white; outline: none; }
-        .send-btn { background: var(--purple); border: none; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .correct-btn { 
+            background: var(--green); 
+            border-radius: 10px; 
+            padding: 0 18px; 
+            font-weight: 800; 
+            font-size: 0.85rem; 
+            color: white; 
+            border: none; 
+            height: 42px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
-        .card-content { background: var(--surface); width: 85%; max-width: 300px; padding: 35px 25px; border-radius: 35px; border: 1px solid rgba(188, 111, 241, 0.3); text-align: center; position: relative; animation: pop 0.3s ease; }
-        .profile-pic-large { width: 95px; height: 95px; border-radius: 50%; border: 3px solid var(--purple); margin: 0 auto 15px; object-fit: cover; display: block; }
-        .level-info-card { background: #0d0d12; padding: 15px; border-radius: 20px; margin: 15px 0; border: 1px solid #2d2d35; }
-        .save-btn { width: 100%; background: var(--purple); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; }
+        .chat-messages { 
+            flex: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            padding-bottom: 90px; 
+            scrollbar-width: none; 
+        }
+        .msg { 
+            padding: 12px 18px; 
+            border-radius: 20px; 
+            max-width: 80%; 
+            font-size: 0.9rem; 
+            background: var(--purple); 
+            color: #000; 
+            align-self: flex-start; 
+            font-weight: 500;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .input-area { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            padding: 15px 20px 30px; 
+            background: #16161d; 
+            display: flex; 
+            gap: 12px; 
+            border-top: 1px solid #2d2d35; 
+            z-index: 1000; 
+        }
+        input[type="text"] { 
+            flex: 1; 
+            background: #2d2d35; 
+            border: 1px solid #3d3d45; 
+            padding: 14px; 
+            border-radius: 15px; 
+            color: white; 
+            outline: none; 
+        }
+        .send-btn { 
+            background: var(--purple); 
+            border: none; 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+        }
+
+        /* --- النوافذ المنبثقة (Modals) --- */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.92); 
+            z-index: 5000; 
+            align-items: center; 
+            justify-content: center; 
+            backdrop-filter: blur(15px); 
+        }
+        .card-content { 
+            background: var(--surface); 
+            width: 88%; 
+            max-width: 320px; 
+            padding: 40px 30px; 
+            border-radius: 40px; 
+            border: 1px solid rgba(188, 111, 241, 0.2); 
+            text-align: center; 
+            position: relative; 
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .profile-pic-large { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--purple); margin: 0 auto 20px; object-fit: cover; display: block; }
+        .level-info-card { background: #0d0d12; padding: 20px; border-radius: 25px; margin: 20px 0; border: 1px solid #2d2d35; }
+        .save-btn { width: 100%; background: var(--purple); color: white; border: none; padding: 16px; border-radius: 18px; font-weight: 700; cursor: pointer; font-size: 1rem; }
+
+        #resultsModal .card-content { background: radial-gradient(circle at center, #1a1a2e 0%, #08080a 100%); }
     </style>
 </head>
 <body>
@@ -101,19 +386,22 @@
     <div id="mainMenuView" class="game-view active-view">
         <div class="top-bar" onclick="openProfile()">
             <img id="headerAvatar" src="" class="my-avatar">
-            <div style="margin-right: 10px;">
-                <div id="headerName" style="font-weight: 700; font-size: 1.15rem;">لاعب جديد</div>
-                <div id="headerLevelText" style="font-size: 0.75rem; color: var(--purple);">المستوى 1</div>
+            <div style="margin-right: 12px;">
+                <div id="headerName" style="font-weight: 700; font-size: 1.2rem;">تحميل...</div>
+                <div id="headerLevelText" style="font-size: 0.8rem; color: var(--purple); font-weight: 600;">المستوى 1</div>
                 <div class="level-mini-bar"><div id="miniProgress" class="level-progress-fill"></div></div>
             </div>
         </div>
         <div class="main-hero">
             <h1 class="game-logo">تحدي التخمين</h1>
-            <p class="game-tagline">أظهر ذكاءك في تخمين الصور</p>
+            <p class="game-tagline">نافس أصدقاءك في سرعة البديهة</p>
             <div class="menu-options">
-                <button class="btn-main btn-play" onclick="startLudoSearch()">ابدأ التحدي</button>
-                <button class="btn-main btn-secondary">المتجر</button>
-                <button class="btn-main btn-secondary" onclick="openProfile()">الإعدادات</button>
+                <button class="btn-main btn-play" onclick="startLudoSearch()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                    ابدأ التحدي
+                </button>
+                <button class="btn-main btn-secondary">المتجر العالمي</button>
+                <button class="btn-main btn-secondary" onclick="openProfile()">الملف الشخصي</button>
             </div>
         </div>
     </div>
@@ -122,16 +410,16 @@
         <div class="vs-container">
             <div class="ludo-box">
                 <div style="position:relative"><div class="pulse-ring"></div><img id="mySearchAvatar" src="" class="ludo-avatar"></div>
-                <div id="mySearchName" style="margin-top:10px; font-weight:700; font-size:0.9rem;">أنت</div>
+                <div id="mySearchName" style="margin-top:15px; font-weight:700; font-size:1rem;">أنت</div>
             </div>
             <div class="vs-badge">VS</div>
             <div class="ludo-box">
                 <img id="oppAvatarSearch" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Searching" class="ludo-avatar" style="border-color:#ff4757">
-                <div id="oppNameSearch" style="margin-top:10px; font-weight:700; font-size:0.9rem; color:#ff4757">جاري البحث..</div>
+                <div id="oppNameSearch" style="margin-top:15px; font-weight:700; font-size:1rem; color:#ff4757">جاري البحث..</div>
             </div>
         </div>
-        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">يتم البحث عن منافس حقيقي...</p>
-        <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="stopSearch()">إلغاء البحث</button>
+        <p id="statusMsg" style="font-weight:600; font-size: 1.2rem; color: white;">نبحث عن خصم حقيقي الآن...</p>
+        <button class="btn-main btn-secondary" style="width:180px; margin-top:40px; font-size: 1rem;" onclick="stopSearch()">إلغاء البحث</button>
     </div>
 
     <div id="gamePlayView" class="game-view">
@@ -142,30 +430,30 @@
         </div>
 
         <div id="resultsModal" class="modal">
-            <div class="card-content" style="background: var(--bg); border:none;">
-                <div id="trophyIcon" style="margin-bottom: 20px;">
-                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 5H18V4C18 2.89543 17.1046 2 16 2H8C6.89543 2 6 2.89543 6 4V5H5C3.34315 5 2 6.34315 2 8V9C2 10.6569 3.34315 12 5 12H6.17071C6.60235 13.6703 7.84411 15.0116 9.46231 15.6552C9.8009 16.7417 10.8119 17.5 12 17.5C13.1881 17.5 14.1991 16.7417 14.5377 15.6552C16.1559 15.0116 17.3976 13.6703 17.8293 12H19C20.6569 12 22 10.6569 22 9V8C22 6.34315 20.6569 5 19 5ZM5 10C4.44772 10 4 9.55228 4 9V8C4 7.44772 4.44772 7 5 7H6V10H5ZM19 10H18V7H19C19.5523 7 20 7.44772 20 8V9C20 9.55228 19.5523 10 19 10ZM13 20H15C15.5523 20 16 20.4477 16 21C16 21.5523 15.5523 22 15 22H9C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20H11V18H13V20Z" fill="#FFD700"/></svg>
+            <div class="card-content">
+                <div id="trophyIcon" style="margin-bottom: 25px;">
+                    <svg width="100" height="100" viewBox="0 0 24 24" fill="none"><path d="M19 5H18V4C18 2.89543 17.1046 2 16 2H8C6.89543 2 6 2.89543 6 4V5H5C3.34315 5 2 6.34315 2 8V9C2 10.6569 3.34315 12 5 12H6.17071C6.60235 13.6703 7.84411 15.0116 9.46231 15.6552C9.8009 16.7417 10.8119 17.5 12 17.5C13.1881 17.5 14.1991 16.7417 14.5377 15.6552C16.1559 15.0116 17.3976 13.6703 17.8293 12H19C20.6569 12 22 10.6569 22 9V8C22 6.34315 20.6569 5 19 5Z" fill="#FFD700"/></svg>
                 </div>
-                <h2 style="margin: 0; color: white; font-weight: 700;">انتهى التحدي</h2>
-                <div style="margin: 30px 0;">
-                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 1.1rem;">
-                        <span style="color: white;">نقاطك:</span>
-                        <span id="myFinalScore" style="color: var(--purple); font-weight: bold;">0</span>
+                <h2 style="margin: 0; color: white; font-weight: 800; font-size: 1.8rem;">نهاية التحدي</h2>
+                <div style="margin: 35px 0;">
+                    <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 10px;">
+                        <span style="color: var(--dim);">نقاطك</span>
+                        <span id="myFinalScore" style="color: var(--purple); font-weight: 900; font-size: 1.2rem;">0</span>
                     </div>
-                    <div style="display: flex; justify-content: center; gap: 10px; font-size: 1.1rem;">
-                        <span style="color: white;">نقاط الخصم:</span>
-                        <span id="oppFinalScore" style="color: var(--green); font-weight: bold;">0</span>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: rgba(255,255,255,0.05); border-radius: 15px;">
+                        <span style="color: var(--dim);">نقاط الخصم</span>
+                        <span id="oppFinalScore" style="color: var(--green); font-weight: 900; font-size: 1.2rem;">0</span>
                     </div>
                 </div>
-                <button class="btn-main btn-play" style="width: 100%; border-radius: 15px;" onclick="location.reload()">خروج للقائمة</button>
+                <button class="btn-main btn-play" style="width: 100%;" onclick="location.reload()">العودة للرئيسية</button>
             </div>
         </div>
 
         <div class="header">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="avatar-circle"><img id="gameOppAvatar" src="" style="width:100%;height:100%"></div>
+                <div class="avatar-circle"><img id="gameOppAvatar" src="" style="width:100%;height:100%;object-fit:cover;"></div>
                 <div style="display: flex; flex-direction: column;">
-                    <span id="gameOppName" style="font-weight:600;">الخصم</span>
+                    <span id="gameOppName" style="font-weight:700; font-size: 1rem;">الخصم</span>
                     <span id="gameOppXP" style="font-size:0.75rem; color:var(--purple); font-weight: bold;">XP 0</span>
                 </div>
             </div>
@@ -173,13 +461,13 @@
         </div>
 
         <div class="arena">
-            <div class="card-box"><div class="card"><img class="blur-img" id="oppCardImg" src=""></div><div class="label">بطاقة الخصم</div></div>
-            <div class="card-box"><div class="card" style="border-color: var(--purple);"><img id="myCardImg" src=""></div><div class="label">بطاقتك</div></div>
+            <div class="card-box"><div class="card"><img class="blur-img" id="oppCardImg" src=""></div><div class="label">بطاقة المنافس</div></div>
+            <div class="card-box"><div class="card" style="border-color: var(--purple);"><img id="myCardImg" src=""></div><div class="label">بطاقتك الخاصة</div></div>
         </div>
 
         <div class="chat-section">
             <div class="voice-controls">
-                <button class="correct-btn" onclick="handleCorrectClick()">صحيح</button>
+                <button class="correct-btn" onclick="handleCorrectClick()">تخمين صحيح ✅</button>
                 <button class="voice-btn" id="micBtn" onclick="toggleMic()">🎤</button>
                 <button class="voice-btn" id="speakerBtn" onclick="toggleSpeaker()">🔊</button>
             </div>
@@ -188,77 +476,117 @@
         </div>
 
         <div class="input-area">
-            <input type="text" id="userInput" placeholder="اكتب تخمينك هنا...">
+            <input type="text" id="userInput" placeholder="اكتب الحل هنا...">
             <button class="send-btn" onclick="sendMessage()">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
     </div>
 
     <div id="profileModal" class="modal">
         <div class="card-content">
-            <div style="position: absolute; top: 20px; left: 20px; color: var(--purple); cursor: pointer;" onclick="openEdit()">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <div style="position: absolute; top: 25px; left: 25px; color: var(--purple); cursor: pointer;" onclick="openEdit()">
+                <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             </div>
             <img id="cardAvatar" src="" class="profile-pic-large">
-            <h2 id="cardName" style="margin: 0;">لاعب جديد</h2>
+            <h2 id="cardName" style="margin: 0; font-size: 1.5rem;">لاعب محترف</h2>
             <div class="level-info-card">
-                <span id="cardLevelLabel" style="font-weight: bold; color: white; display: block; margin-bottom: 5px;">المستوى 1</span>
-                <div class="level-mini-bar" style="width: 100%; height: 8px; margin: 10px 0;"><div id="cardProgress" class="level-progress-fill"></div></div>
+                <span id="cardLevelLabel" style="font-weight: 800; color: white; display: block; margin-bottom: 8px;">المستوى 1</span>
+                <div class="level-mini-bar" style="width: 100%; height: 10px; margin: 10px 0; border-radius: 5px;"><div id="cardProgress" class="level-progress-fill"></div></div>
+                <span id="xpRemaining" style="font-size: 0.75rem; color: var(--dim);">500 XP متبقية للرتبة التالية</span>
             </div>
-            <button class="save-btn" style="background:#333; margin-top: 20px;" onclick="closeAll()">إغلاق</button>
+            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                <div><div id="totalWins" style="font-weight: 800; color: var(--purple); font-size: 1.4rem;">0</div><div style="font-size: 0.8rem; color: var(--dim);">فوز</div></div>
+                <div><div id="totalXP" style="font-weight: 800; color: var(--purple); font-size: 1.4rem;">0</div><div style="font-size: 0.8rem; color: var(--dim);">إجمالي الخبرة</div></div>
+            </div>
+            <button class="save-btn" style="background:#2d2d35; margin-top: 25px;" onclick="closeAll()">رجوع</button>
         </div>
     </div>
 
     <div id="editModal" class="modal">
         <div class="card-content">
-            <h3>تعديل البيانات</h3>
-            <div style="position: relative; display: inline-block; margin-bottom: 20px;">
-                <img id="editPreviewAvatar" src="" class="profile-pic-large" style="opacity: 0.7;">
+            <h3 style="margin-top:0; font-size: 1.4rem;">تعديل الهوية</h3>
+            <div style="position: relative; display: inline-block; margin: 25px 0;">
+                <img id="editPreviewAvatar" src="" class="profile-pic-large" style="opacity: 0.6; filter: grayscale(0.5);">
                 <input type="file" id="fileInp" accept="image/*" onchange="autoSaveImage(event)" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
-                <div style="font-size: 0.7rem; color: var(--purple);">اضغط لتغيير الصورة</div>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; color: white; font-weight: 700; font-size: 0.8rem; width: 80%;">تغيير الصورة</div>
             </div>
-            <input type="text" id="nameInput" style="width:100%; padding:15px; background:#08080a; border:1px solid #333; color:#fff; border-radius:15px; text-align:center; margin-bottom:15px" maxlength="12">
-            <button class="save-btn" onclick="saveName()">حفظ التعديلات</button>
+            <input type="text" id="nameInput" style="width:100%; padding:18px; background:#08080a; border:2px solid #333; color:#fff; border-radius:18px; text-align:center; margin-bottom:20px; font-weight:700;" maxlength="12" placeholder="اسمك الجديد">
+            <button class="save-btn" onclick="saveName()">اعتماد البيانات</button>
+            <div style="margin-top: 25px; color: var(--dim); cursor: pointer; font-weight: 600;" onclick="closeAll()">إلغاء الأمر</div>
         </div>
     </div>
 
     <script>
+        // --- تهيئة Firebase الأساسية ---
         const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let userData = { name: "لاعب " + Math.floor(Math.random()*100), avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", xp: 0 };
-        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
+        // --- متغيرات الحالة (State) ---
+        let userData = { 
+            name: "لاعب " + Math.floor(Math.random()*100), 
+            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + Math.random(), 
+            xp: 0, 
+            wins: 0 
+        };
+        const XP_PER_LEVEL = 500;
+        let currentRound = 1;
+        let myPoints = 0;
+        let oppPoints = 0;
+        let foundOpp = null;
+        let currentPlayerId = null;
+        let currentGameRoom = null;
         let localStream, peerConnection;
-        let isMicOn = false, isSpeakerOn = true;
+        let isMicOn = false;
+        let isSpeakerOn = true;
         const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
+        // --- تحديث واجهة المستخدم (UI) ---
         function updateUI() {
-            const level = Math.floor(userData.xp / 500) + 1;
-            const progress = ((userData.xp % 500) / 500) * 100;
+            const level = Math.floor(userData.xp / XP_PER_LEVEL) + 1;
+            const curXP = userData.xp % XP_PER_LEVEL;
+            const progress = (curXP / XP_PER_LEVEL) * 100;
+            
             document.getElementById('headerName').innerText = userData.name;
             document.getElementById('cardName').innerText = userData.name;
             document.getElementById('headerLevelText').innerText = "المستوى " + level;
+            document.getElementById('cardLevelLabel').innerText = "المستوى " + level;
             document.getElementById('miniProgress').style.width = progress + "%";
-            document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
+            document.getElementById('cardProgress').style.width = progress + "%";
+            document.getElementById('xpRemaining').innerText = (XP_PER_LEVEL - curXP) + " XP متبقية للرتبة التالية";
+            document.getElementById('totalWins').innerText = userData.wins;
+            document.getElementById('totalXP').innerText = userData.xp;
+            
+            document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => {
+                img.src = userData.avatar;
+            });
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
+        // --- نظام البحث (Matchmaking) بدون تكرار أو لعب ضد النفس ---
         function startLudoSearch() {
             document.getElementById('searchingOverlay').style.display = 'flex';
+            // معرف فريد لكل عملية بحث
             currentPlayerId = "user_" + Date.now() + "_" + Math.floor(Math.random()*1000);
             
             const myRef = db.ref("waitingPlayers/" + currentPlayerId);
-            myRef.set({ id: currentPlayerId, name: userData.name, avatar: userData.avatar, xp: userData.xp, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            myRef.set({ 
+                id: currentPlayerId, 
+                name: userData.name, 
+                avatar: userData.avatar, 
+                xp: userData.xp, 
+                timestamp: firebase.database.ServerValue.TIMESTAMP 
+            });
             myRef.onDisconnect().remove();
 
+            // الاستماع للاعبين المنتظرين
             db.ref("waitingPlayers").on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
                 
                 const now = Date.now();
-                // البحث عن لاعب حقيقي بشرط ألا يكون هو "أنا" وبشرط الحداثة
+                // فلترة: لا تأخذني أنا، وخذ فقط اللاعبين النشطين في آخر 10 ثوانٍ
                 const activeIds = Object.keys(players).filter(id => {
                     return id !== currentPlayerId && (now - players[id].timestamp < 10000);
                 });
@@ -274,7 +602,7 @@
         }
 
         function prepareGame(oppId) {
-            document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
+            document.getElementById('statusMsg').innerText = "تم الاتصال بالمنافس!";
             document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
 
@@ -282,28 +610,38 @@
                 document.getElementById('searchingOverlay').style.display = 'none';
                 document.getElementById('mainMenuView').classList.remove('active-view');
                 document.getElementById('gamePlayView').classList.add('active-view');
+                
                 document.getElementById('gameOppName').innerText = foundOpp.name;
                 document.getElementById('gameOppAvatar').src = foundOpp.avatar;
                 document.getElementById('gameOppXP').innerText = "XP " + foundOpp.xp;
 
+                // إنشاء معرف غرفة موحد
                 currentGameRoom = [currentPlayerId, oppId].sort().join("_");
+                
                 initVoiceChat(currentGameRoom); 
                 initGameLogic();       
-            }, 2000);
+            }, 1800);
         }
 
+        // --- نظام الصوت (WebRTC) المتطور ---
         async function initVoiceChat(roomId) {
             if(peerConnection) peerConnection.close();
             peerConnection = new RTCPeerConnection(rtcConfig);
+            
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 localStream.getAudioTracks()[0].enabled = isMicOn;
                 localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-            } catch (e) { console.error("المايك غير متاح"); }
+            } catch (e) { console.warn("صلاحية المايك مرفوضة أو غير موجودة."); }
 
-            peerConnection.ontrack = (e) => { document.getElementById('remoteAudio').srcObject = e.streams[0]; };
+            peerConnection.ontrack = (e) => { 
+                document.getElementById('remoteAudio').srcObject = e.streams[0]; 
+            };
+            
             peerConnection.onicecandidate = (e) => {
-                if (e.candidate) db.ref(`calls/${roomId}/cand/${currentPlayerId}`).push(e.candidate.toJSON());
+                if (e.candidate) {
+                    db.ref(`calls/${roomId}/cand/${currentPlayerId}`).push(e.candidate.toJSON());
+                }
             };
 
             const roomRef = db.ref(`calls/${roomId}`);
@@ -316,12 +654,14 @@
             roomRef.on('value', async (snap) => {
                 const data = snap.val();
                 if (!data) return;
+                
                 if (data.offer && currentPlayerId > foundOpp.id && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
                     const answer = await peerConnection.createAnswer();
                     await peerConnection.setLocalDescription(answer);
                     roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
                 }
+                
                 if (data.answer && currentPlayerId < foundOpp.id && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                 }
@@ -345,29 +685,33 @@
             document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn);
         }
 
-        // --- نظام مزامنة اللعبة بالكامل (ثابت لكل الجولات) ---
+        // --- نظام الجولات المتزامن (إصلاح مشكلة التأخير) ---
         function initGameLogic() {
-            currentRound = 1; myPoints = 0; oppPoints = 0;
+            currentRound = 1; 
+            myPoints = 0; 
+            oppPoints = 0;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
-            // تهيئة بيانات الغرفة من قبل اللاعب الأول فقط
+            // تنظيف أي بيانات قديمة في الغرفة لضمان البداية النظيفة
             if (currentPlayerId < foundOpp.id) {
-                setupRoundData(1);
+                roomRef.remove().then(() => {
+                    setupFullRound(1);
+                });
             }
 
-            // مستمع واحد دائم لكل التغييرات في الغرفة
+            // الاستماع لكل تغيرات الغرفة (صور، نقاط، جولة، كشف)
             roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
 
-                // 1. مزامنة الجولة الحالية
+                // 1. مزامنة الجولة
                 if (data.round && data.round !== currentRound) {
                     currentRound = data.round;
                     showTransition(currentRound, false);
                 }
                 document.getElementById('roundTxt').innerText = `الجولة ${currentRound}/3`;
 
-                // 2. مزامنة الصور (لكل الجولات)
+                // 2. مزامنة الصور لكل جولة
                 if (data.cards) {
                     const myCard = (currentPlayerId < foundOpp.id) ? data.cards.img1 : data.cards.img2;
                     const oppCard = (currentPlayerId < foundOpp.id) ? data.cards.img2 : data.cards.img1;
@@ -376,7 +720,7 @@
                 }
 
                 // 3. مزامنة الكشف (Blur)
-                if (data.reveal) {
+                if (data.reveal === true) {
                     document.getElementById('oppCardImg').classList.remove('blur-img');
                 } else {
                     document.getElementById('oppCardImg').classList.add('blur-img');
@@ -388,12 +732,17 @@
                     oppPoints = data.scores[foundOpp.id] || 0;
                 }
 
-                // 5. مزامنة نهاية اللعبة
+                // 5. مزامنة النهاية
                 if (data.gameState === 'finished') {
                     showTransition(3, true, () => {
                         document.getElementById('myFinalScore').innerText = myPoints;
                         document.getElementById('oppFinalScore').innerText = oppPoints;
                         document.getElementById('resultsModal').style.display = 'flex';
+                        if(myPoints > oppPoints) {
+                            userData.wins += 1;
+                            userData.xp += 100;
+                            saveToStorage();
+                        }
                     });
                 }
             });
@@ -401,11 +750,13 @@
             showTransition(1);
         }
 
-        function setupRoundData(roundNum) {
+        // دالة إنشاء بيانات الجولة (المسؤول عنها لاعب واحد فقط)
+        function setupFullRound(roundNum) {
             db.ref('bank_images').once('value').then((snap) => {
-                const imgs = []; snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
+                const imgs = []; 
+                snap.forEach(c => { if(c.val().url) imgs.push(c.val().url); });
+                
                 if(imgs.length > 1) {
-                    // اختيار عشوائي للصور
                     const r1 = Math.floor(Math.random()*imgs.length);
                     let r2 = Math.floor(Math.random()*imgs.length);
                     while(r1 === r2) r2 = Math.floor(Math.random()*imgs.length);
@@ -413,39 +764,36 @@
                     db.ref(`rooms/${currentGameRoom}`).update({
                         cards: { img1: imgs[r1], img2: imgs[r2] },
                         reveal: false,
-                        round: roundNum
+                        round: roundNum,
+                        timestamp: Date.now()
                     });
                 }
             });
         }
 
         function handleCorrectClick() {
-            const cardImg = document.getElementById('oppCardImg');
-            if (!cardImg.classList.contains('blur-img')) return;
-
+            if (!document.getElementById('oppCardImg').classList.contains('blur-img')) return;
+            
             myPoints += 100;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             
-            // إرسال تحديث الكشف والنقاط للكل
-            const updates = {};
-            updates[`scores/${currentPlayerId}`] = myPoints;
-            updates['reveal'] = true;
-            roomRef.update(updates);
+            // تحديث الكشف والنقاط فوراً
+            roomRef.child('reveal').set(true);
+            roomRef.child('scores/' + currentPlayerId).set(myPoints);
 
-            // الانتقال للجولة التالية بعد 3 ثوانٍ
+            // الانتقال للجولة التالية بعد 2.5 ثانية (ثابت للكل)
             setTimeout(() => {
                 roomRef.once('value').then(snap => {
                     const data = snap.val();
                     if(data.round < 3) {
-                        // المسؤول فقط يغير البيانات
                         if (currentPlayerId < foundOpp.id) {
-                            setupRoundData(data.round + 1);
+                            setupFullRound(data.round + 1);
                         }
                     } else {
                         roomRef.update({ gameState: 'finished' });
                     }
                 });
-            }, 3000);
+            }, 2500);
         }
 
         function showTransition(r, isFinal=false, cb) {
@@ -456,6 +804,7 @@
             
             trans.style.display = 'flex';
             const bars = document.querySelectorAll('.trans-bar');
+            
             bars[0].className = 'trans-bar top slide-in-top'; 
             bars[1].className = 'trans-bar mid slide-in-mid'; 
             bars[2].className = 'trans-bar bottom slide-in-bottom';
@@ -464,41 +813,80 @@
                 bars[0].classList.add('slide-out-top'); 
                 bars[1].classList.add('slide-out-mid'); 
                 bars[2].classList.add('slide-out-bottom'); 
-            }, 2500);
+            }, 2200);
 
-            setTimeout(() => { trans.style.display='none'; if(cb) cb(); }, 3000);
+            setTimeout(() => { 
+                trans.style.display='none'; 
+                if(cb) cb(); 
+            }, 2800);
         }
 
+        // --- وظائف عامة ---
         function sendMessage() {
             const inp = document.getElementById('userInput');
             if(!inp.value.trim()) return;
-            const m = document.createElement('div'); m.className = 'msg'; m.textContent = inp.value;
-            document.getElementById('chatBox').appendChild(m);
-            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+            const chatBox = document.getElementById('chatBox');
+            const m = document.createElement('div');
+            m.className = 'msg';
+            m.textContent = inp.value;
+            chatBox.appendChild(m);
+            chatBox.scrollTop = chatBox.scrollHeight;
             inp.value = "";
         }
 
         function autoSaveImage(e) {
+            const file = e.target.files[0];
+            if(!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => { userData.avatar = ev.target.result; saveToStorage(); updateUI(); };
-            reader.readAsDataURL(e.target.files[0]);
+            reader.onload = (ev) => { 
+                userData.avatar = ev.target.result; 
+                saveToStorage(); 
+                updateUI(); 
+            };
+            reader.readAsDataURL(file);
         }
 
         function saveName() {
             const n = document.getElementById('nameInput').value;
-            if(n) { userData.name = n; saveToStorage(); updateUI(); closeAll(); }
+            if(n && n.trim().length > 0) { 
+                userData.name = n; 
+                saveToStorage(); 
+                updateUI(); 
+                closeAll(); 
+            }
         }
 
-        function openEdit() { document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
+        function openEdit() { 
+            document.getElementById('profileModal').style.display='none'; 
+            document.getElementById('editModal').style.display='flex'; 
+            document.getElementById('nameInput').value = userData.name; 
+            document.getElementById('editPreviewAvatar').src = userData.avatar;
+        }
+
         function openProfile() { document.getElementById('profileModal').style.display='flex'; }
-        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-        function saveToStorage() { localStorage.setItem('guessUser', JSON.stringify(userData)); }
+        
+        function closeAll() { 
+            document.querySelectorAll('.modal').forEach(m => m.style.display='none'); 
+        }
+
+        function saveToStorage() { 
+            localStorage.setItem('guessUser_v2', JSON.stringify(userData)); 
+        }
+
         function stopSearch() { location.reload(); }
 
+        // عند تحميل الصفحة
         window.onload = () => {
-            const s = localStorage.getItem('guessUser');
-            if(s) userData = JSON.parse(s);
+            const saved = localStorage.getItem('guessUser_v2');
+            if(saved) userData = JSON.parse(saved);
             updateUI();
+            
+            // التأكد من وجود صور في البنك (اختياري)
+            db.ref('bank_images').once('value').then(s => {
+                if(!s.exists()) {
+                    console.warn("تحذير: لا توجد صور في bank_images بقاعدة البيانات.");
+                }
+            });
         };
     </script>
 </body>
