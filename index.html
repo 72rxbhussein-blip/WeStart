@@ -270,6 +270,7 @@
     </div>
 
     <script>
+        // --- تهيئة Firebase ---
         const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -284,7 +285,7 @@
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
         let isTransitioning = false;
 
-        // متغيرات WebRTC للصوت
+        // --- متغيرات الصوت المحدثة ---
         let localStream, peerConnection;
         let isMicOn = true, isSpeakerOn = true;
         const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
@@ -311,7 +312,23 @@
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        function startLudoSearch() {
+        // --- وظيفة طلب إذن المايكروفون مبكراً لضمان عمله ---
+        async function requestMicPermission() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                console.log("تم الحصول على إذن المايك");
+                return true;
+            } catch (e) {
+                alert("يرجى تفعيل إذن المايكروفون من إعدادات المتصفح لتتمكن من التحدث!");
+                return false;
+            }
+        }
+
+        async function startLudoSearch() {
+            // نطلب المايك بمجرد الضغط على "ابدأ"
+            const hasMic = await requestMicPermission();
+            if(!hasMic) return;
+
             document.getElementById('searchingOverlay').style.display = 'flex';
             currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
             
@@ -329,16 +346,12 @@
             db.ref("waitingPlayers").on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
-                
                 const activeIds = Object.keys(players).filter(id => id !== currentPlayerId && players[id].status === "waiting");
-
                 if (activeIds.length > 0) {
                     let oppId = activeIds[0];
                     foundOpp = players[oppId];
-                    
                     db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
                     db.ref("waitingPlayers/" + oppId).update({ status: "matched" });
-                    
                     db.ref("waitingPlayers").off();
                     prepareGame(oppId);
                 }
@@ -362,33 +375,34 @@
                 document.getElementById('gameOppName').innerText = foundOpp.name;
                 document.getElementById('gameOppAvatar').src = foundOpp.avatar;
                 document.getElementById('gameOppXP').innerText = "XP " + foundOpp.xp;
-
                 currentGameRoom = [currentPlayerId, oppId].sort().join("_");
                 
-                // تهيئة الصوت فور العثور على منافس
+                // تشغيل الصوت واللعبة
                 initVoiceChat(currentGameRoom);
                 initGameLogic();       
             }, 2000);
         }
 
-        // --- نظام المايك والسماعة (WebRTC) ---
+        // --- نظام المايك والسماعة المحدث (WebRTC) ---
         async function initVoiceChat(roomId) {
             if(peerConnection) peerConnection.close();
             peerConnection = new RTCPeerConnection(rtcConfig);
 
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // إضافة المسارات الصوتية المحلية
+            if(localStream) {
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                document.getElementById('micBtn').classList.add('active-mic');
-            } catch (e) {
-                console.warn("تعذر الوصول للمايك:", e);
             }
 
+            // استقبال صوت الخصم
             peerConnection.ontrack = (event) => {
                 const remoteAudio = document.getElementById('remoteAudio');
-                remoteAudio.srcObject = event.streams[0];
+                if (remoteAudio.srcObject !== event.streams[0]) {
+                    remoteAudio.srcObject = event.streams[0];
+                    console.log("استقبال تيار صوتي من الخصم");
+                }
             };
 
+            // تبادل مرشحي ICE
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
                     db.ref(`calls/${roomId}/candidates/${currentPlayerId}`).push(event.candidate.toJSON());
@@ -396,16 +410,20 @@
             };
 
             const callRef = db.ref(`calls/${roomId}`);
+
+            // اللاعب الأول ينشئ الـ Offer
             if (currentPlayerId < foundOpp.id) {
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
                 callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
             }
 
+            // مراقبة الـ Offer والـ Answer
             callRef.on('value', async (snap) => {
                 const data = snap.val();
                 if (!data) return;
 
+                // الرد على الـ Offer
                 if (data.offer && currentPlayerId > foundOpp.id && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
                     const answer = await peerConnection.createAnswer();
@@ -413,13 +431,16 @@
                     callRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
                 }
 
+                // استقبال الـ Answer
                 if (data.answer && currentPlayerId < foundOpp.id && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                 }
             });
 
+            // استقبال مرشحي الخصم
             db.ref(`calls/${roomId}/candidates/${foundOpp.id}`).on('child_added', (snap) => {
-                peerConnection.addIceCandidate(new RTCIceCandidate(snap.val()));
+                const candidate = new RTCIceCandidate(snap.val());
+                peerConnection.addIceCandidate(candidate).catch(e => console.error(e));
             });
         }
 
@@ -428,6 +449,7 @@
             isMicOn = !isMicOn;
             localStream.getAudioTracks()[0].enabled = isMicOn;
             document.getElementById('micBtn').classList.toggle('active-mic', isMicOn);
+            document.getElementById('micBtn').innerText = isMicOn ? "🎤" : "🔇";
         }
 
         function toggleSpeaker() {
@@ -435,51 +457,38 @@
             isSpeakerOn = !isSpeakerOn;
             remoteAudio.muted = !isSpeakerOn;
             document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn);
+            document.getElementById('speakerBtn').innerText = isSpeakerOn ? "🔊" : "🔈";
         }
 
-        // --- منطق اللعبة كما هو بدون تغيير ---
+        // --- منطق اللعبة الأساسي ---
         function initGameLogic() {
             currentRound = 1; myPoints = 0; oppPoints = 0;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            
             if (currentPlayerId < foundOpp.id) {
                 roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
                 setupRoundData(1);
             }
-
             roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
-
-                if (data.gameState === 'closed') {
-                    location.reload();
-                    return;
-                }
-
+                if (data.gameState === 'closed') { location.reload(); return; }
                 if (data.round && data.round !== currentRound) {
                     currentRound = data.round;
                     showTransition(currentRound);
                 }
                 document.getElementById('roundTxt').innerText = `${currentRound}/3`;
-
                 if (data.cards) {
                     const isFirst = currentPlayerId < foundOpp.id;
                     document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
                     document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
                 }
-
                 document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
-
                 if (data.scores) {
                     myPoints = data.scores[currentPlayerId] || 0;
                     oppPoints = data.scores[foundOpp.id] || 0;
                 }
-
-                if (data.gameState === 'finished') {
-                    endGameResults();
-                }
+                if (data.gameState === 'finished') { endGameResults(); }
             });
-
             const chatRef = db.ref(`rooms/${currentGameRoom}/messages`);
             chatRef.off();
             document.getElementById('chatBox').innerHTML = "";
@@ -491,7 +500,6 @@
                 document.getElementById('chatBox').appendChild(m);
                 document.getElementById('chatBox').scrollTop = 10000;
             });
-
             showTransition(1);
         }
 
@@ -502,20 +510,11 @@
                     let val = child.val();
                     images.push(typeof val === 'string' ? val : val.url);
                 });
-
-                if(images.length < 2) {
-                    images = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
-                }
-
+                if(images.length < 2) images = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
                 const r1 = Math.floor(Math.random()*images.length);
                 let r2 = Math.floor(Math.random()*images.length);
                 while(r1===r2) r2 = Math.floor(Math.random()*images.length);
-                
-                db.ref(`rooms/${currentGameRoom}`).update({ 
-                    cards: {img1: images[r1], img2: images[r2]}, 
-                    reveal: false, 
-                    round: r 
-                });
+                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: images[r1], img2: images[r2]}, reveal: false, round: r });
             });
         }
 
@@ -529,15 +528,12 @@
                 const updates = {};
                 updates[`scores/${foundOpp.id}`] = newOppPoints;
                 updates['reveal'] = true;
-                
                 roomRef.update(updates).then(() => {
                     setTimeout(() => {
                         if (d.round < 3) {
                             if (currentPlayerId < foundOpp.id) setupRoundData(d.round + 1);
                             isTransitioning = false;
-                        } else {
-                            roomRef.update({ gameState: 'finished' });
-                        }
+                        } else { roomRef.update({ gameState: 'finished' }); }
                     }, 3000);
                 });
             });
@@ -551,14 +547,14 @@
             document.getElementById('myFinalScore').innerText = myPoints;
             document.getElementById('oppFinalScore').innerText = oppPoints;
             document.getElementById('resultsModal').style.display = 'flex';
+            // إغلاق المايك عند النهاية
+            if(localStream) localStream.getTracks().forEach(t => t.stop());
         }
 
         function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
         function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
         function forceExit() {
-            if (currentGameRoom) {
-                db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { location.reload(); });
-            } else { location.reload(); }
+            if (currentGameRoom) { db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { location.reload(); }); } else { location.reload(); }
         }
 
         function showTransition(r) {
