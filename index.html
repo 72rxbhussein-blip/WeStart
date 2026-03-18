@@ -50,7 +50,6 @@
         .ludo-box { text-align: center; width: 115px; }
         .ludo-avatar { width: 105px; height: 105px; border-radius: 25px; border: 3px solid var(--purple); object-fit: cover; background: #222; position: relative; z-index: 2; }
         
-        /* تأثير البحث (بلياردو) */
         .opp-search-wrapper { 
             width: 105px; height: 105px; border-radius: 25px; border: 3px solid #ff4757; 
             overflow: hidden; background: #222; position: relative; 
@@ -308,16 +307,14 @@
     </div>
 
     <script>
-        // --- تهيئة Firebase ---
         const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- مكتبة الأصوات ---
         const gameSounds = {
             click: new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3'),
-            search: new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3'), // صوت التكتكة
-            match: new Audio('https://www.soundjay.com/nature/sounds/cricket-chirp-1.mp3'), // استبدل برابط صوت عثور على لاعب
+            search: new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3'),
+            match: new Audio('https://www.soundjay.com/nature/sounds/cricket-chirp-1.mp3'),
             msg: new Audio('https://www.soundjay.com/communication/sounds/message-pop-1.mp3'),
             success: new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3')
         };
@@ -413,12 +410,10 @@
             }
         }
 
-        // --- منطق البحث المتطور (البلياردو) ---
         let searchInterval;
         function startSlotAnimation() {
             const strip = document.getElementById('oppAvatarStrip');
             strip.innerHTML = "";
-            // إنشاء شريط صور عشوائية
             for(let i=0; i<20; i++) {
                 const img = document.createElement('img');
                 img.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`;
@@ -430,7 +425,7 @@
                 pos -= 105;
                 if (pos <= -2100) pos = 0;
                 strip.style.transform = `translateY(${pos}px)`;
-                playSfx('search'); // صوت التكتكة مع كل صورة
+                playSfx('search');
             }, 100);
         }
 
@@ -449,7 +444,7 @@
             if(!hasMic) return;
 
             document.getElementById('searchingOverlay').style.display = 'flex';
-            startSlotAnimation(); // بدء أنيماشين الصور
+            startSlotAnimation();
 
             currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
             
@@ -492,7 +487,7 @@
         }
 
         function prepareGame(oppId) {
-            stopSlotAnimation(foundOpp.avatar); // إيقاف الصور عند الخصم الحقيقي
+            stopSlotAnimation(foundOpp.avatar);
             document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
 
@@ -597,7 +592,7 @@
                     document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
                 }
                 if(data.reveal && document.getElementById('oppCardImg').classList.contains('blur-img')) {
-                    playSfx('success'); // صوت عند كشف الصورة
+                    playSfx('success');
                 }
                 document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
                 if (data.scores) {
@@ -611,7 +606,7 @@
             document.getElementById('chatBox').innerHTML = "";
             chatRef.on('child_added', (snap) => {
                 const msg = snap.val();
-                if(msg.senderId !== currentPlayerId) playSfx('msg'); // صوت عند استلام رسالة
+                if(msg.senderId !== currentPlayerId) playSfx('msg');
                 const m = document.createElement('div');
                 m.className = msg.senderId === currentPlayerId ? 'msg msg-me' : 'msg msg-opp';
                 m.textContent = msg.text;
@@ -621,19 +616,51 @@
             showTransition(1);
         }
 
+        // --- تعديل وظيفة سحب الصور لدعم القسم العشوائي بشكل احترافي ---
         function setupRoundData(r) {
-            const path = selectedCategory === "random" ? "bank_images" : `bank_images/${selectedCategory}`;
-            db.ref(path).once('value').then(snap => {
-                let images = [];
-                snap.forEach(child => {
-                    let val = child.val();
-                    images.push(typeof val === 'string' ? val : val.url);
+            const rootPath = "bank_images";
+            
+            db.ref(rootPath).once('value').then(snap => {
+                let allPossibleImages = [];
+                const data = snap.val();
+                if (!data) return;
+
+                if (selectedCategory === "random") {
+                    // سحب الصور من كافة التصنيفات المتاحة في قاعدة البيانات
+                    Object.keys(data).forEach(catKey => {
+                        const catData = data[catKey];
+                        if (typeof catData === 'object') {
+                            Object.values(catData).forEach(img => {
+                                allPossibleImages.push(typeof img === 'string' ? img : img.url);
+                            });
+                        } else if (typeof catData === 'string') {
+                            allPossibleImages.push(catData);
+                        }
+                    });
+                } else {
+                    // سحب الصور من التصنيف المختار فقط
+                    const specificCat = data[selectedCategory];
+                    if (specificCat) {
+                        Object.values(specificCat).forEach(img => {
+                            allPossibleImages.push(typeof img === 'string' ? img : img.url);
+                        });
+                    }
+                }
+
+                // حماية في حال كانت المصفوفة فارغة
+                if(allPossibleImages.length < 2) {
+                    allPossibleImages = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
+                }
+
+                const r1 = Math.floor(Math.random() * allPossibleImages.length);
+                let r2 = Math.floor(Math.random() * allPossibleImages.length);
+                while(r1 === r2) r2 = Math.floor(Math.random() * allPossibleImages.length);
+
+                db.ref(`rooms/${currentGameRoom}`).update({ 
+                    cards: { img1: allPossibleImages[r1], img2: allPossibleImages[r2] }, 
+                    reveal: false, 
+                    round: r 
                 });
-                if(images.length < 2) images = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
-                const r1 = Math.floor(Math.random()*images.length);
-                let r2 = Math.floor(Math.random()*images.length);
-                while(r1===r2) r2 = Math.floor(Math.random()*images.length);
-                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: images[r1], img2: images[r2]}, reveal: false, round: r });
             });
         }
 
@@ -742,3 +769,4 @@
     </script>
 </body>
 </html>
+                  
