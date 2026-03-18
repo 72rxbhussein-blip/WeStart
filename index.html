@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -328,6 +328,8 @@
         function selectCategory(id, name) {
             selectedCategory = id;
             selectedCategoryName = name;
+            // حفظ التصنيف المختار في الذاكرة
+            localStorage.setItem('guessGame_category', JSON.stringify({id, name}));
             document.getElementById('activeCategoryText').innerText = name;
             document.querySelectorAll('.cat-item').forEach(item => {
                 item.classList.remove('active');
@@ -678,9 +680,16 @@
             } else {
                 saveToStorage();
             }
+            
+            // استرجاع التصنيف المحفوظ عند تحميل الموقع
+            const savedCategory = localStorage.getItem('guessGame_category');
+            if(savedCategory) {
+                const cat = JSON.parse(savedCategory);
+                selectCategory(cat.id, cat.name);
+            }
+            
             updateUI();
         };
     </script>
 </body>
 </html>
-        
