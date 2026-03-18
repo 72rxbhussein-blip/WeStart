@@ -44,11 +44,24 @@
         .cat-item.active { color: var(--purple); font-weight: 700; background: rgba(188, 111, 241, 0.05); }
         @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-        /* --- شاشة البحث --- */
+        /* --- شاشة البحث المتطورة --- */
         #searchingOverlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e 0%, #08080a 100%); }
         .vs-container { display: flex; align-items: center; gap: 30px; margin-bottom: 40px; }
         .ludo-box { text-align: center; width: 115px; }
         .ludo-avatar { width: 105px; height: 105px; border-radius: 25px; border: 3px solid var(--purple); object-fit: cover; background: #222; position: relative; z-index: 2; }
+        
+        /* تأثير البحث (بلياردو) */
+        .opp-search-wrapper { 
+            width: 105px; height: 105px; border-radius: 25px; border: 3px solid #ff4757; 
+            overflow: hidden; background: #222; position: relative; 
+        }
+        .opp-avatar-strip {
+            display: flex; flex-direction: column; transition: transform 0.1s linear;
+        }
+        .opp-avatar-strip img {
+            width: 105px; height: 105px; object-fit: cover; flex-shrink: 0;
+        }
+
         .pulse-ring { position: absolute; inset: 0; border: 3px solid var(--purple); border-radius: 25px; animation: pulse-anim 1.5s infinite; }
         @keyframes pulse-anim { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
         .vs-badge { font-size: 2.8rem; font-weight: 900; color: #ff4757; font-style: italic; text-shadow: 0 0 15px rgba(255, 71, 87, 0.4); }
@@ -162,7 +175,10 @@
             </div>
             <div class="vs-badge">VS</div>
             <div class="ludo-box">
-                <img id="oppAvatarSearch" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Searching" class="ludo-avatar" style="border-color:#ff4757">
+                <div class="opp-search-wrapper">
+                    <div id="oppAvatarStrip" class="opp-avatar-strip">
+                        </div>
+                </div>
                 <div id="oppNameSearch" style="margin-top:10px; font-weight:700; font-size:0.9rem; color:#ff4757">جاري البحث..</div>
             </div>
         </div>
@@ -297,6 +313,22 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // --- مكتبة الأصوات ---
+        const gameSounds = {
+            click: new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3'),
+            search: new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3'), // صوت التكتكة
+            match: new Audio('https://www.soundjay.com/nature/sounds/cricket-chirp-1.mp3'), // استبدل برابط صوت عثور على لاعب
+            msg: new Audio('https://www.soundjay.com/communication/sounds/message-pop-1.mp3'),
+            success: new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3')
+        };
+
+        function playSfx(sound) {
+            if (gameSounds[sound]) {
+                gameSounds[sound].currentTime = 0;
+                gameSounds[sound].play().catch(() => {});
+            }
+        }
+
         function generateUniqueID() {
             let id = "7";
             for (let i = 0; i < 9; i++) {
@@ -318,7 +350,6 @@
         let selectedCategory = "random";
         let selectedCategoryName = "عشوائي";
 
-        // --- وظائف التصنيفات (تم إصلاحها لمنع الفتح التلقائي) ---
         function toggleCategoryPopup(e) {
             if(e) e.stopPropagation();
             const popup = document.getElementById('categoryPopup');
@@ -329,33 +360,22 @@
         function selectCategory(id, name, silent = false) {
             selectedCategory = id;
             selectedCategoryName = name;
-            
-            // تحديث واجهة المستخدم
             document.getElementById('activeCategoryText').innerText = name;
             document.getElementById('searchCatDisplay').innerText = "التصنيف: " + name;
-            
             document.querySelectorAll('.cat-item').forEach(item => {
                 item.classList.remove('active');
                 if(item.innerText.includes(name)) item.classList.add('active');
             });
-
-            // حفظ البيانات
             localStorage.setItem('guessGame_category', JSON.stringify({id, name}));
-
-            // إغلاق القائمة فقط إذا لم يكن الاستدعاء "صامتاً" (عند التحميل)
-            if(!silent) {
-                document.getElementById('categoryPopup').style.display = 'none';
-            }
+            if(!silent) document.getElementById('categoryPopup').style.display = 'none';
         }
 
-        // إغلاق القائمة عند النقر في أي مكان آخر
         window.onclick = function(event) {
             if (!event.target.closest('.category-trigger') && !event.target.closest('.category-popup')) {
                 document.getElementById('categoryPopup').style.display = 'none';
             }
         }
 
-        // --- نظام الصوت ---
         let localStream, peerConnection;
         let isMicOn = true, isSpeakerOn = true;
         const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
@@ -393,11 +413,44 @@
             }
         }
 
+        // --- منطق البحث المتطور (البلياردو) ---
+        let searchInterval;
+        function startSlotAnimation() {
+            const strip = document.getElementById('oppAvatarStrip');
+            strip.innerHTML = "";
+            // إنشاء شريط صور عشوائية
+            for(let i=0; i<20; i++) {
+                const img = document.createElement('img');
+                img.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`;
+                strip.appendChild(img);
+            }
+            
+            let pos = 0;
+            searchInterval = setInterval(() => {
+                pos -= 105;
+                if (pos <= -2100) pos = 0;
+                strip.style.transform = `translateY(${pos}px)`;
+                playSfx('search'); // صوت التكتكة مع كل صورة
+            }, 100);
+        }
+
+        function stopSlotAnimation(finalAvatar) {
+            clearInterval(searchInterval);
+            const strip = document.getElementById('oppAvatarStrip');
+            strip.style.transition = "transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+            strip.innerHTML = `<img src="${finalAvatar}">`;
+            strip.style.transform = `translateY(0px)`;
+            playSfx('match');
+        }
+
         async function startLudoSearch() {
+            playSfx('click');
             const hasMic = await requestMicPermission();
             if(!hasMic) return;
 
             document.getElementById('searchingOverlay').style.display = 'flex';
+            startSlotAnimation(); // بدء أنيماشين الصور
+
             currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
             
             const myRef = db.ref("waitingPlayers/" + currentPlayerId);
@@ -433,13 +486,14 @@
         }
 
         function cancelSearch() {
+            playSfx('click');
             if (currentPlayerId) db.ref("waitingPlayers/" + currentPlayerId).remove();
             location.reload();
         }
 
         function prepareGame(oppId) {
+            stopSlotAnimation(foundOpp.avatar); // إيقاف الصور عند الخصم الحقيقي
             document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
-            document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
 
             setTimeout(() => {
@@ -459,32 +513,26 @@
         async function initVoiceChat(roomId) {
             if(peerConnection) peerConnection.close();
             peerConnection = new RTCPeerConnection(rtcConfig);
-
             if(localStream) {
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
             }
-
             peerConnection.ontrack = (event) => {
                 const remoteAudio = document.getElementById('remoteAudio');
                 if (remoteAudio.srcObject !== event.streams[0]) {
                     remoteAudio.srcObject = event.streams[0];
                 }
             };
-
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
                     db.ref(`calls/${roomId}/candidates/${currentPlayerId}`).push(event.candidate.toJSON());
                 }
             };
-
             const callRef = db.ref(`calls/${roomId}`);
-
             if (currentPlayerId < foundOpp.id) {
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
                 callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
             }
-
             callRef.on('value', async (snap) => {
                 const data = snap.val();
                 if (!data) return;
@@ -498,7 +546,6 @@
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                 }
             });
-
             db.ref(`calls/${roomId}/candidates/${foundOpp.id}`).on('child_added', (snap) => {
                 const candidate = new RTCIceCandidate(snap.val());
                 peerConnection.addIceCandidate(candidate).catch(e => {});
@@ -506,6 +553,7 @@
         }
 
         function toggleMic() {
+            playSfx('click');
             if (!localStream) return;
             isMicOn = !isMicOn;
             localStream.getAudioTracks()[0].enabled = isMicOn;
@@ -514,6 +562,7 @@
         }
 
         function toggleSpeaker() {
+            playSfx('click');
             const remoteAudio = document.getElementById('remoteAudio');
             isSpeakerOn = !isSpeakerOn;
             remoteAudio.muted = !isSpeakerOn;
@@ -547,6 +596,9 @@
                     document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
                     document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
                 }
+                if(data.reveal && document.getElementById('oppCardImg').classList.contains('blur-img')) {
+                    playSfx('success'); // صوت عند كشف الصورة
+                }
                 document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
                 if (data.scores) {
                     myPoints = data.scores[currentPlayerId] || 0;
@@ -559,6 +611,7 @@
             document.getElementById('chatBox').innerHTML = "";
             chatRef.on('child_added', (snap) => {
                 const msg = snap.val();
+                if(msg.senderId !== currentPlayerId) playSfx('msg'); // صوت عند استلام رسالة
                 const m = document.createElement('div');
                 m.className = msg.senderId === currentPlayerId ? 'msg msg-me' : 'msg msg-opp';
                 m.textContent = msg.text;
@@ -586,6 +639,7 @@
 
         function handleCorrectClick() {
             if (isTransitioning) return;
+            playSfx('success');
             isTransitioning = true;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             roomRef.once('value').then(s => {
@@ -606,6 +660,7 @@
         }
 
         function endGameResults() {
+            playSfx('success');
             if (myPoints > oppPoints) userData.wins += 1;
             userData.xp += myPoints;
             saveToStorage();
@@ -616,10 +671,11 @@
             if(localStream) localStream.getTracks().forEach(t => t.stop());
         }
 
-        function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
-        function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
+        function confirmExit() { playSfx('click'); document.getElementById('exitModal').style.display = 'flex'; }
+        function closeExitModal() { playSfx('click'); document.getElementById('exitModal').style.display = 'none'; }
         
         function forceExit() {
+            playSfx('click');
             if (currentGameRoom) { 
                 db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { 
                     closeExitModal();
@@ -659,10 +715,10 @@
         }
 
         function saveToStorage() { localStorage.setItem('guessGameUser_v3', JSON.stringify(userData)); }
-        function openProfile() { updateUI(); document.getElementById('profileModal').style.display='flex'; }
-        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-        function saveName() { userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
-        function openEdit() { document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
+        function openProfile() { playSfx('click'); updateUI(); document.getElementById('profileModal').style.display='flex'; }
+        function closeAll() { playSfx('click'); document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
+        function saveName() { playSfx('click'); userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
+        function openEdit() { playSfx('click'); document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
         
         function autoSaveImage(e) {
             const reader = new FileReader();
@@ -676,14 +732,11 @@
                 userData = JSON.parse(stored);
                 if (!userData.gameID) userData.gameID = generateUniqueID();
             }
-            
-            // استرجاع التصنيف المختار صامتاً (بدون فتح القائمة)
             const savedCategory = localStorage.getItem('guessGame_category');
             if(savedCategory) {
                 const cat = JSON.parse(savedCategory);
-                selectCategory(cat.id, cat.name, true); // True تعني "صامت"
+                selectCategory(cat.id, cat.name, true);
             }
-            
             updateUI();
         };
     </script>
