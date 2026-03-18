@@ -36,7 +36,7 @@
         .btn-play { background: var(--purple); color: white; box-shadow: 0 10px 25px rgba(188, 111, 241, 0.25); }
         .btn-secondary { background: var(--surface); color: white; border: 1px solid #2d2d35; }
 
-        /* --- نظام التصنيفات الجديد --- */
+        /* --- نظام التصنيفات --- */
         .category-trigger { position: absolute; top: -12px; left: -10px; background: #1a1a25; border: 1.5px solid var(--purple); color: white; padding: 6px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 5px; cursor: pointer; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         .category-popup { display: none; position: absolute; bottom: 100%; left: 0; background: #16161d; border: 1px solid #2d2d35; border-radius: 15px; width: 160px; padding: 8px; margin-bottom: 10px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8); animation: popIn 0.3s ease-out; }
         .cat-item { padding: 10px; border-radius: 10px; font-size: 0.85rem; color: var(--dim); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: space-between; }
@@ -135,7 +135,7 @@
             <h1 class="game-logo">تحدي التخمين</h1>
             <p class="game-tagline">أظهر ذكاءك في تخمين الصور</p>
             <div class="menu-options">
-                <div class="category-trigger" onclick="toggleCategoryPopup()">
+                <div class="category-trigger" onclick="toggleCategoryPopup(event)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 6h16M4 12h16M4 18h7"></path></svg>
                     <span id="activeCategoryText">عشوائي</span>
                 </div>
@@ -297,7 +297,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // وظيفة توليد ID يبدأ بـ 7 ومكون من 10 أرقام
         function generateUniqueID() {
             let id = "7";
             for (let i = 0; i < 9; i++) {
@@ -311,42 +310,52 @@
             avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
             xp: 0, 
             wins: 0,
-            gameID: generateUniqueID() // إنشاء ID جديد عند الدخول لأول مرة
+            gameID: generateUniqueID()
         };
 
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
         let isTransitioning = false;
-        let selectedCategory = "random"; // التصنيف الافتراضي
+        let selectedCategory = "random";
         let selectedCategoryName = "عشوائي";
 
-        // وظائف التصنيفات الجديدة
-        function toggleCategoryPopup() {
+        // --- وظائف التصنيفات (تم إصلاحها لمنع الفتح التلقائي) ---
+        function toggleCategoryPopup(e) {
+            if(e) e.stopPropagation();
             const popup = document.getElementById('categoryPopup');
-            popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
+            const isVisible = popup.style.display === 'block';
+            popup.style.display = isVisible ? 'none' : 'block';
         }
 
-        function selectCategory(id, name) {
+        function selectCategory(id, name, silent = false) {
             selectedCategory = id;
             selectedCategoryName = name;
-            // حفظ التصنيف المختار في الذاكرة
-            localStorage.setItem('guessGame_category', JSON.stringify({id, name}));
+            
+            // تحديث واجهة المستخدم
             document.getElementById('activeCategoryText').innerText = name;
+            document.getElementById('searchCatDisplay').innerText = "التصنيف: " + name;
+            
             document.querySelectorAll('.cat-item').forEach(item => {
                 item.classList.remove('active');
                 if(item.innerText.includes(name)) item.classList.add('active');
             });
-            document.getElementById('searchCatDisplay').innerText = "التصنيف: " + name;
-            toggleCategoryPopup();
-        }
 
-        // إغلاق القائمة عند الضغط خارجها
-        window.onclick = function(event) {
-            if (!event.target.closest('.category-trigger')) {
+            // حفظ البيانات
+            localStorage.setItem('guessGame_category', JSON.stringify({id, name}));
+
+            // إغلاق القائمة فقط إذا لم يكن الاستدعاء "صامتاً" (عند التحميل)
+            if(!silent) {
                 document.getElementById('categoryPopup').style.display = 'none';
             }
         }
 
-        // --- متغيرات الصوت المحدثة ---
+        // إغلاق القائمة عند النقر في أي مكان آخر
+        window.onclick = function(event) {
+            if (!event.target.closest('.category-trigger') && !event.target.closest('.category-popup')) {
+                document.getElementById('categoryPopup').style.display = 'none';
+            }
+        }
+
+        // --- نظام الصوت ---
         let localStream, peerConnection;
         let isMicOn = true, isSpeakerOn = true;
         const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
@@ -362,7 +371,7 @@
             const info = getLevelInfo(userData.xp);
             document.getElementById('headerName').innerText = userData.name;
             document.getElementById('cardName').innerText = userData.name;
-            document.getElementById('cardID').innerText = "ID: " + userData.gameID; // عرض ID في الملف الشخصي
+            document.getElementById('cardID').innerText = "ID: " + userData.gameID;
             document.getElementById('headerLevelText').innerText = "المستوى " + info.level;
             document.getElementById('cardLevelLabel').innerText = "المستوى " + info.level;
             document.getElementById('miniProgress').style.width = info.progress + "%";
@@ -374,20 +383,17 @@
             document.getElementById('mySearchName').innerText = userData.name;
         }
 
-        // --- وظيفة طلب إذن المايكروفون مبكراً لضمان عمله ---
         async function requestMicPermission() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                console.log("تم الحصول على إذن المايك");
                 return true;
             } catch (e) {
-                alert("يرجى تفعيل إذن المايكروفون من إعدادات المتصفح لتتمكن من التحدث!");
+                alert("يرجى تفعيل إذن المايكروفون للتمكن من التحدث!");
                 return false;
             }
         }
 
         async function startLudoSearch() {
-            // نطلب المايك بمجرد الضغط على "ابدأ"
             const hasMic = await requestMicPermission();
             if(!hasMic) return;
 
@@ -400,8 +406,8 @@
                 name: userData.name, 
                 avatar: userData.avatar, 
                 xp: userData.xp, 
-                category: selectedCategory, // إضافة التصنيف للبحث
-                gameID: userData.gameID, // إرسال ID لقاعدة البيانات ليراه الخصم
+                category: selectedCategory,
+                gameID: userData.gameID,
                 status: "waiting",
                 timestamp: firebase.database.ServerValue.TIMESTAMP 
             });
@@ -410,7 +416,6 @@
             db.ref("waitingPlayers").on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
-                // البحث عن خصم اختار نفس التصنيف وحالته انتظار
                 const activeIds = Object.keys(players).filter(id => 
                     id !== currentPlayerId && 
                     players[id].status === "waiting" && 
@@ -433,7 +438,7 @@
         }
 
         function prepareGame(oppId) {
-            document.getElementById('statusMsg').innerText = "تم العثور على منافس حقيقي!";
+            document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
             document.getElementById('oppAvatarSearch').src = foundOpp.avatar;
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
 
@@ -443,35 +448,29 @@
                 document.getElementById('gamePlayView').classList.add('active-view');
                 document.getElementById('gameOppName').innerText = foundOpp.name;
                 document.getElementById('gameOppAvatar').src = foundOpp.avatar;
-                document.getElementById('gameOppID').innerText = "ID: " + (foundOpp.gameID || "Unknown"); // عرض ID الخصم بدلاً من XP
+                document.getElementById('gameOppID').innerText = "ID: " + (foundOpp.gameID || "Unknown");
                 currentGameRoom = [currentPlayerId, oppId].sort().join("_");
                 
-                // تشغيل الصوت واللعبة
                 initVoiceChat(currentGameRoom);
                 initGameLogic();       
             }, 2000);
         }
 
-        // --- نظام المايك والسماعة المحدث (WebRTC) ---
         async function initVoiceChat(roomId) {
             if(peerConnection) peerConnection.close();
             peerConnection = new RTCPeerConnection(rtcConfig);
 
-            // إضافة المسارات الصوتية المحلية
             if(localStream) {
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
             }
 
-            // استقبال صوت الخصم
             peerConnection.ontrack = (event) => {
                 const remoteAudio = document.getElementById('remoteAudio');
                 if (remoteAudio.srcObject !== event.streams[0]) {
                     remoteAudio.srcObject = event.streams[0];
-                    console.log("استقبال تيار صوتي من الخصم");
                 }
             };
 
-            // تبادل مرشحي ICE
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
                     db.ref(`calls/${roomId}/candidates/${currentPlayerId}`).push(event.candidate.toJSON());
@@ -480,36 +479,29 @@
 
             const callRef = db.ref(`calls/${roomId}`);
 
-            // اللاعب الأول ينشئ الـ Offer
             if (currentPlayerId < foundOpp.id) {
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
                 callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
             }
 
-            // مراقبة الـ Offer والـ Answer
             callRef.on('value', async (snap) => {
                 const data = snap.val();
                 if (!data) return;
-
-                // الرد على الـ Offer
                 if (data.offer && currentPlayerId > foundOpp.id && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
                     const answer = await peerConnection.createAnswer();
                     await peerConnection.setLocalDescription(answer);
                     callRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
                 }
-
-                // استقبال الـ Answer
                 if (data.answer && currentPlayerId < foundOpp.id && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                 }
             });
 
-            // استقبال مرشحي الخصم
             db.ref(`calls/${roomId}/candidates/${foundOpp.id}`).on('child_added', (snap) => {
                 const candidate = new RTCIceCandidate(snap.val());
-                peerConnection.addIceCandidate(candidate).catch(e => console.error(e));
+                peerConnection.addIceCandidate(candidate).catch(e => {});
             });
         }
 
@@ -529,7 +521,6 @@
             document.getElementById('speakerBtn').innerText = isSpeakerOn ? "🔊" : "🔈";
         }
 
-        // --- منطق اللعبة الأساسي ---
         function initGameLogic() {
             currentRound = 1; myPoints = 0; oppPoints = 0;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
@@ -540,7 +531,12 @@
             roomRef.on('value', (snap) => {
                 const data = snap.val();
                 if (!data) return;
-                if (data.gameState === 'closed') { location.reload(); return; }
+                if (data.gameState === 'closed') { 
+                    document.getElementById('gamePlayView').classList.remove('active-view');
+                    document.getElementById('mainMenuView').classList.add('active-view');
+                    if(localStream) localStream.getTracks().forEach(t => t.stop());
+                    return; 
+                }
                 if (data.round && data.round !== currentRound) {
                     currentRound = data.round;
                     showTransition(currentRound);
@@ -573,7 +569,6 @@
         }
 
         function setupRoundData(r) {
-            // جلب الصور بناءً على التصنيف المختار
             const path = selectedCategory === "random" ? "bank_images" : `bank_images/${selectedCategory}`;
             db.ref(path).once('value').then(snap => {
                 let images = [];
@@ -618,14 +613,21 @@
             document.getElementById('myFinalScore').innerText = myPoints;
             document.getElementById('oppFinalScore').innerText = oppPoints;
             document.getElementById('resultsModal').style.display = 'flex';
-            // إغلاق المايك عند النهاية
             if(localStream) localStream.getTracks().forEach(t => t.stop());
         }
 
         function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
         function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
+        
         function forceExit() {
-            if (currentGameRoom) { db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { location.reload(); }); } else { location.reload(); }
+            if (currentGameRoom) { 
+                db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { 
+                    closeExitModal();
+                    document.getElementById('gamePlayView').classList.remove('active-view');
+                    document.getElementById('mainMenuView').classList.add('active-view');
+                    if(localStream) localStream.getTracks().forEach(t => t.stop());
+                }); 
+            } else { location.reload(); }
         }
 
         function showTransition(r) {
@@ -661,6 +663,7 @@
         function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
         function saveName() { userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
         function openEdit() { document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
+        
         function autoSaveImage(e) {
             const reader = new FileReader();
             reader.onload = (ev) => { userData.avatar = ev.target.result; saveToStorage(); updateUI(); };
@@ -670,22 +673,15 @@
         window.onload = () => {
             const stored = localStorage.getItem('guessGameUser_v3');
             if (stored) {
-                const parsed = JSON.parse(stored);
-                userData = parsed;
-                // التأكد من وجود ID للمستخدمين القدامى أيضاً
-                if (!userData.gameID) {
-                    userData.gameID = generateUniqueID();
-                    saveToStorage();
-                }
-            } else {
-                saveToStorage();
+                userData = JSON.parse(stored);
+                if (!userData.gameID) userData.gameID = generateUniqueID();
             }
             
-            // استرجاع التصنيف المحفوظ عند تحميل الموقع
+            // استرجاع التصنيف المختار صامتاً (بدون فتح القائمة)
             const savedCategory = localStorage.getItem('guessGame_category');
             if(savedCategory) {
                 const cat = JSON.parse(savedCategory);
-                selectCategory(cat.id, cat.name);
+                selectCategory(cat.id, cat.name, true); // True تعني "صامت"
             }
             
             updateUI();
