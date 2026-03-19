@@ -130,6 +130,12 @@
         .btn-confirm { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
         .btn-yes { background: var(--red); color: white; }
         .btn-no { background: #333; color: white; }
+
+        /* --- نظام الأصدقاء الجديد --- */
+        .friend-row { display: flex; align-items: center; justify-content: space-between; background: #0d0d12; padding: 12px; border-radius: 15px; margin-bottom: 8px; border: 1px solid #2d2d35; }
+        .friend-info { display: flex; align-items: center; gap: 10px; }
+        .friend-avatar { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--purple); }
+        .challenge-btn { background: var(--purple); color: white; border: none; padding: 6px 12px; border-radius: 10px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -160,7 +166,7 @@
                 </div>
 
                 <button class="btn-main btn-play" onclick="startLudoSearch()">ابدأ التحدي</button>
-                <button class="btn-main btn-secondary">المتجر</button>
+                <button class="btn-main btn-secondary" onclick="openFriendsModal()">🤝 الأصدقاء</button>
                 <button class="btn-main btn-secondary" onclick="openProfile()">الإعدادات</button>
             </div>
         </div>
@@ -227,6 +233,30 @@
             <button class="send-btn" onclick="sendMessage()">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
+        </div>
+    </div>
+
+    <div id="friendsModal" class="modal">
+        <div class="card-content" style="max-height: 80vh; overflow-y: auto; width: 90%;">
+            <h3>نظام الأصدقاء</h3>
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <input type="text" id="friendIdInput" placeholder="أدخل ID الصديق" style="flex:1; padding:12px; background:#08080a; border:1px solid #333; color:#fff; border-radius:12px; font-size:0.9rem">
+                <button onclick="addFriendById()" style="background:var(--purple); border:none; padding:10px 15px; border-radius:12px; color:white; font-weight:bold">إضافة</button>
+            </div>
+            <h4 style="text-align: right; color: var(--dim); font-size: 0.8rem; margin-bottom: 10px;">أصدقاؤك المتصلون</h4>
+            <div id="friendsList"></div>
+            <button class="custom-btn btn-secondary" onclick="closeAll()">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="inviteReceivedModal" class="modal">
+        <div class="confirm-box">
+            <h3 id="inviterName" style="color: white; margin: 0;">تحدي جديد!</h3>
+            <p style="color: var(--dim); margin: 15px 0;">يريد تحديك في مباراة</p>
+            <div class="confirm-btns">
+                <button class="btn-confirm btn-yes" id="acceptInviteBtn">قبول</button>
+                <button class="btn-confirm btn-no" onclick="rejectInvite()">رفض</button>
+            </div>
         </div>
     </div>
 
@@ -346,6 +376,7 @@
         let isTransitioning = false;
         let selectedCategory = "random";
         let selectedCategoryName = "عشوائي";
+        let myFriends = JSON.parse(localStorage.getItem('myFriendsList_v1') || "[]");
 
         function toggleCategoryPopup(e) {
             if(e) e.stopPropagation();
@@ -398,6 +429,7 @@
             document.getElementById('statXP').innerText = userData.xp;
             document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
             document.getElementById('mySearchName').innerText = userData.name;
+            syncPublicData();
         }
 
         async function requestMicPermission() {
@@ -419,7 +451,6 @@
                 img.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`;
                 strip.appendChild(img);
             }
-            
             let pos = 0;
             searchInterval = setInterval(() => {
                 pos -= 105;
@@ -442,12 +473,9 @@
             playSfx('click');
             const hasMic = await requestMicPermission();
             if(!hasMic) return;
-
             document.getElementById('searchingOverlay').style.display = 'flex';
             startSlotAnimation();
-
-            currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
-            
+            currentPlayerId = "user_" + userData.gameID;
             const myRef = db.ref("waitingPlayers/" + currentPlayerId);
             myRef.set({ 
                 id: currentPlayerId, 
@@ -460,7 +488,6 @@
                 timestamp: firebase.database.ServerValue.TIMESTAMP 
             });
             myRef.onDisconnect().remove();
-
             db.ref("waitingPlayers").on("value", (snapshot) => {
                 const players = snapshot.val();
                 if (!players) return;
@@ -490,7 +517,6 @@
             stopSlotAnimation(foundOpp.avatar);
             document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
             document.getElementById('oppNameSearch').innerText = foundOpp.name;
-
             setTimeout(() => {
                 document.getElementById('searchingOverlay').style.display = 'none';
                 document.getElementById('mainMenuView').classList.remove('active-view');
@@ -499,7 +525,6 @@
                 document.getElementById('gameOppAvatar').src = foundOpp.avatar;
                 document.getElementById('gameOppID').innerText = "ID: " + (foundOpp.gameID || "Unknown");
                 currentGameRoom = [currentPlayerId, oppId].sort().join("_");
-                
                 initVoiceChat(currentGameRoom);
                 initGameLogic();       
             }, 2000);
@@ -523,7 +548,7 @@
                 }
             };
             const callRef = db.ref(`calls/${roomId}`);
-            if (currentPlayerId < foundOpp.id) {
+            if (currentPlayerId < (foundOpp.id || ("user_"+foundOpp.gameID))) {
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
                 callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
@@ -531,17 +556,18 @@
             callRef.on('value', async (snap) => {
                 const data = snap.val();
                 if (!data) return;
-                if (data.offer && currentPlayerId > foundOpp.id && !peerConnection.currentRemoteDescription) {
+                let oppKey = (foundOpp.id || ("user_"+foundOpp.gameID));
+                if (data.offer && currentPlayerId > oppKey && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
                     const answer = await peerConnection.createAnswer();
                     await peerConnection.setLocalDescription(answer);
                     callRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
                 }
-                if (data.answer && currentPlayerId < foundOpp.id && !peerConnection.currentRemoteDescription) {
+                if (data.answer && currentPlayerId < oppKey && !peerConnection.currentRemoteDescription) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                 }
             });
-            db.ref(`calls/${roomId}/candidates/${foundOpp.id}`).on('child_added', (snap) => {
+            db.ref(`calls/${roomId}/candidates/${foundOpp.id || ("user_"+foundOpp.gameID)}`).on('child_added', (snap) => {
                 const candidate = new RTCIceCandidate(snap.val());
                 peerConnection.addIceCandidate(candidate).catch(e => {});
             });
@@ -568,7 +594,8 @@
         function initGameLogic() {
             currentRound = 1; myPoints = 0; oppPoints = 0;
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            if (currentPlayerId < foundOpp.id) {
+            let oppKey = (foundOpp.id || ("user_"+foundOpp.gameID));
+            if (currentPlayerId < oppKey) {
                 roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
                 setupRoundData(1);
             }
@@ -587,7 +614,7 @@
                 }
                 document.getElementById('roundTxt').innerText = `${currentRound}/3`;
                 if (data.cards) {
-                    const isFirst = currentPlayerId < foundOpp.id;
+                    const isFirst = currentPlayerId < oppKey;
                     document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
                     document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
                 }
@@ -597,7 +624,7 @@
                 document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
                 if (data.scores) {
                     myPoints = data.scores[currentPlayerId] || 0;
-                    oppPoints = data.scores[foundOpp.id] || 0;
+                    oppPoints = data.scores[oppKey] || 0;
                 }
                 if (data.gameState === 'finished') { endGameResults(); }
             });
@@ -616,51 +643,19 @@
             showTransition(1);
         }
 
-        // --- تعديل وظيفة سحب الصور لدعم القسم العشوائي بشكل احترافي ---
         function setupRoundData(r) {
-            const rootPath = "bank_images";
-            
-            db.ref(rootPath).once('value').then(snap => {
-                let allPossibleImages = [];
-                const data = snap.val();
-                if (!data) return;
-
-                if (selectedCategory === "random") {
-                    // سحب الصور من كافة التصنيفات المتاحة في قاعدة البيانات
-                    Object.keys(data).forEach(catKey => {
-                        const catData = data[catKey];
-                        if (typeof catData === 'object') {
-                            Object.values(catData).forEach(img => {
-                                allPossibleImages.push(typeof img === 'string' ? img : img.url);
-                            });
-                        } else if (typeof catData === 'string') {
-                            allPossibleImages.push(catData);
-                        }
-                    });
-                } else {
-                    // سحب الصور من التصنيف المختار فقط
-                    const specificCat = data[selectedCategory];
-                    if (specificCat) {
-                        Object.values(specificCat).forEach(img => {
-                            allPossibleImages.push(typeof img === 'string' ? img : img.url);
-                        });
-                    }
-                }
-
-                // حماية في حال كانت المصفوفة فارغة
-                if(allPossibleImages.length < 2) {
-                    allPossibleImages = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
-                }
-
-                const r1 = Math.floor(Math.random() * allPossibleImages.length);
-                let r2 = Math.floor(Math.random() * allPossibleImages.length);
-                while(r1 === r2) r2 = Math.floor(Math.random() * allPossibleImages.length);
-
-                db.ref(`rooms/${currentGameRoom}`).update({ 
-                    cards: { img1: allPossibleImages[r1], img2: allPossibleImages[r2] }, 
-                    reveal: false, 
-                    round: r 
+            const path = selectedCategory === "random" ? "bank_images" : `bank_images/${selectedCategory}`;
+            db.ref(path).once('value').then(snap => {
+                let images = [];
+                snap.forEach(child => {
+                    let val = child.val();
+                    images.push(typeof val === 'string' ? val : val.url);
                 });
+                if(images.length < 2) images = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
+                const r1 = Math.floor(Math.random()*images.length);
+                let r2 = Math.floor(Math.random()*images.length);
+                while(r1===r2) r2 = Math.floor(Math.random()*images.length);
+                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: images[r1], img2: images[r2]}, reveal: false, round: r });
             });
         }
 
@@ -671,14 +666,15 @@
             const roomRef = db.ref(`rooms/${currentGameRoom}`);
             roomRef.once('value').then(s => {
                 const d = s.val();
-                const newOppPoints = (d.scores && d.scores[foundOpp.id] ? d.scores[foundOpp.id] : 0) + 50;
+                let oppKey = (foundOpp.id || ("user_"+foundOpp.gameID));
+                const newOppPoints = (d.scores && d.scores[oppKey] ? d.scores[oppKey] : 0) + 50;
                 const updates = {};
-                updates[`scores/${foundOpp.id}`] = newOppPoints;
+                updates[`scores/${oppKey}`] = newOppPoints;
                 updates['reveal'] = true;
                 roomRef.update(updates).then(() => {
                     setTimeout(() => {
                         if (d.round < 3) {
-                            if (currentPlayerId < foundOpp.id) setupRoundData(d.round + 1);
+                            if (currentPlayerId < oppKey) setupRoundData(d.round + 1);
                             isTransitioning = false;
                         } else { roomRef.update({ gameState: 'finished' }); }
                     }, 3000);
@@ -700,7 +696,6 @@
 
         function confirmExit() { playSfx('click'); document.getElementById('exitModal').style.display = 'flex'; }
         function closeExitModal() { playSfx('click'); document.getElementById('exitModal').style.display = 'none'; }
-        
         function forceExit() {
             playSfx('click');
             if (currentGameRoom) { 
@@ -753,6 +748,117 @@
             reader.readAsDataURL(e.target.files[0]);
         }
 
+        // --- ميزات الأصدقاء البرمجية ---
+        function syncPublicData() {
+            db.ref("users_public/" + userData.gameID).set({
+                name: userData.name,
+                avatar: userData.avatar,
+                gameID: userData.gameID,
+                status: "online",
+                lastSeen: firebase.database.ServerValue.TIMESTAMP
+            });
+            db.ref("users_public/" + userData.gameID).onDisconnect().remove();
+        }
+
+        function openFriendsModal() {
+            playSfx('click');
+            document.getElementById('friendsModal').style.display = 'flex';
+            renderFriends();
+        }
+
+        function addFriendById() {
+            const id = document.getElementById('friendIdInput').value.trim();
+            if(!id || id === userData.gameID) return alert("ID غير صالح");
+            db.ref("users_public/" + id).once('value').then(snap => {
+                if(snap.exists()){
+                    if(!myFriends.includes(id)) {
+                        myFriends.push(id);
+                        localStorage.setItem('myFriendsList_v1', JSON.stringify(myFriends));
+                        renderFriends();
+                        document.getElementById('friendIdInput').value = "";
+                        alert("تمت إضافة الصديق!");
+                    } else { alert("مضاف بالفعل!"); }
+                } else { alert("المستخدم غير موجود!"); }
+            });
+        }
+
+        function renderFriends() {
+            const list = document.getElementById('friendsList');
+            list.innerHTML = "";
+            myFriends.forEach(fid => {
+                db.ref("users_public/" + fid).once('value').then(snap => {
+                    if(snap.exists()){
+                        const f = snap.val();
+                        const div = document.createElement('div');
+                        div.className = 'friend-row';
+                        div.innerHTML = `
+                            <div class="friend-info">
+                                <img src="${f.avatar}" class="friend-avatar">
+                                <div>
+                                    <div style="font-weight:bold; font-size:0.85rem">${f.name}</div>
+                                    <div style="font-size:0.7rem; color:var(--green)">متصل الآن</div>
+                                </div>
+                            </div>
+                            <button class="challenge-btn" onclick="inviteFriend('${f.gameID}')">تحدي</button>
+                        `;
+                        list.appendChild(div);
+                    }
+                });
+            });
+        }
+
+        function inviteFriend(fid) {
+            playSfx('click');
+            const inviteID = "inv_" + Math.random().toString(36).substr(2, 9);
+            db.ref("invites/" + fid).set({
+                fromName: userData.name,
+                fromID: userData.gameID,
+                fromAvatar: userData.avatar,
+                status: "pending",
+                inviteID: inviteID,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            alert("تم إرسال التحدي.. بانتظار القبول");
+            // انتظر القبول
+            db.ref("invites/" + fid).on('value', snap => {
+                const inv = snap.val();
+                if(inv && inv.status === "accepted") {
+                    db.ref("invites/" + fid).off();
+                    db.ref("invites/" + fid).remove();
+                    foundOpp = { id: "user_"+fid, name: fid, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed="+fid, gameID: fid };
+                    // نحتاج جلب بيانات الخصم الحقيقية هنا للتأكد
+                    db.ref("users_public/" + fid).once('value').then(s => {
+                        foundOpp = s.val();
+                        foundOpp.id = "user_"+fid;
+                        prepareGame(foundOpp.id);
+                    });
+                }
+            });
+        }
+
+        function listenForInvites() {
+            db.ref("invites/" + userData.gameID).on("value", (snapshot) => {
+                const invite = snapshot.val();
+                if (invite && invite.status === "pending") {
+                    playSfx('msg');
+                    document.getElementById('inviterName').innerText = invite.fromName;
+                    document.getElementById('inviteReceivedModal').style.display = 'flex';
+                    document.getElementById('acceptInviteBtn').onclick = () => {
+                        db.ref("invites/" + userData.gameID).update({ status: "accepted" });
+                        foundOpp = { id: "user_"+invite.fromID, name: invite.fromName, avatar: invite.fromAvatar, gameID: invite.fromID };
+                        currentPlayerId = "user_" + userData.gameID;
+                        document.getElementById('inviteReceivedModal').style.display = 'none';
+                        prepareGame(foundOpp.id);
+                    };
+                }
+            });
+        }
+
+        function rejectInvite() {
+            db.ref("invites/" + userData.gameID).remove();
+            closeAll();
+        }
+
         window.onload = () => {
             const stored = localStorage.getItem('guessGameUser_v3');
             if (stored) {
@@ -765,8 +871,8 @@
                 selectCategory(cat.id, cat.name, true);
             }
             updateUI();
+            listenForInvites();
         };
     </script>
 </body>
 </html>
-                  
