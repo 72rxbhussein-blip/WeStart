@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تحدي التخمين - النسخة الاحترافية الكاملة</title>
+    <title>تحدي التخمين - النسخة الاحترافية الكاملة بنظام الأصدقاء</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -22,14 +22,11 @@
 
         /* --- قائمة البداية --- */
         #mainMenuView { background: radial-gradient(circle at top right, #1a1a2e 0%, #08080a 100%); }
-        .top-bar { width: 100%; padding: 25px; display: flex; align-items: center; justify-content: space-between; z-index: 10; }
-        .user-info-trigger { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .top-bar { width: 100%; padding: 25px; display: flex; align-items: center; gap: 12px; cursor: pointer; z-index: 10; }
         .my-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--purple); background: #222; overflow: hidden; object-fit: cover; }
         .level-mini-bar { width: 100px; height: 4px; background: #2d2d35; border-radius: 2px; margin-top: 5px; overflow: hidden; }
         .level-progress-fill { height: 100%; background: var(--purple); width: 0%; transition: 0.8s ease-out; }
         
-        .friends-trigger { background: var(--surface); padding: 12px; border-radius: 15px; border: 1px solid #2d2d35; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-
         .main-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; }
         .game-logo { font-size: 3rem; font-weight: 800; color: white; margin-bottom: 5px; text-shadow: 0 0 20px rgba(188, 111, 241, 0.5); }
         .game-tagline { color: var(--dim); font-size: 1rem; margin-bottom: 50px; }
@@ -39,41 +36,60 @@
         .btn-play { background: var(--purple); color: white; box-shadow: 0 10px 25px rgba(188, 111, 241, 0.25); }
         .btn-secondary { background: var(--surface); color: white; border: 1px solid #2d2d35; }
 
+        /* --- واجهة الأصدقاء الجديدة بالكامل --- */
+        #friendsView { 
+            position: fixed; inset: 0; background: var(--bg); z-index: 9000; display: none; flex-direction: column; 
+            animation: slideUp 0.4s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .friends-header { padding: 20px; display: flex; align-items: center; border-bottom: 1px solid #2d2d35; background: #0c0c10; }
+        .friends-back { cursor: pointer; color: var(--purple); display: flex; align-items: center; gap: 8px; font-weight: bold; }
+        
+        .friends-search-box { padding: 15px 20px; position: relative; }
+        .friends-search-box input { 
+            width: 100%; background: #1a1a20; border: 1px solid #333; padding: 14px 45px 14px 15px; 
+            border-radius: 15px; color: white; font-size: 0.9rem;
+        }
+        .search-icon-abs { position: absolute; right: 35px; top: 30px; color: var(--dim); }
+
+        .friends-scroll-area { flex: 1; overflow-y: auto; padding: 10px 20px; }
+        .friend-row { 
+            background: #16161d; border-radius: 18px; padding: 12px; display: flex; align-items: center; 
+            gap: 12px; margin-bottom: 12px; border: 1px solid #222;
+        }
+        .friend-info { flex: 1; }
+        .friend-name-text { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .online-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
+        .offline-dot { width: 8px; height: 8px; background: #555; border-radius: 50%; }
+        
+        .invite-action-btn { 
+            background: var(--purple); color: white; border: none; padding: 8px 15px; 
+            border-radius: 10px; font-weight: bold; font-size: 0.8rem; cursor: pointer;
+        }
+
+        /* --- تصميم بوبجي لإرسال الدعوة --- */
+        #incomingInviteBox {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-200%);
+            width: 90%; max-width: 360px; background: #1c1c24; border-radius: 15px; 
+            padding: 15px; z-index: 10001; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid var(--purple);
+        }
+        .invite-visible { transform: translateX(-50%) translateY(0) !important; }
+        .invite-header-pubg { display: flex; align-items: center; gap: 12px; }
+        .invite-avatar-pubg { width: 55px; height: 55px; border-radius: 12px; object-fit: cover; border: 2px solid var(--purple); }
+        .invite-btns-row { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-pubg { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .btn-pubg-accept { background: var(--green); color: white; }
+        .btn-pubg-reject { background: var(--red); color: white; }
+
         /* --- نظام التصنيفات --- */
         .category-trigger { position: absolute; top: -12px; left: -10px; background: #1a1a25; border: 1.5px solid var(--purple); color: white; padding: 6px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 5px; cursor: pointer; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         .category-popup { display: none; position: absolute; bottom: 100%; left: 0; background: #16161d; border: 1px solid #2d2d35; border-radius: 15px; width: 160px; padding: 8px; margin-bottom: 10px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8); animation: popIn 0.3s ease-out; }
         .cat-item { padding: 10px; border-radius: 10px; font-size: 0.85rem; color: var(--dim); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: space-between; }
         .cat-item:hover { background: #222; color: white; }
         .cat-item.active { color: var(--purple); font-weight: 700; background: rgba(188, 111, 241, 0.05); }
-
-        /* --- واجهة الأصدقاء والبحث --- */
-        #friendsView { background: var(--bg); z-index: 200; }
-        .search-container { padding: 20px; background: var(--surface); border-bottom: 1px solid #2d2d35; }
-        .search-input-wrapper { position: relative; display: flex; align-items: center; background: #08080a; border-radius: 15px; padding: 5px 15px; border: 1px solid #333; }
-        .search-input-wrapper input { flex: 1; background: transparent; border: none; padding: 12px; color: white; font-size: 0.9rem; }
-        .friends-list { flex: 1; overflow-y: auto; padding: 15px; }
-        .friend-card { background: var(--surface); border-radius: 20px; padding: 15px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border: 1px solid #23232b; }
-        .friend-info { display: flex; align-items: center; gap: 12px; }
-        .friend-avatar { width: 50px; height: 50px; border-radius: 15px; border: 2px solid #333; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dim); }
-        .status-online { background: var(--green); box-shadow: 0 0 8px var(--green); }
-        .invite-btn { background: var(--purple); color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
-
-        /* --- إشعار الدعوة (أسلوب ببجي) --- */
-        #inviteNotification { 
-            position: fixed; bottom: -150px; left: 50%; transform: translateX(-50%); 
-            width: 90%; max-width: 400px; background: rgba(22, 22, 29, 0.95); 
-            border: 1.5px solid var(--purple); border-radius: 25px; padding: 15px; 
-            display: flex; align-items: center; justify-content: space-between; 
-            z-index: 10000; backdrop-filter: blur(15px); transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-        }
-        #inviteNotification.show { bottom: 30px; }
-        .invite-content { display: flex; align-items: center; gap: 12px; }
-        .invite-actions { display: flex; gap: 8px; }
-        .btn-invite-act { padding: 10px 20px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; font-size: 0.85rem; }
-        .btn-accept { background: var(--green); color: white; }
-        .btn-decline { background: var(--red); color: white; }
+        @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
         /* --- شاشة البحث المتطورة --- */
         #searchingOverlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e 0%, #08080a 100%); }
@@ -84,6 +100,7 @@
         .opp-search-wrapper { width: 105px; height: 105px; border-radius: 25px; border: 3px solid #ff4757; overflow: hidden; background: #222; position: relative; }
         .opp-avatar-strip { display: flex; flex-direction: column; transition: transform 0.1s linear; }
         .opp-avatar-strip img { width: 105px; height: 105px; object-fit: cover; flex-shrink: 0; }
+
         .pulse-ring { position: absolute; inset: 0; border: 3px solid var(--purple); border-radius: 25px; animation: pulse-anim 1.5s infinite; }
         @keyframes pulse-anim { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
         .vs-badge { font-size: 2.8rem; font-weight: 900; color: #ff4757; font-style: italic; text-shadow: 0 0 15px rgba(255, 71, 87, 0.4); }
@@ -148,42 +165,36 @@
         .btn-save-custom { background: var(--purple); color: white; box-shadow: 0 4px 15px rgba(188, 111, 241, 0.3); }
         .btn-secondary { background: var(--surface); color: white; border: 1px solid #2d2d35; }
 
-        /* --- التنبيهات الصغيرة --- */
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--surface); color: white; padding: 12px 25px; border-radius: 50px; border: 1px solid var(--purple); z-index: 10001; font-weight: 600; font-size: 0.9rem; box-shadow: 0 10px 20px rgba(0,0,0,0.5); display: none; }
-
-        @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .confirm-box { background: var(--surface); padding: 30px; border-radius: 25px; text-align: center; width: 80%; max-width: 300px; border: 1px solid #333; }
+        .confirm-btns { display: flex; gap: 15px; margin-top: 25px; }
+        .btn-confirm { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-yes { background: var(--red); color: white; }
+        .btn-no { background: #333; color: white; }
     </style>
 </head>
 <body>
 
-    <div id="toast" class="toast"></div>
-
-    <div id="inviteNotification">
-        <div class="invite-content">
-            <img id="inviterAvatar" src="" style="width: 45px; height: 45px; border-radius: 12px; border: 1.5px solid var(--purple);">
+    <div id="incomingInviteBox">
+        <div class="invite-header-pubg">
+            <img id="pubgInviterAvatar" src="" class="invite-avatar-pubg">
             <div>
-                <div id="inviterName" style="font-weight: 700; font-size: 0.9rem;">اسم اللاعب</div>
-                <div style="font-size: 0.7rem; color: var(--dim);">يرسل لك دعوة للعب!</div>
+                <div id="pubgInviterName" style="font-weight:700; font-size:1rem; color:white;">اسم اللاعب</div>
+                <div style="font-size:0.75rem; color:var(--dim);">يدعوك للانضمام إلى مباراة</div>
             </div>
         </div>
-        <div class="invite-actions">
-            <button class="btn-invite-act btn-decline" onclick="handleInviteResponse(false)">رفض</button>
-            <button class="btn-invite-act btn-accept" onclick="handleInviteResponse(true)">دخول</button>
+        <div class="invite-btns-row">
+            <button class="btn-pubg btn-pubg-accept" onclick="acceptFriendInvite()">موافق ودخول</button>
+            <button class="btn-pubg btn-pubg-reject" onclick="rejectFriendInvite()">رفض</button>
         </div>
     </div>
 
     <div id="mainMenuView" class="game-view active-view">
-        <div class="top-bar">
-            <div class="user-info-trigger" onclick="openProfile()">
-                <img id="headerAvatar" src="" class="my-avatar">
-                <div style="margin-right: 10px;">
-                    <div id="headerName" style="font-weight: 700; font-size: 1.15rem;">لاعب جديد</div>
-                    <div id="headerLevelText" style="font-size: 0.75rem; color: var(--purple);">المستوى 1</div>
-                    <div class="level-mini-bar"><div id="miniProgress" class="level-progress-fill"></div></div>
-                </div>
-            </div>
-            <div class="friends-trigger" onclick="openFriendsView()">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <div class="top-bar" onclick="openProfile()">
+            <img id="headerAvatar" src="" class="my-avatar">
+            <div style="margin-right: 10px;">
+                <div id="headerName" style="font-weight: 700; font-size: 1.15rem;">لاعب جديد</div>
+                <div id="headerLevelText" style="font-size: 0.75rem; color: var(--purple);">المستوى 1</div>
+                <div class="level-mini-bar"><div id="miniProgress" class="level-progress-fill"></div></div>
             </div>
         </div>
         <div class="main-hero">
@@ -195,35 +206,33 @@
                     <span id="activeCategoryText">عشوائي</span>
                 </div>
                 <div id="categoryPopup" class="category-popup">
-                    <div class="cat-item active" onclick="selectCategory('random', 'عشوائي')">عشوائي</div>
-                    <div class="cat-item" onclick="selectCategory('football', 'كرة قدم')">كرة قدم</div>
-                    <div class="cat-item" onclick="selectCategory('celebs', 'مشاهير')">مشاهير</div>
-                    <div class="cat-item" onclick="selectCategory('food', 'طعام')">طعام</div>
-                    <div class="cat-item" onclick="selectCategory('countries', 'دول')">دول</div>
+                    <div class="cat-item active" onclick="selectCategory('random', 'عشوائي')">عشوائي <span>🎲</span></div>
+                    <div class="cat-item" onclick="selectCategory('football', 'كرة قدم')">كرة قدم <span>⚽</span></div>
+                    <div class="cat-item" onclick="selectCategory('celebs', 'مشاهير')">مشاهير <span>🌟</span></div>
+                    <div class="cat-item" onclick="selectCategory('food', 'طعام')">طعام <span>🍕</span></div>
+                    <div class="cat-item" onclick="selectCategory('countries', 'دول')">دول <span>🌍</span></div>
                 </div>
 
                 <button class="btn-main btn-play" onclick="startLudoSearch()">ابدأ التحدي</button>
-                <button class="btn-main btn-secondary" onclick="openFriendsView()">الأصدقاء</button>
+                <button class="btn-main btn-secondary" onclick="openFriendsPanel()">الأصدقاء</button>
                 <button class="btn-main btn-secondary" onclick="openProfile()">الإعدادات</button>
             </div>
         </div>
     </div>
 
-    <div id="friendsView" class="game-view">
-        <div class="header">
-            <div class="exit-btn" onclick="closeFriendsView()" style="transform: rotate(180deg);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+    <div id="friendsView">
+        <div class="friends-header">
+            <div class="friends-back" onclick="closeFriendsPanel()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                رجوع
             </div>
-            <div style="font-weight: 800; font-size: 1.2rem;">قائمة الأصدقاء</div>
-            <div style="width: 40px;"></div>
+            <div style="margin-right: auto; font-weight: 800; font-size: 1.2rem;">قائمة الأصدقاء</div>
         </div>
-        <div class="search-container">
-            <div class="search-input-wrapper">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="friendSearchInput" placeholder="ابحث عن صديق بالـ ID الخاص به..." oninput="searchPlayer()">
-            </div>
+        <div class="friends-search-box">
+            <input type="text" id="friendSearchInput" placeholder="ابحث عن ID اللاعب..." oninput="handleFriendSearch()">
+            <svg class="search-icon-abs" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
-        <div class="friends-list" id="friendsListContainer">
+        <div class="friends-scroll-area" id="friendsList">
             </div>
     </div>
 
@@ -268,8 +277,8 @@
         </div>
 
         <div class="arena">
-            <div class="card-box"><div class="card"><img class="blur-img" id="oppCardImg" src=""></div><div class="label">بطاقة الخصم</div></div>
-            <div class="card-box"><div class="card" style="border-color: var(--purple);"><img id="myCardImg" src=""></div><div class="label">بطاقتك</div></div>
+            <div class="card-box"><div class="card"><img class="blur-img" id="oppCardImg" src=""></div><div class="label" style="font-size: 0.75rem; margin-top: 5px;">بطاقة الخصم</div></div>
+            <div class="card-box"><div class="card" style="border-color: var(--purple);"><img id="myCardImg" src=""></div><div class="label" style="font-size: 0.75rem; margin-top: 5px;">بطاقتك</div></div>
         </div>
 
         <div class="chat-section">
@@ -372,14 +381,13 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- أصوات اللعبة ---
+        // --- مكتبة الأصوات ---
         const gameSounds = {
             click: new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3'),
-            search: new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3'),
-            match: new Audio('https://www.soundjay.com/nature/sounds/cricket-chirp-1.mp3'),
+            search: new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3'), 
+            match: new Audio('https://www.soundjay.com/nature/sounds/cricket-chirp-1.mp3'), 
             msg: new Audio('https://www.soundjay.com/communication/sounds/message-pop-1.mp3'),
-            success: new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3'),
-            invite: new Audio('https://www.soundjay.com/communication/sounds/telephone-ring-03a.mp3')
+            success: new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3')
         };
 
         function playSfx(sound) {
@@ -389,16 +397,11 @@
             }
         }
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.style.display = 'block';
-            setTimeout(() => toast.style.display = 'none', 3000);
-        }
-
         function generateUniqueID() {
             let id = "7";
-            for (let i = 0; i < 9; i++) id += Math.floor(Math.random() * 10);
+            for (let i = 0; i < 9; i++) {
+                id += Math.floor(Math.random() * 10);
+            }
             return id;
         }
 
@@ -408,373 +411,211 @@
             xp: 0, 
             wins: 0,
             gameID: generateUniqueID(),
-            friends: [] // تخزين الـ IDs فقط
+            status: "online"
         };
 
         let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
         let isTransitioning = false;
         let selectedCategory = "random";
         let selectedCategoryName = "عشوائي";
-        let currentInvite = null;
 
-        // --- تحديث الحالة المتصلة ---
-        function updateOnlineStatus() {
-            const statusRef = db.ref(`users/${userData.gameID}`);
-            statusRef.update({
-                name: userData.name,
-                avatar: userData.avatar,
-                status: "online",
-                lastSeen: firebase.database.ServerValue.TIMESTAMP
-            });
-            statusRef.onDisconnect().update({ status: "offline" });
+        // --- نظام الأصدقاء المتطور ---
+        
+        function openFriendsPanel() {
+            playSfx('click');
+            document.getElementById('friendsView').style.display = 'flex';
+            loadFriendsList();
         }
 
-        // --- الاستماع للدعوات الواردة ---
-        function listenForInvites() {
-            db.ref(`invites/${userData.gameID}`).on('value', snap => {
-                const data = snap.val();
-                if (data && data.status === "pending") {
-                    currentInvite = data;
-                    document.getElementById('inviterName').innerText = data.senderName;
-                    document.getElementById('inviterAvatar').src = data.senderAvatar;
-                    document.getElementById('inviteNotification').classList.add('show');
-                    playSfx('invite');
-                } else if (data && data.status === "declined") {
-                    showToast("تم رفض الدعوة");
-                    db.ref(`invites/${userData.gameID}`).remove();
-                } else if (data && data.status === "accepted") {
-                    // إذا قبل الشخص الآخر، ننتقل للعبة
-                    db.ref(`invites/${userData.gameID}`).remove();
-                    foundOpp = { id: data.receiverID, name: data.receiverName, avatar: data.receiverAvatar, gameID: data.receiverID };
-                    prepareGame(data.receiverID, true);
+        function closeFriendsPanel() {
+            playSfx('click');
+            document.getElementById('friendsView').style.display = 'none';
+        }
+
+        function handleFriendSearch() {
+            const searchVal = document.getElementById('friendSearchInput').value.trim();
+            const listDiv = document.getElementById('friendsList');
+            
+            if (searchVal.length > 5) {
+                db.ref('active_users').orderByChild('gameID').equalTo(searchVal).once('value', snapshot => {
+                    listDiv.innerHTML = "";
+                    if (snapshot.exists()) {
+                        snapshot.forEach(child => {
+                            const p = child.val();
+                            if (p.gameID !== userData.gameID) {
+                                renderFriendRow(p, true);
+                            }
+                        });
+                    } else {
+                        listDiv.innerHTML = "<div style='text-align:center; margin-top:20px; color:var(--dim);'>لم يتم العثور على لاعب بهذا الـ ID</div>";
+                    }
+                });
+            } else {
+                loadFriendsList();
+            }
+        }
+
+        function loadFriendsList() {
+            const listDiv = document.getElementById('friendsList');
+            db.ref('active_users').limitToLast(20).once('value', snapshot => {
+                listDiv.innerHTML = "";
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        const p = child.val();
+                        if (p.gameID !== userData.gameID) {
+                            renderFriendRow(p, false);
+                        }
+                    });
                 }
             });
         }
 
-        function handleInviteResponse(accepted) {
-            playSfx('click');
-            document.getElementById('inviteNotification').classList.remove('show');
-            if (!currentInvite) return;
-
-            if (accepted) {
-                const roomId = [currentInvite.senderID, userData.gameID].sort().join("_");
-                db.ref(`invites/${currentInvite.senderID}`).update({ 
-                    status: "accepted", 
-                    receiverName: userData.name, 
-                    receiverAvatar: userData.avatar,
-                    receiverID: userData.gameID
-                });
-                foundOpp = { id: currentInvite.senderID, name: currentInvite.senderName, avatar: currentInvite.senderAvatar, gameID: currentInvite.senderID };
-                prepareGame(currentInvite.senderID, true);
-            } else {
-                db.ref(`invites/${currentInvite.senderID}`).update({ status: "declined" });
-            }
-            db.ref(`invites/${userData.gameID}`).remove();
+        function renderFriendRow(player, isSearch) {
+            const listDiv = document.getElementById('friendsList');
+            const row = document.createElement('div');
+            row.className = 'friend-row';
+            const isOnline = player.status === "online";
+            
+            row.innerHTML = `
+                <img src="${player.avatar}" style="width:50px; height:50px; border-radius:50%; border:2px solid ${isOnline ? 'var(--green)' : '#444'};">
+                <div class="friend-info">
+                    <div class="friend-name-text">
+                        ${player.name}
+                        <span class="${isOnline ? 'online-dot' : 'offline-dot'}"></span>
+                    </div>
+                    <div style="font-size:0.7rem; color:var(--dim);">ID: ${player.gameID}</div>
+                </div>
+                <button class="invite-action-btn" onclick="sendFriendInvite('${player.gameID}', '${player.name}', '${player.avatar}')">إرسال دعوة</button>
+            `;
+            listDiv.appendChild(row);
         }
 
-        function sendInvite(targetID) {
+        function sendFriendInvite(targetID, targetName, targetAvatar) {
             playSfx('click');
-            showToast("تم إرسال الدعوة...");
             db.ref(`invites/${targetID}`).set({
-                senderID: userData.gameID,
-                senderName: userData.name,
-                senderAvatar: userData.avatar,
-                status: "pending"
+                fromID: userData.gameID,
+                fromName: userData.name,
+                fromAvatar: userData.avatar,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                status: 'pending'
+            });
+            alert("تم إرسال دعوة اللعب إلى " + targetName);
+
+            // مراقبة الرد
+            db.ref(`invite_responses/${userData.gameID}`).on('value', snap => {
+                const resp = snap.val();
+                if (resp) {
+                    if (resp.status === 'accepted') {
+                        db.ref(`invite_responses/${userData.gameID}`).remove();
+                        startPrivateMatch(resp.roomID, {gameID: targetID, name: targetName, avatar: targetAvatar});
+                    } else if (resp.status === 'rejected') {
+                        alert("تم رفض الدعوة.");
+                        db.ref(`invite_responses/${userData.gameID}`).remove();
+                    }
+                }
             });
         }
+
+        function listenForIncomingInvites() {
+            db.ref(`invites/${userData.gameID}`).on('value', snap => {
+                const invite = snap.val();
+                if (invite && invite.status === 'pending') {
+                    playSfx('msg');
+                    document.getElementById('pubgInviterName').innerText = invite.fromName;
+                    document.getElementById('pubgInviterAvatar').src = invite.fromAvatar;
+                    document.getElementById('incomingInviteBox').classList.add('invite-visible');
+                    window.currentInviteData = invite;
+                }
+            });
+        }
+
+        function acceptFriendInvite() {
+            const invite = window.currentInviteData;
+            const roomID = "private_" + Math.min(userData.gameID, invite.fromID) + "_" + Math.max(userData.gameID, invite.fromID);
+            
+            db.ref(`invite_responses/${invite.fromID}`).set({
+                status: 'accepted',
+                roomID: roomID
+            });
+            
+            db.ref(`invites/${userData.gameID}`).remove();
+            document.getElementById('incomingInviteBox').classList.remove('invite-visible');
+            
+            startPrivateMatch(roomID, {gameID: invite.fromID, name: invite.fromName, avatar: invite.fromAvatar});
+        }
+
+        function rejectFriendInvite() {
+            const invite = window.currentInviteData;
+            db.ref(`invite_responses/${invite.fromID}`).set({ status: 'rejected' });
+            db.ref(`invites/${userData.gameID}`).remove();
+            document.getElementById('incomingInviteBox').classList.remove('invite-visible');
+        }
+
+        function startPrivateMatch(roomID, oppData) {
+            foundOpp = oppData;
+            currentGameRoom = roomID;
+            currentPlayerId = "u" + userData.gameID;
+            
+            document.getElementById('friendsView').style.display = 'none';
+            document.getElementById('mainMenuView').classList.remove('active-view');
+            document.getElementById('gamePlayView').classList.add('active-view');
+            
+            document.getElementById('gameOppName').innerText = foundOpp.name;
+            document.getElementById('gameOppAvatar').src = foundOpp.avatar;
+            document.getElementById('gameOppID').innerText = "ID: " + foundOpp.gameID;
+            
+            initVoiceChat(roomID);
+            initGameLogic();
+        }
+
+        function updateMyGlobalStatus() {
+            db.ref(`active_users/${userData.gameID}`).set({
+                name: userData.name,
+                avatar: userData.avatar,
+                gameID: userData.gameID,
+                status: "online",
+                lastSeen: firebase.database.ServerValue.TIMESTAMP
+            });
+            db.ref(`active_users/${userData.gameID}`).onDisconnect().update({ status: "offline" });
+        }
+
+        // --- المزايا الأساسية السابقة دون حذف ---
 
         function toggleCategoryPopup(e) {
             if(e) e.stopPropagation();
             const popup = document.getElementById('categoryPopup');
-            popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
+            const isVisible = popup.style.display === 'block';
+            popup.style.display = isVisible ? 'none' : 'block';
         }
 
         function selectCategory(id, name, silent = false) {
             selectedCategory = id;
             selectedCategoryName = name;
             document.getElementById('activeCategoryText').innerText = name;
+            document.getElementById('searchCatDisplay').innerText = "التصنيف: " + name;
             document.querySelectorAll('.cat-item').forEach(item => {
                 item.classList.remove('active');
                 if(item.innerText.includes(name)) item.classList.add('active');
             });
+            localStorage.setItem('guessGame_category', JSON.stringify({id, name}));
             if(!silent) document.getElementById('categoryPopup').style.display = 'none';
         }
 
-        // --- إدارة واجهة الأصدقاء ---
-        function openFriendsView() {
-            playSfx('click');
-            document.getElementById('mainMenuView').classList.remove('active-view');
-            document.getElementById('friendsView').classList.add('active-view');
-            renderFriendsList();
+        window.onclick = function(event) {
+            if (!event.target.closest('.category-trigger') && !event.target.closest('.category-popup')) {
+                document.getElementById('categoryPopup').style.display = 'none';
+            }
         }
 
-        function closeFriendsView() {
-            playSfx('click');
-            document.getElementById('friendsView').classList.remove('active-view');
-            document.getElementById('mainMenuView').classList.add('active-view');
-        }
-
-        function searchPlayer() {
-            const id = document.getElementById('friendSearchInput').value.trim();
-            if (id.length < 5) { renderFriendsList(); return; }
-            
-            db.ref(`users/${id}`).once('value', snap => {
-                const player = snap.val();
-                if (player && id !== userData.gameID) {
-                    const container = document.getElementById('friendsListContainer');
-                    container.innerHTML = `
-                        <div style="color: var(--dim); font-size: 0.8rem; margin-bottom: 10px;">نتائج البحث:</div>
-                        <div class="friend-card">
-                            <div class="friend-info">
-                                <img src="${player.avatar}" class="friend-avatar">
-                                <div>
-                                    <div style="font-weight: 700;">${player.name}</div>
-                                    <div style="font-size: 0.7rem; color: var(--purple);">ID: ${id}</div>
-                                </div>
-                            </div>
-                            <button class="invite-btn" onclick="sendInvite('${id}')">إرسال دعوة</button>
-                        </div>
-                        <hr style="border: 0; border-top: 1px solid #2d2d35; margin: 20px 0;">
-                    `;
-                }
-            });
-        }
-
-        function renderFriendsList() {
-            const container = document.getElementById('friendsListContainer');
-            container.innerHTML = `<div style="text-align:center; color:var(--dim); margin-top:50px;">سيظهر أصدقاؤك المتصلون هنا</div>`;
-            
-            // جلب عينة من اللاعبين المتصلين للتجربة (أو الأصدقاء الفعليين)
-            db.ref('users').limitToLast(10).once('value', snap => {
-                container.innerHTML = "";
-                snap.forEach(child => {
-                    const p = child.val();
-                    const id = child.key;
-                    if (id === userData.gameID) return;
-
-                    const card = document.createElement('div');
-                    card.className = 'friend-card';
-                    card.innerHTML = `
-                        <div class="friend-info">
-                            <img src="${p.avatar}" class="friend-avatar">
-                            <div>
-                                <div style="font-weight: 700; display:flex; align-items:center; gap:5px;">
-                                    ${p.name} <span class="status-dot ${p.status === 'online' ? 'status-online' : ''}"></span>
-                                </div>
-                                <div style="font-size: 0.7rem; color: var(--dim);">ID: ${id}</div>
-                            </div>
-                        </div>
-                        <button class="invite-btn" onclick="sendInvite('${id}')">دعوة للعب</button>
-                    `;
-                    container.appendChild(card);
-                });
-            });
-        }
-
-        // --- منطق اللعبة والبحث (معدل) ---
-        async function startLudoSearch() {
-            playSfx('click');
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
-            if(!stream) { alert("يرجى تفعيل المايكروفون!"); return; }
-            localStream = stream;
-
-            document.getElementById('searchingOverlay').style.display = 'flex';
-            startSlotAnimation();
-
-            currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
-            const myRef = db.ref("waitingPlayers/" + currentPlayerId);
-            myRef.set({ 
-                id: currentPlayerId, name: userData.name, avatar: userData.avatar, 
-                category: selectedCategory, gameID: userData.gameID, status: "waiting"
-            });
-            myRef.onDisconnect().remove();
-
-            db.ref("waitingPlayers").on("value", (snapshot) => {
-                const players = snapshot.val();
-                if (!players) return;
-                const activeIds = Object.keys(players).filter(id => id !== currentPlayerId && players[id].status === "waiting" && players[id].category === selectedCategory);
-                if (activeIds.length > 0) {
-                    let oppId = activeIds[0];
-                    foundOpp = players[oppId];
-                    db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
-                    db.ref("waitingPlayers").off();
-                    prepareGame(oppId);
-                }
-            });
-        }
-
-        function prepareGame(oppId, isDirectInvite = false) {
-            if(!isDirectInvite) stopSlotAnimation(foundOpp.avatar);
-            document.getElementById('statusMsg').innerText = "تم الاتصال باللاعب!";
-            
-            setTimeout(() => {
-                document.getElementById('searchingOverlay').style.display = 'none';
-                document.getElementById('mainMenuView').classList.remove('active-view');
-                document.getElementById('friendsView').classList.remove('active-view');
-                document.getElementById('gamePlayView').classList.add('active-view');
-                document.getElementById('gameOppName').innerText = foundOpp.name;
-                document.getElementById('gameOppAvatar').src = foundOpp.avatar;
-                document.getElementById('gameOppID').innerText = "ID: " + foundOpp.gameID;
-                
-                currentGameRoom = isDirectInvite ? [userData.gameID, foundOpp.gameID].sort().join("_") : [currentPlayerId, oppId].sort().join("_");
-                initVoiceChat(currentGameRoom);
-                initGameLogic();       
-            }, isDirectInvite ? 0 : 2000);
-        }
-
-        // --- باقي دوال اللعبة الأصلية (تعديل currentPlayerId للتعامل مع الـ ID الحقيقي عند الحاجة) ---
         let localStream, peerConnection;
-        const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-
-        async function initVoiceChat(roomId) {
-            if(peerConnection) peerConnection.close();
-            peerConnection = new RTCPeerConnection(rtcConfig);
-            if(localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            
-            peerConnection.ontrack = (e) => document.getElementById('remoteAudio').srcObject = e.streams[0];
-            peerConnection.onicecandidate = (e) => {
-                if (e.candidate) db.ref(`calls/${roomId}/candidates/${userData.gameID}`).push(e.candidate.toJSON());
-            };
-
-            const callRef = db.ref(`calls/${roomId}`);
-            const myID = userData.gameID;
-            const oppID = foundOpp.gameID;
-
-            if (myID < oppID) {
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
-            }
-
-            callRef.on('value', async (snap) => {
-                const data = snap.val();
-                if (!data) return;
-                if (data.offer && myID > oppID && !peerConnection.currentRemoteDescription) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await peerConnection.createAnswer();
-                    await peerConnection.setLocalDescription(answer);
-                    callRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
-                }
-                if (data.answer && myID < oppID && !peerConnection.currentRemoteDescription) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                }
-            });
-            db.ref(`calls/${roomId}/candidates/${oppID}`).on('child_added', (s) => peerConnection.addIceCandidate(new RTCIceCandidate(s.val())));
-        }
-
-        // --- أنيماشين البحث ---
-        let searchInterval;
-        function startSlotAnimation() {
-            const strip = document.getElementById('oppAvatarStrip');
-            strip.innerHTML = "";
-            for(let i=0; i<20; i++) {
-                const img = document.createElement('img');
-                img.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`;
-                strip.appendChild(img);
-            }
-            let pos = 0;
-            searchInterval = setInterval(() => {
-                pos -= 105;
-                if (pos <= -2100) pos = 0;
-                strip.style.transform = `translateY(${pos}px)`;
-                playSfx('search');
-            }, 100);
-        }
-
-        function stopSlotAnimation(finalAvatar) {
-            clearInterval(searchInterval);
-            const strip = document.getElementById('oppAvatarStrip');
-            strip.innerHTML = `<img src="${finalAvatar}">`;
-            strip.style.transform = `translateY(0px)`;
-            playSfx('match');
-        }
-
-        // --- بقية دوال اللعبة الأساسية ---
-        function initGameLogic() {
-            currentRound = 1; myPoints = 0; oppPoints = 0;
-            const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            const myID = userData.gameID;
-            if (myID < foundOpp.gameID) {
-                roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
-                setupRoundData(1);
-            }
-            roomRef.on('value', (snap) => {
-                const data = snap.val();
-                if (!data) return;
-                if (data.gameState === 'closed') { location.reload(); return; }
-                if (data.round && data.round !== currentRound) { currentRound = data.round; showTransition(currentRound); }
-                document.getElementById('roundTxt').innerText = `${currentRound}/3`;
-                if (data.cards) {
-                    const isFirst = myID < foundOpp.gameID;
-                    document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
-                    document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
-                }
-                document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
-                if (data.scores) {
-                    myPoints = data.scores[myID] || 0;
-                    oppPoints = data.scores[foundOpp.gameID] || 0;
-                }
-                if (data.gameState === 'finished') { endGameResults(); }
-            });
-            const chatRef = db.ref(`rooms/${currentGameRoom}/messages`);
-            chatRef.off(); document.getElementById('chatBox').innerHTML = "";
-            chatRef.on('child_added', (snap) => {
-                const msg = snap.val();
-                if(msg.senderId !== myID) playSfx('msg');
-                const m = document.createElement('div');
-                m.className = msg.senderId === myID ? 'msg msg-me' : 'msg msg-opp';
-                m.textContent = msg.text;
-                document.getElementById('chatBox').appendChild(m);
-                document.getElementById('chatBox').scrollTop = 10000;
-            });
-            showTransition(1);
-        }
-
-        function setupRoundData(r) {
-            db.ref('bank_images').once('value').then(snap => {
-                let images = [];
-                snap.forEach(child => { let val = child.val(); images.push(typeof val === 'string' ? val : val.url); });
-                if(images.length < 2) images = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
-                const r1 = Math.floor(Math.random()*images.length);
-                let r2 = Math.floor(Math.random()*images.length);
-                while(r1===r2) r2 = Math.floor(Math.random()*images.length);
-                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: images[r1], img2: images[r2]}, reveal: false, round: r });
-            });
-        }
-
-        function handleCorrectClick() {
-            if (isTransitioning) return;
-            playSfx('success');
-            isTransitioning = true;
-            const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            roomRef.once('value').then(s => {
-                const d = s.val();
-                const newOppPoints = (d.scores && d.scores[foundOpp.gameID] ? d.scores[foundOpp.gameID] : 0) + 50;
-                const updates = {};
-                updates[`scores/${foundOpp.gameID}`] = newOppPoints;
-                updates['reveal'] = true;
-                roomRef.update(updates).then(() => {
-                    setTimeout(() => {
-                        if (d.round < 3) {
-                            if (userData.gameID < foundOpp.gameID) setupRoundData(d.round + 1);
-                            isTransitioning = false;
-                        } else { roomRef.update({ gameState: 'finished' }); }
-                    }, 3000);
-                });
-            });
-        }
-
-        function sendMessage() {
-            const inp = document.getElementById('userInput');
-            if (!inp.value.trim() || !currentGameRoom) return;
-            db.ref(`rooms/${currentGameRoom}/messages`).push({ senderId: userData.gameID, text: inp.value });
-            inp.value = "";
-        }
+        let isMicOn = true, isSpeakerOn = true;
+        const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
 
         function getLevelInfo(xp) {
             const level = Math.floor(xp / 250) + 1;
-            const progress = ((xp % 250) / 250) * 100;
-            return { level, progress, remaining: 250 - (xp % 250) };
+            const xpInLevel = xp % 250;
+            const progress = (xpInLevel / 250) * 100;
+            return { level, xpInLevel, progress, remaining: 250 - xpInLevel };
         }
 
         function updateUI() {
@@ -790,9 +631,268 @@
             document.getElementById('statWins').innerText = userData.wins;
             document.getElementById('statXP').innerText = userData.xp;
             document.querySelectorAll('#headerAvatar, #cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
+            document.getElementById('mySearchName').innerText = userData.name;
+        }
+
+        async function requestMicPermission() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                return true;
+            } catch (e) {
+                alert("يرجى تفعيل إذن المايكروفون للتمكن من التحدث!");
+                return false;
+            }
+        }
+
+        let searchInterval;
+        function startSlotAnimation() {
+            const strip = document.getElementById('oppAvatarStrip');
+            strip.innerHTML = "";
+            for(let i=0; i<20; i++) {
+                const img = document.createElement('img');
+                img.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`;
+                strip.appendChild(img);
+            }
+            let pos = 0;
+            searchInterval = setInterval(() => {
+                pos -= 105;
+                if (pos <= -2100) pos = 0;
+                strip.style.transform = `translateY(${pos}px)`;
+                playSfx('search'); 
+            }, 100);
+        }
+
+        function stopSlotAnimation(finalAvatar) {
+            clearInterval(searchInterval);
+            const strip = document.getElementById('oppAvatarStrip');
+            strip.style.transition = "transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+            strip.innerHTML = `<img src="${finalAvatar}">`;
+            strip.style.transform = `translateY(0px)`;
+            playSfx('match');
+        }
+
+        async function startLudoSearch() {
+            playSfx('click');
+            const hasMic = await requestMicPermission();
+            if(!hasMic) return;
+
+            document.getElementById('searchingOverlay').style.display = 'flex';
+            startSlotAnimation(); 
+
+            currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
+            const myRef = db.ref("waitingPlayers/" + currentPlayerId);
+            myRef.set({ 
+                id: currentPlayerId, 
+                name: userData.name, 
+                avatar: userData.avatar, 
+                xp: userData.xp, 
+                category: selectedCategory,
+                gameID: userData.gameID,
+                status: "waiting",
+                timestamp: firebase.database.ServerValue.TIMESTAMP 
+            });
+            myRef.onDisconnect().remove();
+
+            db.ref("waitingPlayers").on("value", (snapshot) => {
+                const players = snapshot.val();
+                if (!players) return;
+                const activeIds = Object.keys(players).filter(id => 
+                    id !== currentPlayerId && 
+                    players[id].status === "waiting" && 
+                    players[id].category === selectedCategory
+                );
+                if (activeIds.length > 0) {
+                    let oppId = activeIds[0];
+                    foundOpp = players[oppId];
+                    db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
+                    db.ref("waitingPlayers/" + oppId).update({ status: "matched" });
+                    db.ref("waitingPlayers").off();
+                    prepareGame(oppId);
+                }
+            });
+        }
+
+        function cancelSearch() {
+            playSfx('click');
+            if (currentPlayerId) db.ref("waitingPlayers/" + currentPlayerId).remove();
+            location.reload();
+        }
+
+        function prepareGame(oppId) {
+            stopSlotAnimation(foundOpp.avatar); 
+            document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
+            document.getElementById('oppNameSearch').innerText = foundOpp.name;
+
+            setTimeout(() => {
+                document.getElementById('searchingOverlay').style.display = 'none';
+                document.getElementById('mainMenuView').classList.remove('active-view');
+                document.getElementById('gamePlayView').classList.add('active-view');
+                document.getElementById('gameOppName').innerText = foundOpp.name;
+                document.getElementById('gameOppAvatar').src = foundOpp.avatar;
+                document.getElementById('gameOppID').innerText = "ID: " + (foundOpp.gameID || "Unknown");
+                currentGameRoom = [currentPlayerId, oppId].sort().join("_");
+                
+                initVoiceChat(currentGameRoom);
+                initGameLogic();       
+            }, 2000);
+        }
+
+        async function initVoiceChat(roomId) {
+            if(peerConnection) peerConnection.close();
+            peerConnection = new RTCPeerConnection(rtcConfig);
+            if(localStream) {
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            }
+            peerConnection.ontrack = (event) => {
+                const remoteAudio = document.getElementById('remoteAudio');
+                if (remoteAudio.srcObject !== event.streams[0]) {
+                    remoteAudio.srcObject = event.streams[0];
+                }
+            };
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    db.ref(`calls/${roomId}/candidates/${currentPlayerId}`).push(event.candidate.toJSON());
+                }
+            };
+            const callRef = db.ref(`calls/${roomId}`);
+            const isCaller = currentPlayerId < (foundOpp.id || "u"+foundOpp.gameID);
+            
+            if (isCaller) {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
+            }
+            callRef.on('value', async (snap) => {
+                const data = snap.val();
+                if (!data) return;
+                if (data.offer && !isCaller && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    callRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
+                }
+                if (data.answer && isCaller && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                }
+            });
+            const oppActualID = foundOpp.id || "u"+foundOpp.gameID;
+            db.ref(`calls/${roomId}/candidates/${oppActualID}`).on('child_added', (snap) => {
+                const candidate = new RTCIceCandidate(snap.val());
+                peerConnection.addIceCandidate(candidate).catch(e => {});
+            });
+        }
+
+        function toggleMic() {
+            playSfx('click');
+            if (!localStream) return;
+            isMicOn = !isMicOn;
+            localStream.getAudioTracks()[0].enabled = isMicOn;
+            document.getElementById('micBtn').classList.toggle('active-mic', isMicOn);
+            document.getElementById('micBtn').innerText = isMicOn ? "🎤" : "🔇";
+        }
+
+        function toggleSpeaker() {
+            playSfx('click');
+            const remoteAudio = document.getElementById('remoteAudio');
+            isSpeakerOn = !isSpeakerOn;
+            remoteAudio.muted = !isSpeakerOn;
+            document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn);
+            document.getElementById('speakerBtn').innerText = isSpeakerOn ? "🔊" : "🔈";
+        }
+
+        function initGameLogic() {
+            currentRound = 1; myPoints = 0; oppPoints = 0;
+            const roomRef = db.ref(`rooms/${currentGameRoom}`);
+            const oppActualID = foundOpp.id || "u"+foundOpp.gameID;
+
+            if (currentPlayerId < oppActualID) {
+                roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
+                setupRoundData(1);
+            }
+            roomRef.on('value', (snap) => {
+                const data = snap.val();
+                if (!data) return;
+                if (data.gameState === 'closed') { 
+                    location.reload();
+                    return; 
+                }
+                if (data.round && data.round !== currentRound) {
+                    currentRound = data.round;
+                    showTransition(currentRound);
+                }
+                document.getElementById('roundTxt').innerText = `${currentRound}/3`;
+                if (data.cards) {
+                    const isFirst = currentPlayerId < oppActualID;
+                    document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
+                    document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
+                }
+                if(data.reveal && document.getElementById('oppCardImg').classList.contains('blur-img')) {
+                    playSfx('success');
+                }
+                document.getElementById('oppCardImg').className = data.reveal ? "" : "blur-img";
+                if (data.scores) {
+                    myPoints = data.scores[currentPlayerId] || 0;
+                    oppPoints = data.scores[oppActualID] || 0;
+                }
+                if (data.gameState === 'finished') { endGameResults(); }
+            });
+            const chatRef = db.ref(`rooms/${currentGameRoom}/messages`);
+            chatRef.off();
+            document.getElementById('chatBox').innerHTML = "";
+            chatRef.on('child_added', (snap) => {
+                const msg = snap.val();
+                if(msg.senderId !== currentPlayerId) playSfx('msg'); 
+                const m = document.createElement('div');
+                m.className = msg.senderId === currentPlayerId ? 'msg msg-me' : 'msg msg-opp';
+                m.textContent = msg.text;
+                document.getElementById('chatBox').appendChild(m);
+                document.getElementById('chatBox').scrollTop = 10000;
+            });
+            showTransition(1);
+        }
+
+        function setupRoundData(r) {
+            const path = selectedCategory === "random" ? "bank_images" : `bank_images/${selectedCategory}`;
+            db.ref(path).once('value').then(snap => {
+                let images = [];
+                snap.forEach(child => {
+                    let val = child.val();
+                    images.push(typeof val === 'string' ? val : val.url);
+                });
+                if(images.length < 2) images = ["https://picsum.photos/400/600?random=1", "https://picsum.photos/400/600?random=2"];
+                const r1 = Math.floor(Math.random()*images.length);
+                let r2 = Math.floor(Math.random()*images.length);
+                while(r1===r2) r2 = Math.floor(Math.random()*images.length);
+                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: images[r1], img2: images[r2]}, reveal: false, round: r });
+            });
+        }
+
+        function handleCorrectClick() {
+            if (isTransitioning) return;
+            playSfx('success');
+            isTransitioning = true;
+            const roomRef = db.ref(`rooms/${currentGameRoom}`);
+            const oppActualID = foundOpp.id || "u"+foundOpp.gameID;
+
+            roomRef.once('value').then(s => {
+                const d = s.val();
+                const newOppPoints = (d.scores && d.scores[oppActualID] ? d.scores[oppActualID] : 0) + 50;
+                const updates = {};
+                updates[`scores/${oppActualID}`] = newOppPoints;
+                updates['reveal'] = true;
+                roomRef.update(updates).then(() => {
+                    setTimeout(() => {
+                        if (d.round < 3) {
+                            if (currentPlayerId < oppActualID) setupRoundData(d.round + 1);
+                            isTransitioning = false;
+                        } else { roomRef.update({ gameState: 'finished' }); }
+                    }, 3000);
+                });
+            });
         }
 
         function endGameResults() {
+            playSfx('success');
             if (myPoints > oppPoints) userData.wins += 1;
             userData.xp += myPoints;
             saveToStorage();
@@ -800,6 +900,19 @@
             document.getElementById('myFinalScore').innerText = myPoints;
             document.getElementById('oppFinalScore').innerText = oppPoints;
             document.getElementById('resultsModal').style.display = 'flex';
+            if(localStream) localStream.getTracks().forEach(t => t.stop());
+        }
+
+        function confirmExit() { playSfx('click'); document.getElementById('exitModal').style.display = 'flex'; }
+        function closeExitModal() { playSfx('click'); document.getElementById('exitModal').style.display = 'none'; }
+        
+        function forceExit() {
+            playSfx('click');
+            if (currentGameRoom) { 
+                db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => { 
+                    location.reload();
+                }); 
+            } else { location.reload(); }
         }
 
         function showTransition(r) {
@@ -823,15 +936,23 @@
             setTimeout(() => trans.style.display='none', 3000);
         }
 
-        function cancelSearch() { if (currentPlayerId) db.ref("waitingPlayers/" + currentPlayerId).remove(); location.reload(); }
-        function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
-        function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
-        function forceExit() { location.reload(); }
-        function saveToStorage() { localStorage.setItem('guessGameUser_v4', JSON.stringify(userData)); updateOnlineStatus(); }
-        function openProfile() { updateUI(); document.getElementById('profileModal').style.display='flex'; }
-        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-        function saveName() { userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
-        function openEdit() { document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
+        function sendMessage() {
+            const inp = document.getElementById('userInput');
+            if (!inp.value.trim() || !currentGameRoom) return;
+            db.ref(`rooms/${currentGameRoom}/messages`).push({ senderId: currentPlayerId, text: inp.value });
+            inp.value = "";
+        }
+
+        function saveToStorage() { 
+            localStorage.setItem('guessGameUser_v3', JSON.stringify(userData)); 
+            updateMyGlobalStatus();
+        }
+        
+        function openProfile() { playSfx('click'); updateUI(); document.getElementById('profileModal').style.display='flex'; }
+        function closeAll() { playSfx('click'); document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
+        function saveName() { playSfx('click'); userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
+        function openEdit() { playSfx('click'); document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
+        
         function autoSaveImage(e) {
             const reader = new FileReader();
             reader.onload = (ev) => { userData.avatar = ev.target.result; saveToStorage(); updateUI(); };
@@ -839,25 +960,21 @@
         }
 
         window.onload = () => {
-            const stored = localStorage.getItem('guessGameUser_v4');
-            if (stored) userData = JSON.parse(stored);
+            const stored = localStorage.getItem('guessGameUser_v3');
+            if (stored) {
+                userData = JSON.parse(stored);
+                if (!userData.gameID) userData.gameID = generateUniqueID();
+            }
+            const savedCategory = localStorage.getItem('guessGame_category');
+            if(savedCategory) {
+                const cat = JSON.parse(savedCategory);
+                selectCategory(cat.id, cat.name, true);
+            }
             updateUI();
-            updateOnlineStatus();
-            listenForInvites();
+            updateMyGlobalStatus();
+            listenForIncomingInvites();
         };
-
-        function toggleMic() {
-            if (!localStream) return;
-            const enabled = localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled;
-            document.getElementById('micBtn').classList.toggle('active-mic', enabled);
-            document.getElementById('micBtn').innerText = enabled ? "🎤" : "🔇";
-        }
-        function toggleSpeaker() {
-            const remote = document.getElementById('remoteAudio');
-            remote.muted = !remote.muted;
-            document.getElementById('speakerBtn').classList.toggle('muted-speaker', remote.muted);
-            document.getElementById('speakerBtn').innerText = remote.muted ? "🔈" : "🔊";
-        }
     </script>
 </body>
 </html>
+            
