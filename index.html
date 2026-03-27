@@ -3,727 +3,490 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تحدي التخمين - النسخة الاحترافية الكاملة</title>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    
+    <title>WeStars - Ultimate Edition</title>
     <style>
-        :root { --bg: #08080a; --purple: #bc6ff1; --surface: #16161d; --text: #e2e8f0; --dim: #64748b; --red: #ff4757; --green: #2ecc71; }
-        * { 
-            box-sizing: border-box; 
-            font-family: 'IBM Plex Sans Arabic', sans-serif; 
-            outline: none; 
-            -webkit-tap-highlight-color: transparent; 
-            user-select: none; /* منع تحديد النصوص */
-        }
-        
-        body, html { 
-            background: var(--bg); color: var(--text); margin: 0; height: 100dvh; width: 100%;
-            overflow: hidden; display: flex; flex-direction: column; position: fixed;
-        }
-
-        .game-view { display: none; height: 100%; width: 100%; flex-direction: column; padding-bottom: 70px; }
-        .active-view { display: flex; }
-
-        /* --- حل ثغرة الغش والحماية --- */
-        img {
-            -webkit-touch-callout: none !important;
-            -webkit-user-select: none !important;
-            user-select: none !important;
-            pointer-events: none; /* يمنع التفاعل المباشر مع الصور */
-            -webkit-user-drag: none;
-        }
-        .card { position: relative; overflow: hidden; }
-        .card::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: 5;
-            background: transparent;
-        }
-        .blur-img { 
-            filter: blur(40px) brightness(0.5); 
-            transition: filter 1s ease-in-out; /* انميشن كشف الصورة */
+        :root {
+            --bg-color: #ffffff;
+            --page-bg: #f8f9fa;
+            --text-color: #1a1a1a;
+            --nav-bg: #ffffff;
+            --accent-color: #007bff;
+            --inactive-color: #a0a0a0;
+            --border-color: #eeeeee;
+            --banner-gradient: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+            --input-bg: #f1f3f5;
+            --card-bg: #ffffff;
         }
 
-        /* --- قائمة البداية --- */
-        #mainMenuView { background: radial-gradient(circle at top right, #1a1a2e 0%, #08080a 100%); }
-        
-        /* [تعديل] تم حذف الـ top-bar من هنا برمجياً ليبقى فقط في الملف الشخصي */
-
-        .main-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; }
-        .game-logo { font-size: 3rem; font-weight: 800; color: white; margin-bottom: 5px; text-shadow: 0 0 20px rgba(188, 111, 241, 0.5); }
-        .game-tagline { color: var(--dim); font-size: 1rem; margin-bottom: 50px; }
-        
-        .menu-options { width: 85%; max-width: 340px; display: flex; flex-direction: column; gap: 18px; position: relative; }
-        .btn-main { width: 100%; padding: 18px; border-radius: 20px; border: none; font-size: 1.15rem; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; gap: 12px; }
-        .btn-play { background: var(--purple); color: white; box-shadow: 0 10px 25px rgba(188, 111, 241, 0.25); }
-        .btn-secondary { background: var(--surface); color: white; border: 1px solid #2d2d35; }
-
-        /* --- نظام التصنيفات --- */
-        .category-popup { display: none; position: absolute; bottom: 50px; left: 0; right: 0; background: #16161d; border: 1px solid #2d2d35; border-radius: 15px; width: 100%; padding: 8px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8); animation: popIn 0.3s ease-out; }
-        .cat-item { padding: 10px; border-radius: 10px; font-size: 0.85rem; color: var(--dim); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: space-between; }
-        .cat-item:hover { background: #222; color: white; }
-        .cat-item.active { color: var(--purple); font-weight: 700; background: rgba(188, 111, 241, 0.05); }
-        @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-        /* --- قائمة الرسائل المنفصلة --- */
-        #messagesListView { background: var(--bg); display: none; flex-direction: column; padding: 20px; }
-        .msg-list-header { font-size: 1.5rem; font-weight: 800; margin-bottom: 20px; border-bottom: 1px solid #2d2d35; padding-bottom: 10px; }
-        .empty-messages { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--dim); }
-
-        /* --- شريط التنقل السفلي الاحترافي --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            height: 70px; background: #111116;
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid #2d2d35; z-index: 2000;
-            padding-bottom: env(safe-area-inset-bottom);
+        [data-theme="dark"] {
+            --bg-color: #0b0b0b;
+            --page-bg: #050505;
+            --text-color: #ffffff;
+            --nav-bg: #0f0f0f;
+            --accent-color: #00d2ff;
+            --inactive-color: #666666;
+            --border-color: #1f1f1f;
+            --banner-gradient: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+            --input-bg: #1a1a1a;
+            --card-bg: #121212;
         }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center;
-            color: var(--dim); cursor: pointer; transition: 0.3s;
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
-        .nav-item.active { color: var(--purple); }
-        .nav-item svg { width: 26px; height: 26px; }
 
-        /* --- شاشة البحث --- */
-        #searchingOverlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e 0%, #08080a 100%); }
-        .vs-container { display: flex; align-items: center; gap: 30px; margin-bottom: 40px; }
-        .ludo-box { text-align: center; width: 115px; }
-        .ludo-avatar { width: 105px; height: 105px; border-radius: 25px; border: 3px solid var(--purple); object-fit: cover; background: #222; position: relative; z-index: 2; }
-        .opp-search-wrapper { width: 105px; height: 105px; border-radius: 25px; border: 3px solid #ff4757; overflow: hidden; background: #222; position: relative; }
-        .opp-avatar-strip { display: flex; flex-direction: column; transition: transform 0.1s linear; }
-        .opp-avatar-strip img { width: 105px; height: 105px; object-fit: cover; flex-shrink: 0; }
-        .pulse-ring { position: absolute; inset: 0; border: 3px solid var(--purple); border-radius: 25px; animation: pulse-anim 1.5s infinite; }
-        @keyframes pulse-anim { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
-        .vs-badge { font-size: 2.8rem; font-weight: 900; color: #ff4757; font-style: italic; text-shadow: 0 0 15px rgba(255, 71, 87, 0.4); }
+        body {
+            background-color: var(--page-bg);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
 
-        /* --- الأنيماشين والتحولات --- */
-        #roundTransition { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0, 0, 0, 0.92); flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
-        .trans-bar { width: 200%; height: 65px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem; box-shadow: 0 0 40px rgba(0,0,0,0.9); position: relative; overflow: hidden; transform: rotate(-8deg); }
-        .trans-bar.top, .trans-bar.bottom { background: #1a1a20; color: var(--purple); border-top: 2px solid var(--purple); border-bottom: 2px solid var(--purple); }
-        .trans-bar.mid { background: var(--purple); color: #000; margin: 15px 0; }
+        /* --- الهيدر العلوي (تبويبات تيك توك) --- */
+        .top-tabs-nav {
+            display: flex; justify-content: center; align-items: center; gap: 25px;
+            background: var(--nav-bg); border-bottom: 1px solid var(--border-color);
+            height: 55px; position: sticky; top: 0; z-index: 100;
+        }
+        .tab-item {
+            font-size: 1rem; font-weight: 600; color: var(--inactive-color);
+            cursor: pointer; position: relative; padding: 5px 0;
+        }
+        .tab-item.active { color: var(--text-color); }
+        .tab-item.active::after {
+            content: ''; position: absolute; bottom: -8px; left: 50%;
+            transform: translateX(-50%); width: 20px; height: 3px;
+            background: var(--accent-color); border-radius: 10px;
+        }
+
+        .content-area { flex: 1; position: relative; overflow: hidden; margin-bottom: 65px; }
+
+        .page {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; overflow-y: auto; background-color: var(--page-bg);
+            padding-bottom: 40px;
+        }
+        .page.active { display: block; }
+
+        /* --- صندوق النشر الاحترافي --- */
+        .publish-card {
+            background: var(--card-bg); margin: 15px; border-radius: 20px;
+            padding: 15px; border: 1px solid var(--border-color);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .publish-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; position: relative; }
+        .user-mini-pic { width: 45px; height: 45px; border-radius: 50%; background-size: cover; border: 2px solid var(--accent-color); }
+        .privacy-btn { background: var(--input-bg); border-radius: 15px; padding: 5px 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
         
-        @keyframes slideInLeft { from { transform: rotate(-8deg) translateX(-150%); } to { transform: rotate(-8deg) translateX(0); } }
-        @keyframes slideInRight { from { transform: rotate(-8deg) translateX(150%); } to { transform: rotate(-8deg) translateX(0); } }
-        @keyframes slideOutLeft { to { transform: rotate(-8deg) translateX(-200%); opacity: 0; } }
-        @keyframes slideOutRight { to { transform: rotate(-8deg) translateX(200%); opacity: 0; } }
+        .privacy-menu {
+            position: absolute; top: 45px; left: 0; background: var(--card-bg);
+            border: 1px solid var(--border-color); border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000; display: none; width: 110px;
+        }
+        .privacy-option { padding: 10px; font-size: 0.85rem; cursor: pointer; text-align: center; border-bottom: 1px solid var(--border-color); color: var(--text-color); }
+        .privacy-option:hover { background: var(--accent-color); color: white; }
 
-        .slide-in-top { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
-        .slide-in-mid { animation: slideInRight 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.1s; }
-        .slide-in-bottom { animation: slideInLeft 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.2s; }
-        .slide-out-top { animation: slideOutLeft 0.5s forwards !important; }
-        .slide-out-mid { animation: slideOutRight 0.5s forwards !important; }
-        .slide-out-bottom { animation: slideOutLeft 0.5s forwards !important; }
-
-        /* --- واجهة اللعبة --- */
-        .header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d2d35; flex-shrink: 0; position: relative; }
-        .avatar-circle { width: 45px; height: 45px; border-radius: 50%; background: #333; border: 2px solid var(--purple); overflow: hidden; }
-        .round-indicator { position: absolute; left: 50%; transform: translateX(-50%); background: #2d2d35; padding: 4px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--purple); font-weight: bold; }
-        .exit-btn { background: #1a1a20; border: 1px solid #333; color: var(--red); padding: 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
-        .arena { flex-shrink: 0; padding: 20px 10px; display: flex; justify-content: center; gap: 15px; }
-        .card-box { flex: 1; max-width: 145px; text-align: center; }
-        .card { aspect-ratio: 3/4; background: #1a1a20; border-radius: 20px; border: 1px solid #333; overflow: hidden; }
-        .card img { width: 100%; height: 100%; object-fit: cover; }
-
-        .chat-section { flex: 1; background: #1a1a20; margin: 0 15px; border-radius: 25px 25px 0 0; border: 1px solid rgba(188, 111, 241, 0.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .voice-controls { position: absolute; top: 0; left: 0; right: 0; padding: 15px; display: flex; gap: 8px; z-index: 100; align-items: center; background: linear-gradient(to bottom, #1a1a20 60%, transparent); }
-        .voice-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #333; background: #16161d; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
-        .voice-btn.active-mic { background: var(--red); border-color: var(--red); box-shadow: 0 0 10px var(--red); }
-        .voice-btn.muted-speaker { background: var(--dim); opacity: 0.6; }
-        .correct-btn { background: var(--green); border-radius: 8px; padding: 0 12px; font-weight: bold; font-size: 0.75rem; color: white; border: none; height: 35px; cursor: pointer; }
+        .input-box { background: var(--input-bg); border-radius: 15px; padding: 12px; }
+        .post-input { width: 100%; background: transparent; border: none; outline: none; color: var(--text-color); font-size: 0.95rem; min-height: 45px; resize: none; text-align: right; }
         
-        .chat-messages { flex: 1; padding: 65px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scrollbar-width: none; }
-        .msg { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 0.85rem; word-wrap: break-word; }
-        .msg-me { background: var(--purple); color: #000; align-self: flex-start; border-bottom-right-radius: 4px; }
-        .msg-opp { background: #2d2d35; color: #fff; align-self: flex-end; border-bottom-left-radius: 4px; }
-        
-        .input-area { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 15px 25px; background: #16161d; display: flex; gap: 10px; border-top: 1px solid #2d2d35; z-index: 1000; }
-        input[type="text"] { flex: 1; background: #2d2d35; border: none; padding: 12px; border-radius: 12px; color: white; outline: none; }
-        .send-btn { background: var(--purple); border: none; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .img-preview-container { margin-top: 10px; position: relative; display: none; }
+        .img-preview-container img { width: 100%; border-radius: 10px; max-height: 200px; object-fit: cover; }
+        .remove-img { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        /* --- القوائم والمنبثقات --- */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
-        .card-content { background: var(--surface); width: 85%; max-width: 320px; padding: 35px 25px; border-radius: 35px; border: 1px solid rgba(188, 111, 241, 0.3); text-align: center; position: relative; }
-        .profile-pic-large { width: 95px; height: 95px; border-radius: 50%; border: 3px solid var(--purple); margin: 0 auto 15px; object-fit: cover; display: block; }
-        
-        .stats-grid { display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #2d2d35; padding-top: 20px; }
-        .stat-item { text-align: center; }
-        .stat-val { display: block; font-size: 1.4rem; font-weight: 800; color: var(--purple); }
-        .stat-lbl { font-size: 0.7rem; color: var(--dim); }
+        .publish-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .footer-icons { display: flex; gap: 15px; }
 
-        .custom-btn { width: 100%; padding: 14px; border-radius: 15px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; margin-top: 15px; display: block; }
-        .btn-save-custom { background: var(--purple); color: white; box-shadow: 0 4px 15px rgba(188, 111, 241, 0.3); }
-        .confirm-box { background: var(--surface); padding: 30px; border-radius: 25px; text-align: center; width: 80%; max-width: 300px; border: 1px solid #333; }
-        .confirm-btns { display: flex; gap: 15px; margin-top: 25px; }
-        .btn-confirm { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-yes { background: var(--red); color: white; }
-        .btn-no { background: #333; color: white; }
+        /* --- تصميم بطاقة المنشور المرتبة --- */
+        .post-card {
+            background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border-color);
+            padding: 15px; margin-bottom: 15px; position: relative; display: flex; flex-direction: column;
+        }
+        .post-top { display: flex; justify-content: space-between; align-items: center; }
+        .post-user { display: flex; align-items: center; gap: 10px; }
+        .post-pic { width: 42px; height: 42px; border-radius: 50%; background-size: cover; background-color: #eee; border: 1px solid var(--border-color); }
+        .post-info { display: flex; flex-direction: column; }
+        .post-name { font-weight: 700; font-size: 0.95rem; }
+        .post-id { font-size: 0.75rem; color: var(--inactive-color); }
+        .post-options { cursor: pointer; color: var(--inactive-color); padding: 5px; }
+
+        .post-body { margin-top: 10px; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; text-align: right; width: 100%; }
+        .post-img { width: 100%; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border-color); display: block; }
+
+        .post-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px; }
+        .post-interactions { display: flex; gap: 20px; }
+        .inter-item { display: flex; align-items: center; gap: 6px; color: var(--inactive-color); cursor: pointer; font-size: 0.85rem; }
+        .inter-item.liked svg { fill: #ff4757; stroke: #ff4757; }
+        .inter-item.liked span { color: #ff4757; }
+        .post-date { font-size: 0.7rem; color: var(--inactive-color); direction: ltr; margin-bottom: 2px; }
+
+        /* --- الملف الشخصي --- */
+        .profile-header { background-color: var(--bg-color); position: relative; padding-bottom: 20px; }
+        .profile-banner { width: 100%; height: 180px; background: var(--banner-gradient); position: relative; background-size: cover; background-position: center; }
+        .edit-banner-btn { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); padding: 8px; border-radius: 50%; display: flex; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .profile-avatar-section { text-align: center; margin-top: -60px; position: relative; z-index: 5; }
+        .profile-pic { width: 110px; height: 110px; border-radius: 50%; background-color: var(--bg-color); border: 4px solid var(--bg-color); margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-size: cover; background-position: center; }
+        .profile-name-display { font-size: 1.4rem; font-weight: 800; margin-top: 10px; }
+        .profile-id-display { color: var(--inactive-color); font-size: 0.9rem; }
+        
+        .menu-list { list-style: none; margin-top: 10px; }
+        .menu-item { display: flex; align-items: center; padding: 16px 20px; background: var(--bg-color); border-bottom: 1px solid var(--border-color); cursor: pointer; }
+        .menu-icon { margin-left: 15px; color: var(--accent-color); display: flex; }
+        .menu-label { flex: 1; font-weight: 500; }
+
+        /* --- واجهة التعديل --- */
+        .sub-header { padding: 18px; display: flex; align-items: center; background: var(--bg-color); border-bottom: 1px solid var(--border-color); }
+        .back-icon { cursor: pointer; margin-left: 15px; }
+        .edit-section { padding: 20px; }
+        .edit-group { margin-bottom: 18px; }
+        .edit-label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--inactive-color); font-weight: bold; }
+        .edit-input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); outline: none; }
+        .btn-save { width: 100%; padding: 16px; border-radius: 12px; border: none; background: var(--accent-color); color: white; font-weight: bold; cursor: pointer; }
+
+        /* --- سويتش الوضع الداكن --- */
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background-color: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 1000; }
+        .nav-item { flex: 1; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .nav-item svg { width: 26px; height: 26px; fill: none; stroke: var(--inactive-color); stroke-width: 1.8; }
+        .nav-item.active svg { stroke: var(--accent-color); transform: scale(1.1); }
     </style>
 </head>
-<body oncontextmenu="return false;"> 
-    
-    <div id="mainMenuView" class="game-view active-view">
-        <div class="main-hero">
-            <h1 class="game-logo">تحدي التخمين</h1>
-            <p class="game-tagline">أظهر ذكاءك في تخمين الصور</p>
-            <div class="menu-options">
-                <button class="btn-main btn-play" onclick="startLudoSearch()">ابدأ التحدي</button>
-                <button class="btn-main btn-secondary">المتجر</button>
-                
-                <button class="btn-main btn-secondary" onclick="toggleCategoryPopup(event)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h7"></path></svg>
-                    التصنيف: <span id="activeCategoryText" style="color: var(--purple); margin-right: 5px;">عشوائي</span>
-                </button>
+<body onload="loadSavedData()">
 
-                <div id="categoryPopup" class="category-popup">
-                    <div class="cat-item active" onclick="selectCategory('random', 'عشوائي')">عشوائي <span>🎲</span></div>
-                    <div class="cat-item" onclick="selectCategory('football', 'كرة قدم')">كرة قدم <span>⚽</span></div>
-                    <div class="cat-item" onclick="selectCategory('celebs', 'مشاهير')">مشاهير <span>🌟</span></div>
-                    <div class="cat-item" onclick="selectCategory('food', 'طعام')">طعام <span>🍕</span></div>
-                    <div class="cat-item" onclick="selectCategory('countries', 'دول')">دول <span>🌍</span></div>
+    <header class="top-tabs-nav" id="mainTopNav">
+        <div class="tab-item" onclick="switchFeedTab('ana', this)">أنا</div>
+        <div class="tab-item" onclick="switchFeedTab('friends', this)">الأصدقاء</div>
+        <div class="tab-item active" onclick="switchFeedTab('general', this)">عام</div>
+    </header>
+
+    <main class="content-area">
+        <section id="feed" class="page active">
+            <div id="ana-publish-zone" style="display: none;">
+                <div class="publish-card">
+                    <div class="publish-header">
+                        <div class="user-mini-pic" id="pubUserPic"></div>
+                        <div class="user-mini-info" style="margin-right: 10px;">
+                            <div class="user-mini-name" id="pubUserName" style="font-weight:700;">WeStars</div>
+                            <div class="privacy-btn" onclick="togglePrivacyMenu()">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                <span id="privacyLabel" style="font-size: 0.75rem;">عام</span>
+                                <div class="privacy-menu" id="privacyMenu">
+                                    <div class="privacy-option" onclick="setPrivacy('عام')">عام</div>
+                                    <div class="privacy-option" onclick="setPrivacy('الاصدقاء')">الأصدقاء</div>
+                                    <div class="privacy-option" onclick="setPrivacy('خاص')">خاص</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-box">
+                        <textarea class="post-input" id="postTextInput" placeholder="بماذا تفكر؟" oninput="autoGrow(this)"></textarea>
+                        <div class="img-preview-container" id="postImgPreviewZone">
+                            <span class="remove-img" onclick="removeSelectedImg()">×</span>
+                            <img id="postImgPreview" src="">
+                        </div>
+                    </div>
+                    <div class="publish-footer">
+                        <div class="footer-icons">
+                            <label class="icon-btn" style="cursor: pointer;">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#28a745" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                <input type="file" id="postFilePicker" hidden accept="image/*" onchange="previewPostImg(this)">
+                            </label>
+                        </div>
+                        <div class="icon-btn" onclick="addNewPost()" style="cursor: pointer; background: #007bff; padding: 8px 16px; border-radius: 12px;">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+            <div id="postsFeed" style="padding: 0 15px;"></div>
+        </section>
 
-    <div id="messagesListView" class="game-view">
-        <div class="msg-list-header">الرسائل</div>
-        <div class="empty-messages">
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            <p style="margin-top: 15px;">لا توجد محادثات حالية</p>
-        </div>
-    </div>
+        <section id="messages" class="page">
+            <div style="padding: 100px 20px; text-align: center;"><h2>الرسائل</h2><p style="color:var(--inactive-color)">لا توجد دردشات حالياً</p></div>
+        </section>
 
-    <div class="bottom-nav">
-        <div id="navHome" class="nav-item active" onclick="switchView('home')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-        </div>
-        <div id="navChat" class="nav-item" onclick="switchView('chat')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-        </div>
-        <div id="navProfile" class="nav-item" onclick="openProfile()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-        </div>
-    </div>
-
-    <div id="searchingOverlay">
-        <div class="vs-container">
-            <div class="ludo-box">
-                <div style="position:relative"><div class="pulse-ring"></div><img id="mySearchAvatar" src="" class="ludo-avatar"></div>
-                <div id="mySearchName" style="margin-top:10px; font-weight:700; font-size:0.9rem;">أنت</div>
-            </div>
-            <div class="vs-badge">VS</div>
-            <div class="ludo-box">
-                <div class="opp-search-wrapper">
-                    <div id="oppAvatarStrip" class="opp-avatar-strip"></div>
+        <section id="profile" class="page">
+            <div class="profile-header">
+                <div class="profile-banner" id="mainBannerDisplay">
+                    <div class="edit-banner-btn" onclick="openEditProfile()">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </div>
                 </div>
-                <div id="oppNameSearch" style="margin-top:10px; font-weight:700; font-size:0.9rem; color:#ff4757">جاري البحث..</div>
-            </div>
-        </div>
-        <p id="statusMsg" style="font-weight:600; font-size: 1.1rem; color: white;">جارِ البحث عن منافس حقيقي...</p>
-        <div id="searchCatDisplay" style="margin-top: -20px; color: var(--purple); font-size: 0.85rem; font-weight: 700;">التصنيف: عشوائي</div>
-        <button class="btn-main btn-secondary" style="width:150px; margin-top:30px; font-size: 0.9rem;" onclick="cancelSearch()">إلغاء البحث</button>
-    </div>
-
-    <div id="gamePlayView" class="game-view">
-        <div id="roundTransition">
-            <div class="trans-bar top" id="transOppName">الخصم : 0</div>
-            <div class="trans-bar mid" id="transRoundTxt">الجولة 1</div>
-            <div class="trans-bar bottom" id="transMyName">انت : 0</div>
-        </div>
-
-        <div class="header">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="avatar-circle"><img id="gameOppAvatar" src="" style="width:100%;height:100%"></div>
-                <div style="display: flex; flex-direction: column;">
-                    <span id="gameOppName" style="font-weight:600;">الخصم</span>
-                    <span id="gameOppID" style="font-size:0.75rem; color:var(--purple); font-weight: bold;">ID: 0</span>
+                <div class="profile-avatar-section">
+                    <div class="profile-pic" id="mainAvatarDisplay">
+                        <svg id="mainDefaultAvatar" viewBox="0 0 24 24" width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </div>
+                    <div class="profile-name-display" id="mainName">WeStars</div>
+                    <div class="profile-id-display" id="mainID">@User</div>
                 </div>
             </div>
-            <div class="round-indicator" id="roundTxt">1/3</div>
-            <div class="exit-btn" onclick="confirmExit()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+            <ul class="menu-list">
+                <li class="menu-item" onclick="switchPage('settings-page')">
+                    <div class="menu-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                    <div class="menu-label">الإعدادات</div>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>
+                </li>
+                <li class="menu-item">
+                    <div class="menu-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M14 15l-4-4m0 4l4-4"></path></svg></div>
+                    <div class="menu-label">القائمة السوداء</div>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>
+                </li>
+            </ul>
+        </section>
+
+        <section id="edit-profile-page" class="page">
+            <div class="sub-header">
+                <div class="back-icon" onclick="switchPage('profile')"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"></path></svg></div>
+                <h3>تعديل المعلومات</h3>
             </div>
-        </div>
-
-        <div class="arena">
-            <div class="card-box"><div class="card"><img class="blur-img" id="oppCardImg" src="" draggable="false"></div><div class="label">بطاقة الخصم</div></div>
-            <div class="card-box"><div class="card" style="border-color: var(--purple);"><img id="myCardImg" src="" draggable="false"></div><div class="label">بطاقتك</div></div>
-        </div>
-
-        <div class="chat-section">
-            <div class="voice-controls">
-                <button class="correct-btn" onclick="handleCorrectClick()">صحيح</button>
-                <button class="voice-btn" id="micBtn" onclick="toggleMic()">🎤</button>
-                <button class="voice-btn" id="speakerBtn" onclick="toggleSpeaker()">🔊</button>
-            </div>
-            <div class="chat-messages" id="chatBox"></div>
-            <audio id="remoteAudio" autoplay playsinline></audio>
-        </div>
-
-        <div class="input-area">
-            <input type="text" id="userInput" placeholder="اكتب تخمينك هنا...">
-            <button class="send-btn" onclick="sendMessage()">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            </button>
-        </div>
-    </div>
-
-    <div id="exitModal" class="modal">
-        <div class="confirm-box">
-            <h3 style="margin: 0; color: white;">هل أنت متأكد!</h3>
-            <p style="color: var(--dim); font-size: 0.9rem; margin-top: 10px;">سيتم انهاء المباراة!</p>
-            <div class="confirm-btns">
-                <button class="btn-confirm btn-yes" onclick="forceExit()">نعم</button>
-                <button class="btn-confirm btn-no" onclick="closeExitModal()">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="resultsModal" class="modal">
-        <div class="card-content" style="background: var(--bg); border:none;">
-            <div style="margin-bottom: 20px;">
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="none"><path d="M19 5H18V4C18 2.89543 17.1046 2 16 2H8C6.89543 2 6 2.89543 6 4V5H5C3.34315 5 2 6.34315 2 8V9C2 10.6569 3.34315 12 5 12H6.17071C6.60235 13.6703 7.84411 15.0116 9.46231 15.6552C9.8009 16.7417 10.8119 17.5 12 17.5C13.1881 17.5 14.1991 16.7417 14.5377 15.6552C16.1559 15.0116 17.3976 13.6703 17.8293 12H19C20.6569 12 22 10.6569 22 9V8C22 6.34315 20.6569 5 19 5ZM5 10C4.44772 10 4 9.55228 4 9V8C4 7.44772 4.44772 7 5 7H6V10H5ZM19 10H18V7H19C19.5523 7 20 7.44772 20 8V9C20 9.55228 19.5523 10 19 10ZM13 20H15C15.5523 20 16 20.4477 16 21C16 21.5523 15.5523 22 15 22H9C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20H11V18H13V20Z" fill="#FFD700"/></svg>
-            </div>
-            <h2 style="margin: 0; color: white; font-weight: 700;">انتهى التحدي</h2>
-            <div style="margin: 30px 0;">
-                <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; font-size: 1.1rem;">
-                    <span style="color: white;">نقاطك:</span>
-                    <span id="myFinalScore" style="color: var(--purple); font-weight: bold;">0</span>
+            <div style="background: var(--bg-color); padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+                <div class="profile-banner" id="previewBanner" style="display:flex; align-items:center; justify-content:center;">
+                    <button style="background:rgba(0,0,0,0.5); color:white; border:none; padding:8px 16px; border-radius:20px; cursor:pointer;" onclick="document.getElementById('editBannerInput').click()">تغيير البنر</button>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 10px; font-size: 1.1rem;">
-                    <span style="color: white;">نقاط الخصم:</span>
-                    <span id="oppFinalScore" style="color: var(--green); font-weight: bold;">0</span>
+                <div class="profile-avatar-section">
+                    <div class="profile-pic" id="previewAvatar">
+                        <button style="background:rgba(0,0,0,0.5); color:white; border:none; padding:6px 12px; border-radius:20px; cursor:pointer; margin-top:60px;" onclick="document.getElementById('editAvatarInput').click()">تغيير</button>
+                    </div>
                 </div>
             </div>
-            <button class="btn-main btn-play" style="width: 100%; border-radius: 15px;" onclick="location.reload()">خروج للقائمة</button>
-        </div>
-    </div>
-
-    <div id="profileModal" class="modal">
-        <div class="card-content">
-            <div style="position: absolute; top: 20px; left: 20px; color: var(--purple); cursor: pointer;" onclick="openEdit()">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <div class="edit-section">
+                <div class="edit-group"><label class="edit-label">الاسم</label><input type="text" id="inputEditName" class="edit-input" maxlength="14"></div>
+                <div class="edit-group"><label class="edit-label">المعرف</label><input type="text" id="inputEditID" class="edit-input" maxlength="15"></div>
+                <button class="btn-save" onclick="saveProfileChanges()">حفظ وتحديث</button>
             </div>
-            <img id="cardAvatar" src="" class="profile-pic-large">
-            <h2 id="cardName" style="margin: 0;">لاعب جديد</h2>
-            <div id="cardID" style="font-size: 0.85rem; color: var(--dim); margin-top: 4px; font-weight: 600;">ID: 7000000000</div>
-            
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span id="statWins" class="stat-val">0</span>
-                    <span class="stat-lbl">مرات الفوز</span>
-                </div>
-            </div>
+            <input type="file" id="editBannerInput" hidden accept="image/*" onchange="handleImgPreview(this, 'previewBanner')">
+            <input type="file" id="editAvatarInput" hidden accept="image/*" onchange="handleImgPreview(this, 'previewAvatar')">
+        </section>
 
-            <button class="custom-btn btn-close-custom" onclick="closeAll()">إغلاق النافذة</button>
-        </div>
-    </div>
-
-    <div id="editModal" class="modal">
-        <div class="card-content">
-            <h3>تعديل البيانات</h3>
-            <div style="position: relative; display: inline-block; margin-bottom: 20px;">
-                <img id="editPreviewAvatar" src="" class="profile-pic-large" style="opacity: 0.7;">
-                <input type="file" id="fileInp" accept="image/*" onchange="autoSaveImage(event)" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
-                <div style="font-size: 0.7rem; color: var(--purple);">اضغط لتغيير الصورة</div>
+        <section id="settings-page" class="page">
+            <div class="sub-header">
+                <div class="back-icon" onclick="switchPage('profile')"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"></path></svg></div>
+                <h3>الإعدادات</h3>
             </div>
-            <input type="text" id="nameInput" style="width:100%; padding:15px; background:#08080a; border:1px solid #333; color:#fff; border-radius:15px; text-align:center; margin-bottom:15px" maxlength="12">
-            <button class="custom-btn btn-save-custom" onclick="saveName()">حفظ التعديلات</button>
-        </div>
-    </div>
+            <div style="padding: 20px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); margin-top: 15px;">
+                <span>الوضع الداكن الاحترافي</span>
+                <label class="switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" id="nav-feed" onclick="switchPage('feed', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg></div>
+        <div class="nav-item" id="nav-messages" onclick="switchPage('messages', this)"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></div>
+        <div class="nav-item" id="nav-profile" onclick="switchPage('profile', this)"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+    </nav>
 
     <script>
-        // --- تهيئة Firebase ---
-        const firebaseConfig = { databaseURL: "https://westarts-75dd6-default-rtdb.firebaseio.com/" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        let posts = JSON.parse(localStorage.getItem('ws_all_posts')) || [];
+        let currentPrivacy = 'عام';
+        let selectedPostImg = '';
 
-        // --- مكتبة الأصوات ---
-        const gameSounds = {
-            click: new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3'),
-            search: new Audio('https://www.soundjay.com/buttons/sounds/button-20.mp3'),
-            match: new Audio('https://www.soundjay.com/nature/sounds/cricket-chirp-1.mp3'),
-            msg: new Audio('https://www.soundjay.com/communication/sounds/message-pop-1.mp3'),
-            success: new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3')
-        };
+        function loadSavedData() {
+            const name = localStorage.getItem('ws_name') || "WeStars";
+            const id = localStorage.getItem('ws_id') || "User";
+            const avatar = localStorage.getItem('ws_avatar');
+            const banner = localStorage.getItem('ws_banner');
+            const theme = localStorage.getItem('ws_theme');
 
-        function playSfx(sound) {
-            if (gameSounds[sound]) {
-                gameSounds[sound].currentTime = 0;
-                gameSounds[sound].play().catch(() => {});
+            document.getElementById('mainName').innerText = name;
+            document.getElementById('pubUserName').innerText = name;
+            document.getElementById('inputEditName').value = name;
+            document.getElementById('mainID').innerText = "@" + id;
+            document.getElementById('inputEditID').value = id;
+
+            if (avatar) {
+                const url = `url(${avatar})`;
+                document.getElementById('mainAvatarDisplay').style.backgroundImage = url;
+                document.getElementById('previewAvatar').style.backgroundImage = url;
+                document.getElementById('pubUserPic').style.backgroundImage = url;
+                document.getElementById('mainDefaultAvatar').style.display = 'none';
             }
-        }
-
-        function generateUniqueID() {
-            let id = "7";
-            for (let i = 0; i < 9; i++) id += Math.floor(Math.random() * 10);
-            return id;
-        }
-
-        let userData = { 
-            name: "لاعب " + Math.floor(Math.random()*100), 
-            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-            wins: 0,
-            gameID: generateUniqueID()
-        };
-
-        let currentRound = 1, myPoints = 0, oppPoints = 0, foundOpp = null, currentPlayerId = null, currentGameRoom = null;
-        let isTransitioning = false;
-        let selectedCategory = "random";
-        let selectedCategoryName = "عشوائي";
-
-        // [تعديل] وظيفة التبديل بين الواجهات (الرئيسية والرسائل)
-        function switchView(view) {
-            playSfx('click');
-            document.getElementById('mainMenuView').style.display = 'none';
-            document.getElementById('messagesListView').style.display = 'none';
-            document.getElementById('navHome').classList.remove('active');
-            document.getElementById('navChat').classList.remove('active');
-
-            if(view === 'home') {
-                document.getElementById('mainMenuView').style.display = 'flex';
-                document.getElementById('navHome').classList.add('active');
-            } else if(view === 'chat') {
-                document.getElementById('messagesListView').style.display = 'flex';
-                document.getElementById('navChat').classList.add('active');
+            if (banner) document.getElementById('mainBannerDisplay').style.backgroundImage = `url(${banner})`;
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('themeToggle').checked = true;
             }
+            renderPosts('general');
         }
 
-        function toggleCategoryPopup(e) {
-            if(e) e.stopPropagation();
-            const popup = document.getElementById('categoryPopup');
-            popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
+        function switchPage(pageId, element) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('mainTopNav').style.display = (pageId === 'feed') ? 'flex' : 'none';
+            if(element) element.classList.add('active');
+            else if(['profile','edit-profile-page','settings-page'].includes(pageId)) document.getElementById('nav-profile').classList.add('active');
         }
 
-        function selectCategory(id, name, silent = false) {
-            selectedCategory = id;
-            selectedCategoryName = name;
-            document.getElementById('activeCategoryText').innerText = name;
-            document.getElementById('searchCatDisplay').innerText = "التصنيف: " + name;
-            document.querySelectorAll('.cat-item').forEach(item => {
-                item.classList.remove('active');
-                if(item.innerText.includes(name)) item.classList.add('active');
-            });
-            localStorage.setItem('guessGame_category', JSON.stringify({id, name}));
-            if(!silent) document.getElementById('categoryPopup').style.display = 'none';
+        function switchFeedTab(type, el) {
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('ana-publish-zone').style.display = (type === 'ana') ? 'block' : 'none';
+            renderPosts(type);
         }
 
-        window.onclick = function(event) {
-            if (!event.target.closest('.menu-options') && !event.target.closest('.category-popup')) {
-                document.getElementById('categoryPopup').style.display = 'none';
-            }
+        // --- نظام المنشورات المصلح ---
+        function togglePrivacyMenu() {
+            const m = document.getElementById('privacyMenu');
+            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
         }
 
-        let localStream, peerConnection;
-        let isMicOn = true, isSpeakerOn = true;
-        const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-
-        function updateUI() {
-            // [تعديل] تم حذف تحديث عناصر الـ headerName لأنها حذفت من الواجهة الرئيسية
-            document.getElementById('cardName').innerText = userData.name;
-            document.getElementById('cardID').innerText = "ID: " + userData.gameID;
-            document.getElementById('statWins').innerText = userData.wins;
-            document.querySelectorAll('#cardAvatar, #editPreviewAvatar, #mySearchAvatar').forEach(img => img.src = userData.avatar);
-            document.getElementById('mySearchName').innerText = userData.name;
+        function setPrivacy(p) {
+            currentPrivacy = p;
+            document.getElementById('privacyLabel').innerText = p;
+            document.getElementById('privacyMenu').style.display = 'none'; // اختفاء فوري
         }
 
-        async function requestMicPermission() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                return true;
-            } catch (e) {
-                alert("يرجى تفعيل إذن المايكروفون!");
-                return false;
-            }
-        }
-
-        let searchInterval;
-        function startSlotAnimation() {
-            const strip = document.getElementById('oppAvatarStrip');
-            strip.innerHTML = "";
-            for(let i=0; i<20; i++) {
-                const img = document.createElement('img');
-                img.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.random()}`;
-                strip.appendChild(img);
-            }
-            let pos = 0;
-            searchInterval = setInterval(() => {
-                pos -= 105;
-                if (pos <= -2100) pos = 0;
-                strip.style.transform = `translateY(${pos}px)`;
-                playSfx('search');
-            }, 100);
-        }
-
-        function stopSlotAnimation(finalAvatar) {
-            clearInterval(searchInterval);
-            const strip = document.getElementById('oppAvatarStrip');
-            strip.style.transition = "transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-            strip.innerHTML = `<img src="${finalAvatar}">`;
-            strip.style.transform = `translateY(0px)`;
-            playSfx('match');
-        }
-
-        async function startLudoSearch() {
-            playSfx('click');
-            const hasMic = await requestMicPermission();
-            if(!hasMic) return;
-            document.getElementById('searchingOverlay').style.display = 'flex';
-            startSlotAnimation();
-            currentPlayerId = "user_" + Math.random().toString(36).substr(2, 9);
-            const myRef = db.ref("waitingPlayers/" + currentPlayerId);
-            myRef.set({ 
-                id: currentPlayerId, name: userData.name, avatar: userData.avatar, 
-                category: selectedCategory, gameID: userData.gameID, status: "waiting",
-                timestamp: firebase.database.ServerValue.TIMESTAMP 
-            });
-            myRef.onDisconnect().remove();
-            db.ref("waitingPlayers").on("value", (snapshot) => {
-                const players = snapshot.val();
-                if (!players) return;
-                const activeIds = Object.keys(players).filter(id => 
-                    id !== currentPlayerId && players[id].status === "waiting" && players[id].category === selectedCategory
-                );
-                if (activeIds.length > 0) {
-                    let oppId = activeIds[0];
-                    foundOpp = players[oppId];
-                    db.ref("waitingPlayers/" + currentPlayerId).update({ status: "matched" });
-                    db.ref("waitingPlayers/" + oppId).update({ status: "matched" });
-                    db.ref("waitingPlayers").off();
-                    prepareGame(oppId);
+        function previewPostImg(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedPostImg = e.target.result;
+                    document.getElementById('postImgPreview').src = selectedPostImg;
+                    document.getElementById('postImgPreviewZone').style.display = 'block';
                 }
-            });
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
-        function cancelSearch() {
-            if (currentPlayerId) db.ref("waitingPlayers/" + currentPlayerId).remove();
-            location.reload();
+        function removeSelectedImg() {
+            selectedPostImg = '';
+            document.getElementById('postImgPreviewZone').style.display = 'none';
+            document.getElementById('postFilePicker').value = '';
         }
 
-        function prepareGame(oppId) {
-            stopSlotAnimation(foundOpp.avatar);
-            document.getElementById('statusMsg').innerText = "تم العثور على منافس!";
-            document.getElementById('oppNameSearch').innerText = foundOpp.name;
-            setTimeout(() => {
-                document.getElementById('searchingOverlay').style.display = 'none';
-                document.getElementById('mainMenuView').classList.remove('active-view');
-                document.getElementById('gamePlayView').classList.add('active-view');
-                document.getElementById('gameOppName').innerText = foundOpp.name;
-                document.getElementById('gameOppAvatar').src = foundOpp.avatar;
-                document.getElementById('gameOppID').innerText = "ID: " + (foundOpp.gameID || "Unknown");
-                currentGameRoom = [currentPlayerId, oppId].sort().join("_");
-                initVoiceChat(currentGameRoom);
-                initGameLogic();       
-            }, 2000);
-        }
+        function addNewPost() {
+            const textInput = document.getElementById('postTextInput');
+            const text = textInput.value;
+            if(!text.trim() && !selectedPostImg) return;
 
-        async function initVoiceChat(roomId) {
-            if(peerConnection) peerConnection.close();
-            peerConnection = new RTCPeerConnection(rtcConfig);
-            if(localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            peerConnection.ontrack = (event) => {
-                const remoteAudio = document.getElementById('remoteAudio');
-                if (remoteAudio.srcObject !== event.streams[0]) remoteAudio.srcObject = event.streams[0];
+            const now = new Date();
+            const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}  ${now.getFullYear()}:${now.getMonth()+1}:${now.getDate()}`;
+
+            const newPost = {
+                id: Date.now(),
+                userName: localStorage.getItem('ws_name') || "WeStars",
+                userId: localStorage.getItem('ws_id') || "User",
+                userPic: localStorage.getItem('ws_avatar') || '',
+                content: text,
+                image: selectedPostImg,
+                privacy: currentPrivacy,
+                time: timeStr,
+                likes: [],
+                comments: 0
             };
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) db.ref(`calls/${roomId}/candidates/${currentPlayerId}`).push(event.candidate.toJSON());
-            };
-            const callRef = db.ref(`calls/${roomId}`);
-            if (currentPlayerId < foundOpp.id) {
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                callRef.update({ offer: { type: offer.type, sdp: offer.sdp } });
+
+            posts.unshift(newPost);
+            localStorage.setItem('ws_all_posts', JSON.stringify(posts));
+            
+            // --- تصفير الحقول فوراً بعد النشر ---
+            textInput.value = '';
+            textInput.style.height = '45px';
+            removeSelectedImg();
+            
+            renderPosts('ana'); // التحديث الفوري للعرض
+        }
+
+        function renderPosts(filter) {
+            const container = document.getElementById('postsFeed');
+            container.innerHTML = '';
+            const myId = localStorage.getItem('ws_id') || "User";
+
+            const filtered = posts.filter(p => {
+                if(filter === 'ana') return p.userId === myId;
+                if(filter === 'friends') return p.privacy === 'الاصدقاء' || p.privacy === 'عام';
+                return p.privacy === 'عام';
+            });
+
+            filtered.forEach(post => {
+                const isLiked = post.likes.includes(myId);
+                const postHtml = `
+                    <article class="post-card">
+                        <div class="post-top">
+                            <div class="post-user">
+                                <div class="post-pic" style="background-image: url(${post.userPic});"></div>
+                                <div class="post-info">
+                                    <span class="post-name">${post.userName}</span>
+                                    <span class="post-id">@${post.userId}</span>
+                                </div>
+                            </div>
+                            <div class="post-options">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                            </div>
+                        </div>
+                        <div class="post-body">${post.content}${post.image ? `<img src="${post.image}" class="post-img">` : ''}</div>
+                        <div class="post-footer">
+                            <div class="post-interactions">
+                                <div class="inter-item ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                                    <span>${post.likes.length}</span>
+                                </div>
+                                <div class="inter-item">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                    <span>${post.comments}</span>
+                                </div>
+                            </div>
+                            <div class="post-date">${post.time}</div>
+                        </div>
+                    </article>
+                `;
+                container.innerHTML += postHtml;
+            });
+        }
+
+        function toggleLike(postId) {
+            const myId = localStorage.getItem('ws_id') || "User";
+            const post = posts.find(p => p.id === postId);
+            if(post) {
+                const idx = post.likes.indexOf(myId);
+                if(idx > -1) post.likes.splice(idx, 1);
+                else post.likes.push(myId);
+                localStorage.setItem('ws_all_posts', JSON.stringify(posts));
+                renderPosts(document.querySelector('.tab-item.active').innerText === 'أنا' ? 'ana' : 'general');
             }
-            callRef.on('value', async (snap) => {
-                const data = snap.val();
-                if (!data) return;
-                if (data.offer && currentPlayerId > foundOpp.id && !peerConnection.currentRemoteDescription) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await peerConnection.createAnswer();
-                    await peerConnection.setLocalDescription(answer);
-                    callRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
-                }
-                if (data.answer && currentPlayerId < foundOpp.id && !peerConnection.currentRemoteDescription) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                }
-            });
-            db.ref(`calls/${roomId}/candidates/${foundOpp.id}`).on('child_added', (snap) => {
-                const candidate = new RTCIceCandidate(snap.val());
-                peerConnection.addIceCandidate(candidate).catch(e => {});
-            });
         }
 
-        function toggleMic() {
-            if (!localStream) return;
-            isMicOn = !isMicOn;
-            localStream.getAudioTracks()[0].enabled = isMicOn;
-            document.getElementById('micBtn').classList.toggle('active-mic', isMicOn);
-            document.getElementById('micBtn').innerText = isMicOn ? "🎤" : "🔇";
-        }
+        // --- وظائف الهوية والتعديل (محفوظة) ---
+        function openEditProfile() { switchPage('edit-profile-page'); }
 
-        function toggleSpeaker() {
-            const remoteAudio = document.getElementById('remoteAudio');
-            isSpeakerOn = !isSpeakerOn;
-            remoteAudio.muted = !isSpeakerOn;
-            document.getElementById('speakerBtn').classList.toggle('muted-speaker', !isSpeakerOn);
-            document.getElementById('speakerBtn').innerText = isSpeakerOn ? "🔊" : "🔈";
-        }
-
-        function initGameLogic() {
-            currentRound = 1; myPoints = 0; oppPoints = 0;
-            const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            if (currentPlayerId < foundOpp.id) {
-                roomRef.set({ round: 1, gameState: 'active', scores: {}, reveal: false });
-                setupRoundData(1);
+        function handleImgPreview(input, targetId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) { document.getElementById(targetId).style.backgroundImage = `url(${e.target.result})`; }
+                reader.readAsDataURL(input.files[0]);
             }
-            roomRef.on('value', (snap) => {
-                const data = snap.val();
-                if (!data) return;
-                if (data.gameState === 'closed') { location.reload(); return; }
-                if (data.round && data.round !== currentRound) {
-                    currentRound = data.round;
-                    showTransition(currentRound);
-                }
-                document.getElementById('roundTxt').innerText = `${currentRound}/3`;
-                if (data.cards) {
-                    const isFirst = currentPlayerId < foundOpp.id;
-                    document.getElementById('myCardImg').src = isFirst ? data.cards.img1 : data.cards.img2;
-                    document.getElementById('oppCardImg').src = isFirst ? data.cards.img2 : data.cards.img1;
-                }
-                if(data.reveal) {
-                    document.getElementById('oppCardImg').classList.remove('blur-img');
-                } else {
-                    document.getElementById('oppCardImg').classList.add('blur-img');
-                }
-                if (data.scores) {
-                    myPoints = data.scores[currentPlayerId] || 0;
-                    oppPoints = data.scores[foundOpp.id] || 0;
-                }
-                if (data.gameState === 'finished') endGameResults();
-            });
-            const chatRef = db.ref(`rooms/${currentGameRoom}/messages`);
-            chatRef.off(); document.getElementById('chatBox').innerHTML = "";
-            chatRef.on('child_added', (snap) => {
-                const msg = snap.val();
-                if(msg.senderId !== currentPlayerId) playSfx('msg');
-                const m = document.createElement('div');
-                m.className = msg.senderId === currentPlayerId ? 'msg msg-me' : 'msg msg-opp';
-                m.textContent = msg.text;
-                document.getElementById('chatBox').appendChild(m);
-                document.getElementById('chatBox').scrollTop = 10000;
-            });
-            showTransition(1);
         }
 
-        function setupRoundData(r) {
-            const path = selectedCategory === "random" ? "bank_images" : `bank_images/${selectedCategory}`;
-            db.ref(path).once('value').then(snap => {
-                let images = [];
-                snap.forEach(child => {
-                    let val = child.val();
-                    images.push(typeof val === 'string' ? val : val.url);
-                });
-                if(images.length < 2) images = ["https://images.unsplash.com/photo-1541963463532-d68292c34b19", "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"];
-                const r1 = Math.floor(Math.random()*images.length);
-                let r2 = Math.floor(Math.random()*images.length);
-                while(r1===r2) r2 = Math.floor(Math.random()*images.length);
-                db.ref(`rooms/${currentGameRoom}`).update({ cards: {img1: images[r1], img2: images[r2]}, reveal: false, round: r });
-            });
+        function saveProfileChanges() {
+            const n = document.getElementById('inputEditName').value;
+            const i = document.getElementById('inputEditID').value;
+            const av = document.getElementById('previewAvatar').style.backgroundImage;
+            const bn = document.getElementById('previewBanner').style.backgroundImage;
+
+            if(n.trim()) localStorage.setItem('ws_name', n);
+            if(i.trim()) localStorage.setItem('ws_id', i.replace(/[^a-zA-Z0-9]/g, ''));
+            if(av && av !== 'none') localStorage.setItem('ws_avatar', av.replace(/url\(["']?|["']?\)$/g, ""));
+            if(bn && bn !== 'none') localStorage.setItem('ws_banner', bn.replace(/url\(["']?|["']?\)$/g, ""));
+            loadSavedData();
+            switchPage('profile');
         }
 
-        function handleCorrectClick() {
-            if (isTransitioning) return;
-            playSfx('success');
-            isTransitioning = true;
-            const roomRef = db.ref(`rooms/${currentGameRoom}`);
-            roomRef.once('value').then(s => {
-                const d = s.val();
-                const newOppPoints = (d.scores && d.scores[foundOpp.id] ? d.scores[foundOpp.id] : 0) + 50;
-                const updates = {};
-                updates[`scores/${foundOpp.id}`] = newOppPoints;
-                updates['reveal'] = true;
-                roomRef.update(updates).then(() => {
-                    setTimeout(() => {
-                        if (d.round < 3) {
-                            if (currentPlayerId < foundOpp.id) setupRoundData(d.round + 1);
-                            isTransitioning = false;
-                        } else { roomRef.update({ gameState: 'finished' }); }
-                    }, 3000);
-                });
-            });
+        function autoGrow(el) { el.style.height = '45px'; el.style.height = (el.scrollHeight) + 'px'; }
+        function toggleTheme() {
+            const d = document.getElementById('themeToggle').checked;
+            document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
+            localStorage.setItem('ws_theme', d ? 'dark' : 'light');
         }
-
-        function endGameResults() {
-            playSfx('success');
-            if (myPoints > oppPoints) userData.wins += 1;
-            saveToStorage();
-            updateUI();
-            document.getElementById('myFinalScore').innerText = myPoints;
-            document.getElementById('oppFinalScore').innerText = oppPoints;
-            document.getElementById('resultsModal').style.display = 'flex';
-        }
-
-        function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
-        function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
-        
-        function forceExit() {
-            if (currentGameRoom) db.ref(`rooms/${currentGameRoom}`).update({ gameState: 'closed' }).then(() => location.reload());
-            else location.reload();
-        }
-
-        function showTransition(r) {
-            const trans = document.getElementById('roundTransition');
-            document.getElementById('transOppName').innerText = `${foundOpp ? foundOpp.name : 'الخصم'} : ${oppPoints}`;
-            document.getElementById('transMyName').innerText = `أنت : ${myPoints}`;
-            document.getElementById('transRoundTxt').innerText = `الجولة ${r}`;
-            trans.style.display = 'flex';
-            const bars = document.querySelectorAll('.trans-bar');
-            bars.forEach(b => b.style.animation = 'none');
-            setTimeout(() => {
-                bars[0].className = 'trans-bar top slide-in-top'; 
-                bars[1].className = 'trans-bar mid slide-in-mid'; 
-                bars[2].className = 'trans-bar bottom slide-in-bottom';
-            }, 50);
-            setTimeout(() => {
-                bars[0].classList.add('slide-out-top'); 
-                bars[1].classList.add('slide-out-mid'); 
-                bars[2].classList.add('slide-out-bottom'); 
-            }, 2500);
-            setTimeout(() => trans.style.display='none', 3000);
-        }
-
-        function sendMessage() {
-            const inp = document.getElementById('userInput');
-            if (!inp.value.trim() || !currentGameRoom) return;
-            db.ref(`rooms/${currentGameRoom}/messages`).push({ senderId: currentPlayerId, text: inp.value });
-            inp.value = "";
-        }
-
-        function saveToStorage() { localStorage.setItem('guessGameUser_v3', JSON.stringify(userData)); }
-        function openProfile() { updateUI(); document.getElementById('profileModal').style.display='flex'; }
-        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-        function saveName() { userData.name = document.getElementById('nameInput').value; saveToStorage(); updateUI(); closeAll(); }
-        function openEdit() { document.getElementById('profileModal').style.display='none'; document.getElementById('editModal').style.display='flex'; document.getElementById('nameInput').value=userData.name; }
-        
-        function autoSaveImage(e) {
-            const reader = new FileReader();
-            reader.onload = (ev) => { userData.avatar = ev.target.result; saveToStorage(); updateUI(); };
-            reader.readAsDataURL(e.target.files[0]);
-        }
-
-        window.onload = () => {
-            const stored = localStorage.getItem('guessGameUser_v3');
-            if (stored) {
-                userData = JSON.parse(stored);
-                if (!userData.gameID) userData.gameID = generateUniqueID();
-            }
-            updateUI();
-        };
     </script>
 </body>
 </html>
