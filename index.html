@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
+        /* المتغيرات اللونية الأساسية - لم يتم تغيير أي لون للحفاظ على التصميم */
         :root {
             --bg-color: #ffffff;
             --page-bg: #f1f2f6;
@@ -20,8 +21,10 @@
             --danger-color: #ff4757;
             --chat-bubble-me: #00d2ff;
             --chat-bubble-other: #f1f2f6;
+            --reply-bg: rgba(0, 210, 255, 0.1);
         }
 
+        /* المظهر الليلي (Dark Mode) - التصميم الفخم المعتمد */
         [data-theme="dark"] {
             --bg-color: #0b0b0b;
             --page-bg: #000000;
@@ -33,6 +36,7 @@
             --card-bg: #121212;
             --input-bg: #1c1c1c;
             --chat-bubble-other: #1c1c1c;
+            --reply-bg: rgba(255, 255, 255, 0.05);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -43,70 +47,140 @@
         .page.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- Header --- */
+        /* --- الهيدر والقوائم --- */
         .msg-header { padding: 25px 20px 5px; background: var(--nav-bg); display: flex; justify-content: space-between; align-items: center; }
         .msg-header-title { font-weight: 900; font-size: 1.5rem; }
-        .add-friend-btn { width: 40px; height: 40px; border-radius: 12px; background: var(--input-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent-color); }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        
+        .action-btn { width: 42px; height: 42px; border-radius: 12px; background: var(--input-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent-color); position: relative; transition: 0.2s; }
+        .action-btn:active { transform: scale(0.9); }
+        .dot-notify { position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background: var(--danger-color); border-radius: 50%; border: 2px solid var(--nav-bg); display: none; }
+
         .search-area { padding: 10px 15px 15px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); }
         .msg-list-item { display: flex; align-items: center; padding: 15px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); cursor: pointer; position: relative; }
-        .msg-avatar { width: 55px; height: 55px; border-radius: 50%; background-size: cover; border: 2px solid var(--accent-color); margin-left: 12px; position: relative; }
+        .msg-avatar { width: 55px; height: 55px; border-radius: 50%; background-size: cover; border: 2px solid var(--accent-color); margin-left: 12px; position: relative; background-position: center; }
 
-        /* --- Unread Badge --- */
         .unread-badge { position: absolute; top: 15px; right: 20px; background: var(--danger-color); color: white; min-width: 20px; height: 20px; border-radius: 10px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: bold; padding: 0 6px; border: 2px solid var(--card-bg); }
 
-        /* --- Chat Window --- */
+        /* --- نافذة الدردشة --- */
         #chat-window { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 3000; display: none; flex-direction: column; }
         .chat-header { height: 60px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 15px; }
-        .chat-body { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
-        .chat-footer { padding: 10px 15px 25px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 5px; }
+        .chat-body { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .chat-footer { padding: 10px 15px 25px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 5px; position: relative; }
         
-        #edit-indicator { display: none; background: var(--input-bg); padding: 8px 12px; border-radius: 10px; border-right: 4px solid var(--accent-color); margin-bottom: 5px; align-items: center; justify-content: space-between; font-size: 0.85rem; }
+        #edit-indicator, #reply-indicator { display: none; background: var(--input-bg); padding: 8px 12px; border-radius: 12px; border-right: 4px solid var(--accent-color); margin-bottom: 5px; align-items: center; justify-content: space-between; font-size: 0.85rem; animation: slideUp 0.2s ease; }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; position: relative; word-wrap: break-word; }
+        .reply-content-preview { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--inactive-color); font-size: 0.75rem; margin-top: 2px; }
+
+        /* --- فقاعات الرسائل (Bubbles) ونظام السحب --- */
+        .bubble-container { 
+            position: relative; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            transition: transform 0.1s linear; 
+            touch-action: pan-y; 
+            user-select: none;
+        }
+        .bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; position: relative; word-wrap: break-word; transition: background 0.5s; z-index: 5; }
         .bubble.me { background: var(--chat-bubble-me); color: #fff; border-top-right-radius: 4px; align-self: flex-start; text-align: right; }
         .bubble.other { background: var(--chat-bubble-other); color: var(--text-color); border-top-left-radius: 4px; align-self: flex-end; text-align: left; }
-        .bubble-time { font-size: 0.65rem; color: inherit; opacity: 0.7; margin-top: 5px; display: block; direction: ltr; }
+        
+        .replied-msg-box { background: rgba(0,0,0,0.1); border-right: 3px solid #fff; padding: 5px 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 0.8rem; }
+        .bubble.other .replied-msg-box { background: var(--reply-bg); border-right: 3px solid var(--accent-color); }
+        .reply-name { font-weight: bold; display: block; font-size: 0.75rem; margin-bottom: 2px; }
+        .reply-text { opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* --- Popups --- */
+        /* تعديل تنسيق الوقت ليصبح تحت الرسالة ومرتباً */
+        .bubble-time { 
+            font-size: 0.65rem; 
+            color: inherit; 
+            opacity: 0.7; 
+            margin-top: 5px; 
+            display: block; 
+            direction: ltr; 
+            white-space: nowrap;
+        }
+        
+        @keyframes highlightEffect {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.03); filter: brightness(1.5); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        .highlight-msg { animation: highlightEffect 1s ease; z-index: 10; }
+
+        .swipe-icon { 
+            position: absolute; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            opacity: 0; 
+            transition: 0.1s; 
+            color: var(--accent-color); 
+            display: flex;
+            align-items: center;
+            z-index: 1;
+        }
+        .swipe-right { right: -45px; }
+        .swipe-left { left: -45px; }
+
         .custom-popup { position: fixed; background: var(--card-bg); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border-color); z-index: 9000; display: none; min-width: 170px; overflow: hidden; animation: popIn 0.2s; }
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .popup-btn { padding: 14px; font-size: 0.9rem; border-bottom: 1px solid var(--border-color); cursor: pointer; text-align: center; color: var(--text-color); font-weight: 500; }
         .popup-btn:last-child { border-bottom: none; }
         .popup-btn:active { background: var(--input-bg); }
         
-        /* --- Preview Image --- */
         .preview-box { display: none; padding: 10px; background: var(--input-bg); border-radius: 15px; position: relative; margin-bottom: 8px; width: fit-content; }
         .preview-img { max-height: 100px; border-radius: 10px; display: block; }
         .close-preview { position: absolute; top: -5px; right: -5px; background: var(--danger-color); color: white; border-radius: 50%; width: 22px; height: 22px; text-align: center; cursor: pointer; line-height: 20px; font-weight: bold; border: 2px solid var(--nav-bg); }
 
-        /* --- Global --- */
         .styled-input { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-color); outline: none; }
-        .avatar-main { width: 110px; height: 110px; border-radius: 50%; border: 5px solid var(--bg-color); background-size: cover; margin: -55px auto 10px; position: relative; z-index: 5; background-color: #eee; }
-        .banner { width: 100%; height: 160px; background: #222; background-size: cover; position: relative; }
+        .avatar-main { width: 110px; height: 110px; border-radius: 50%; border: 5px solid var(--bg-color); background-size: cover; margin: -55px auto 10px; position: relative; z-index: 5; background-color: #eee; background-position: center; }
+        .banner { width: 100%; height: 160px; background: #222; background-size: cover; position: relative; background-position: center; }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 1000; }
         .nav-btn { flex: 1; display: flex; justify-content: center; align-items: center; }
         .nav-btn.active svg { stroke: var(--accent-color); }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger-color); color: white; padding: 10px 20px; border-radius: 20px; z-index: 11000; display: none; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger-color); color: white; padding: 10px 20px; border-radius: 20px; z-index: 11000; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .theme-icon { width: 45px; height: 45px; border-radius: 50%; background: var(--input-bg); display: flex; align-items: center; justify-content: center; margin-left: 15px; transition: 0.3s; }
+        
+        .req-card { margin: 10px 15px; padding: 15px; background: var(--card-bg); border-radius: 18px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-color); animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .btn-accept { background: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        .btn-ignore { background: var(--input-bg); color: var(--inactive-color); border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
     </style>
 </head>
 <body onclick="closeAllUI()">
 
-    <div id="toastAlert" class="toast">هذا المعرف مستخدم بالفعل!</div>
+    <div id="toastAlert" class="toast">تنبيه!</div>
 
-    <audio id="soundSend" src="https://v16m.tiktokcdn-us.com/9fd261b272601245239183cf7c9bb6a2/69c8b068/video/tos/alisg/tos-alisg-pve-0037c001/oQBvAWAD8aiwI59HhE8XUIi4E1IPcaXDALBYb/?a=1233&bti=OUBzOTg7QGo6OjZAL3AjLTAzYCMxNDNg&ch=0&cr=13&dr=0&er=0&lr=all&net=0&cd=0%7C0%7C0%7C&cv=1&br=126&bt=63&cs=0&ds=6&ft=74~WHDDwN4vVQQdGuIOnsdh9FqXqYlIYP~LjhWLrK&mime_type=video_mp4&qs=4&rc=aTY0NWRmPGc7Ojg0N2k0NEBpanM7M285cmk4OjMzODczNEBeMmMwMzQtNWAxNjNeLjFiYSNyZW9eMmQ0azFhLS1kMWBzcw%3D%3D&vvpl=1&l=20260328225359519336B1936B193C8B52&btag=e000b0000"></audio>
-    <audio id="soundReceive" src="https://v16m.tiktokcdn-us.com/651663f12fdf08cd9c5e17e679a8eb95/69c8b132/video/tos/alisg/tos-alisg-pve-0037c001/o4nIe9ltQxWoFATRgZjQwGA6AGL6vwe8eAKGeI/?a=1233&bti=OUBzOTg7QGo6OjZAL3AjLTAzYCMxNDNg&ch=0&cr=13&dr=0&er=0&lr=all&net=0&cd=0%7C0%7C0%7C&cv=1&br=122&bt=61&cs=0&ds=6&ft=kLx3-yt4ZZo0PD8bYafaQ9pqzCpKJE.C~&mime_type=video_mp4&qs=4&rc=PGkzNGY0PGU2PGdkOjQ1aEBpMzxkaXk5cm04OjMzODczNEAxLTIwYV9hX2IxXjIvLzAuYSNhLWxeMmQ0azFhLS1kMWBzcw%3D%3D&vvpl=1&l=20260328225721063FC8D87D7CCB3C4D84&btag=e000b0200"></audio>
+    <audio id="soundSend" src="https://v16m.tiktokcdn-us.com/77d3734c1a1ba70f31f8551a97fbba05/69c9acf1/video/tos/alisg/tos-alisg-pve-0037c001/oAEAXEYxadBVl8FXXHAnBIa9VVJJ9AkiX4icP/?a=1233&bti=OUBzOTg7QGo6OjZAL3AjLTAzYCMxNDNg&ch=0&cr=13&dr=0&er=0&lr=all&net=0&cd=0%7C0%7C0%7C&cv=1&br=126&bt=63&cs=0&ds=6&ft=arR-Iqq2mToPD12Mfy3s3wUeo6oLaeF~O5&mime_type=video_mp4&qs=4&rc=MzM5OjplOWVoN2VpaDVkNkBpanJqcWs5cnRvOjMzODczNEAtYjZgNjYyNjUxXi5iLi1jYSNyZ2AvMmQ0XjFhLS1kMWBzcw%3D%3D&vvpl=1&l=20260329165128E2C66D03A8519D129CAE&btag=e000b0000"></audio>
+    <audio id="soundReceiveActive" src="https://v19.tiktokcdn-us.com/9c13630d0b59abe8ac8f74a09ee199c6/69c9ad57/video/tos/alisg/tos-alisg-pve-0037c001/ok2fQKXf9f4bLNxSDAMAItk3jzTAqCmITqQ38N/?a=1233&bti=OTg7QGo5QHM6OjZALTAzYCMvcCMxNDNg&ch=0&cr=13&dr=0&er=0&lr=all&net=0&cd=0%7C0%7C0%7C&cv=1&br=116&bt=58&cs=0&ds=6&ft=ha56B22xjQM9wwCLVsprU5~Ov9UoLopib9_x~YBMEeF&mime_type=video_mp4&qs=4&rc=Zjs7OmY5aTdnOzY5ZTRkM0BpajlxOng5cmVvOjMzODczNEBjYjYvMDQwXjYxYmI2MzYxYSNmc3NzMmRjXzFhLS1kMWBzcw%3D%3D&vvpl=1&l=2026032916531085B81E7CCAFCB013089D&btag=e000b0200"></audio>
+    <audio id="soundReceiveAway" src="https://v16m.tiktokcdn-us.com/0256ccda928d2baf85a5a830835af12a/69c9ac9a/video/tos/alisg/tos-alisg-pve-0037c001/ooA4BEZpcEOARR9IWaJfBFVyfDpZ8VQoVGCcug/?a=1233&bti=OUBzOTg7QGo6OjZAL3AjLTAzYCMxNDNg&ch=0&cr=13&dr=0&er=0&lr=all&net=0&cd=0%7C0%7C0%7C&cv=1&br=122&bt=61&cs=0&ds=6&ft=kLx3-yt4ZZo0PDNpBafaQ9vHzCpKJE.C~&mime_type=video_mp4&qs=4&rc=N2hkOTdnNWc7Zjk1Njs6aEBpamRyOG45cjZvOjMzODczNEBgYDYvLTQ2Nl4xXi4vLTQzYSNqL21jMmRrXzFhLS1kMWBzcw%3D%3D&vvpl=1&l=20260329165001A78F2C6CF165A3148A96&btag=e000b0000"></audio>
 
     <main class="content">
         <section id="page-messages" class="page active">
             <div class="msg-header">
                 <div class="msg-header-title">الرسائل</div>
-                <div class="add-friend-btn" onclick="goPage('add-friend')">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <div class="header-actions">
+                    <div class="action-btn" onclick="goPage('requests')">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <div id="requestDot" class="dot-notify"></div>
+                    </div>
+                    <div class="action-btn" onclick="goPage('add-friend')">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </div>
                 </div>
             </div>
             <div class="search-area"><input type="text" id="friendSearch" class="styled-input" placeholder="بحث..." oninput="smartSearch()"></div>
             <div id="messages-list"></div>
+        </section>
+
+        <section id="page-requests" class="page">
+            <div style="padding:15px; display:flex; align-items:center; background:var(--nav-bg); border-bottom:1px solid var(--border-color);">
+                <div onclick="goPage('messages')" style="margin-left:15px; cursor:pointer;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+                <h3 style="flex:1; text-align:center;">طلبات المراسلة</h3>
+            </div>
+            <div id="requests-list" style="padding-top:10px;"></div>
         </section>
 
         <section id="page-add-friend" class="page">
@@ -121,7 +195,7 @@
         <div id="chat-window">
             <div class="chat-header">
                 <div onclick="closeChat()" style="cursor:pointer; margin-left:15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
-                <div id="chat-user-avatar" style="width:38px; height:38px; border-radius:50%; background-size:cover; margin-left:10px; background-color:#ccc;"></div>
+                <div id="chat-user-avatar" style="width:38px; height:38px; border-radius:50%; background-size:cover; margin-left:10px; background-color:#ccc; background-position:center;"></div>
                 <div id="chat-user-name" style="font-weight:bold;">User</div>
             </div>
             <div class="chat-body" id="chat-body"></div>
@@ -133,6 +207,17 @@
                         <span style="color:var(--accent-color); font-weight:bold;">تعديل الرسالة</span>
                     </div>
                     <span onclick="cancelEditMode()" style="cursor:pointer; font-weight:900; opacity:0.6;">×</span>
+                </div>
+
+                <div id="reply-indicator">
+                    <div style="flex:1;">
+                        <div style="display:flex; align-items:center; gap:5px;">
+                             <svg viewBox="0 0 24 24" width="14" height="14" fill="var(--accent-color)"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"></path></svg>
+                             <span id="reply-to-name" style="color:var(--accent-color); font-weight:bold; font-size:0.8rem;">الرد على...</span>
+                        </div>
+                        <div id="reply-to-text" class="reply-content-preview">الرسالة المختصرة...</div>
+                    </div>
+                    <span onclick="cancelReplyMode()" style="cursor:pointer; font-weight:900; opacity:0.6; padding:5px;">×</span>
                 </div>
 
                 <div id="chatImgPrevBox" class="preview-box">
@@ -181,10 +266,10 @@
                 <button onclick="saveProfile()" style="color:var(--accent-color); background:none; border:none; font-weight:bold; font-size:1rem; cursor:pointer;">حفظ</button>
             </div>
             <div style="padding:20px;">
-                <div id="eBannerPrev" style="height:140px; border-radius:15px; background-size:cover; margin-bottom:15px; position:relative; background-color:#333;">
+                <div id="eBannerPrev" style="height:140px; border-radius:15px; background-size:cover; margin-bottom:15px; position:relative; background-color:#333; background-position:center;">
                     <label style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3); color:#fff; cursor:pointer;">تغيير الغلاف<input type="file" hidden onchange="prevImg(this, 'eBannerPrev')"></label>
                 </div>
-                <div id="eAvatarPrev" style="width:95px; height:95px; border-radius:50%; background-size:cover; margin:-48px auto 20px; border:4px solid var(--bg-color); position:relative; background-color:#eee;">
+                <div id="eAvatarPrev" style="width:95px; height:95px; border-radius:50%; background-size:cover; margin:-48px auto 20px; border:4px solid var(--bg-color); position:relative; background-color:#eee; background-position:center;">
                     <label style="position:absolute; bottom:0; right:0; background:var(--accent-color); width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid var(--bg-color);"><svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg><input type="file" hidden onchange="prevImg(this, 'eAvatarPrev')"></label>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:15px;">
@@ -209,7 +294,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let currentFriend = null, selectedMsgId = null, selectedMsgText = "", selectedMsgImg = null;
+        let currentFriend = null, selectedMsgId = null, selectedMsgText = "", selectedMsgImg = null, replyToId = null;
         let tempChatImg = null, isEditMode = false;
         let myID = localStorage.getItem('myStarsID') || 'user' + Math.floor(Math.random()*9999);
         localStorage.setItem('myStarsID', myID);
@@ -228,13 +313,25 @@
             document.body.setAttribute('data-theme', 'dark');
             syncWithFirebase();
             startUnreadMonitor();
+            listenForRequests();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toastAlert');
+            t.innerText = msg; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2500);
         }
 
         function playSound(type) {
-            const sSend = document.getElementById('soundSend');
-            const sReceive = document.getElementById('soundReceive');
-            if(type === 'send') { sSend.currentTime = 0; sSend.play().catch(e => console.log('Audio error:', e)); }
-            if(type === 'receive') { sReceive.currentTime = 0; sReceive.play().catch(e => console.log('Audio error:', e)); }
+            let sound;
+            if (type === 'send') sound = document.getElementById('soundSend');
+            else if (type === 'receive_active') sound = document.getElementById('soundReceiveActive');
+            else if (type === 'receive_away') sound = document.getElementById('soundReceiveAway');
+            
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Audio play error:", e));
+            }
         }
 
         function syncWithFirebase() { db.ref('users/' + userData.id).set({ name: userData.name, id: userData.id, avatar: userData.avatar }); }
@@ -247,6 +344,48 @@
             if(id === 'profile') document.querySelectorAll('.nav-btn')[1].classList.add('active');
         }
 
+        let startX = 0;
+        function touchStartSwipe(e, id) { startX = e.touches[0].clientX; document.getElementById('cont-' + id).style.transition = 'none'; }
+        function touchMoveSwipe(e, id, sender) {
+            let moveX = e.touches[0].clientX - startX;
+            let el = document.getElementById('cont-' + id);
+            let iconR = document.getElementById('icon-r-' + id);
+            let iconL = document.getElementById('icon-l-' + id);
+            const isMe = (sender === userData.id);
+            if(!isMe && moveX > 0 && moveX < 110) { el.style.transform = `translateX(${moveX}px)`; iconR.style.opacity = moveX / 70; } 
+            else if(isMe && moveX < 0 && moveX > -110) { el.style.transform = `translateX(${moveX}px)`; iconL.style.opacity = Math.abs(moveX) / 70; }
+        }
+        function touchEndSwipe(e, id, sender, text) {
+            let el = document.getElementById('cont-' + id);
+            let moveX = e.changedTouches[0].clientX - startX;
+            const isMe = (sender === userData.id);
+            el.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            if((!isMe && moveX > 65) || (isMe && moveX < -65)) {
+                if (window.navigator.vibrate) window.navigator.vibrate(15);
+                activateReplyMode(id, text, isMe ? userData.name : currentFriend.name);
+            }
+            el.style.transform = `translateX(0px)`;
+            setTimeout(() => { document.getElementById('icon-r-' + id).style.opacity = 0; document.getElementById('icon-l-' + id).style.opacity = 0; }, 200);
+        }
+
+        function activateReplyMode(id, text, name) {
+            cancelEditMode(); replyToId = id;
+            const repInd = document.getElementById('reply-indicator');
+            document.getElementById('reply-to-name').innerText = name;
+            document.getElementById('reply-to-text').innerText = text || "صورة";
+            repInd.style.display = 'flex';
+            document.getElementById('chat-input').focus();
+        }
+        function cancelReplyMode() { replyToId = null; document.getElementById('reply-indicator').style.display = 'none'; }
+        function scrollToMsg(targetId) {
+            const target = document.getElementById('msg-' + targetId);
+            if(target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('highlight-msg');
+                setTimeout(() => target.classList.remove('highlight-msg'), 1000);
+            }
+        }
+
         function openChat(id) {
             currentFriend = myFriends.find(f => f.id === id);
             document.getElementById('chat-user-name').innerText = currentFriend.name;
@@ -256,120 +395,57 @@
             
             db.ref('chats/' + chatID).once('value', snap => {
                 const msgs = snap.val();
-                if(msgs) {
-                    Object.keys(msgs).forEach(key => {
-                        if(msgs[key].sender !== userData.id) db.ref('chats/' + chatID + '/' + key).update({ seen: true });
-                    });
-                }
+                if(msgs) Object.keys(msgs).forEach(key => { if(msgs[key].sender !== userData.id) db.ref('chats/' + chatID + '/' + key).update({ seen: true }); });
             });
 
-            db.ref('chats/' + chatID).on('value', snap => renderMessages(snap.val()));
+            db.ref('chats/' + chatID).on('value', snap => {
+                const msgs = snap.val();
+                if (msgs) {
+                    const keys = Object.keys(msgs);
+                    const lastMsg = msgs[keys[keys.length - 1]];
+                    if (lastMsg && lastMsg.sender !== userData.id && !lastMsg.soundPlayed) {
+                        if (currentFriend && currentFriend.id === lastMsg.sender) playSound('receive_active');
+                        else playSound('receive_away');
+                        db.ref('chats/' + chatID + '/' + keys[keys.length - 1]).update({ soundPlayed: true });
+                    }
+                }
+                renderMessages(msgs);
+            });
         }
 
         function renderMessages(msgs) {
             const container = document.getElementById('chat-body');
-            const oldHeight = container.scrollHeight;
             container.innerHTML = '';
             if(!msgs) return;
-
-            let lastMsg = null;
             Object.keys(msgs).forEach(key => {
                 const m = msgs[key];
-                lastMsg = m;
                 if(m.deletedBy && m.deletedBy === userData.id) return;
                 const isMe = m.sender === userData.id;
-                container.innerHTML += `
-                    <div class="bubble ${isMe ? 'me' : 'other'}" 
-                         oncontextmenu="handleLongPress(event, '${key}', '${m.text || ''}', '${m.img || ''}', '${m.sender}')" 
-                         ontouchstart="touchStart(event, '${key}', '${m.text || ''}', '${m.img || ''}', '${m.sender}')"
-                         ontouchend="touchEnd()">
+                let replyHtml = "";
+                if(m.replyTo) {
+                    const original = msgs[m.replyTo];
+                    replyHtml = `<div class="replied-msg-box" onclick="scrollToMsg('${m.replyTo}')">
+                        <span class="reply-name">${original ? (original.sender === userData.id ? 'أنت' : currentFriend.name) : 'رسالة محذوفة'}</span>
+                        <div class="reply-text">${original ? (original.text || 'صورة') : '...'}</div>
+                    </div>`;
+                }
+
+                // العرض المطلوب للوقت والتاريخ
+                const timeDisplay = `${m.date} | ${m.time}`;
+
+                container.innerHTML += `<div class="bubble-container" id="cont-${key}" 
+                    ontouchstart="touchStartSwipe(event, '${key}')" ontouchmove="touchMoveSwipe(event, '${key}', '${m.sender}')" ontouchend="touchEndSwipe(event, '${key}', '${m.sender}', '${m.text}')">
+                    <div id="icon-r-${key}" class="swipe-icon swipe-right"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"></path></svg></div>
+                    <div id="icon-l-${key}" class="swipe-icon swipe-left"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"></path></svg></div>
+                    <div id="msg-${key}" class="bubble ${isMe ? 'me' : 'other'}" oncontextmenu="handleLongPress(event, '${key}', '${m.text || ''}', '${m.img || ''}', '${m.sender}')">
+                        ${replyHtml}
                         ${m.img ? `<img src="${m.img}" style="width:100%; border-radius:10px; margin-bottom:5px; cursor:pointer;" onclick="viewImg('${m.img}')">` : ''}
                         ${m.text || ''}
-                        <span class="bubble-time">${m.time} | ${m.date}</span>
-                    </div>`;
+                        <span class="bubble-time">${timeDisplay}</span>
+                    </div>
+                </div>`;
             });
-
-            // تشغيل الصوت عند وصول رسالة جديدة وأنت داخل الدردشة
-            if (lastMsg && lastMsg.sender !== userData.id && !lastMsg.seen) {
-                const chatID = [userData.id, currentFriend.id].sort().join('_');
-                db.ref('chats/' + chatID).once('value', snap => {
-                   playSound('send'); // الصوت الأول لأنك داخل الدردشة
-                });
-            }
-
             container.scrollTop = container.scrollHeight;
-        }
-
-        function startUnreadMonitor() {
-            myFriends.forEach(f => {
-                const chatID = [userData.id, f.id].sort().join('_');
-                db.ref('chats/' + chatID).on('value', snap => {
-                    const msgs = snap.val();
-                    let count = 0;
-                    let lastSender = "";
-                    if(msgs) {
-                        Object.keys(msgs).forEach(k => {
-                            if(msgs[k].sender !== userData.id && !msgs[k].seen) {
-                                count++;
-                                lastSender = msgs[k].sender;
-                            }
-                        });
-                    }
-                    
-                    const badge = document.getElementById('badge-' + f.id);
-                    if(badge) {
-                        // تشغيل الصوت الثاني (التنبيه الخارجي) إذا وصلت رسالة وأنت لست في دردشتها
-                        if (count > parseInt(badge.innerText || 0) && (!currentFriend || currentFriend.id !== f.id)) {
-                            playSound('receive');
-                        }
-                        badge.innerText = count;
-                        badge.style.display = count > 0 ? 'flex' : 'none';
-                    }
-                });
-            });
-        }
-
-        let touchTimer;
-        function touchStart(e, id, text, img, sender) { touchTimer = setTimeout(() => handleLongPress(e, id, text, img, sender), 1500); }
-        function touchEnd() { if(touchTimer) clearTimeout(touchTimer); }
-
-        function handleLongPress(e, id, text, img, sender) {
-            if(touchTimer) clearTimeout(touchTimer);
-            e.preventDefault();
-            selectedMsgId = id; selectedMsgText = text; selectedMsgImg = img;
-            const pop = document.getElementById('msgPopup');
-            const isMe = sender === userData.id;
-            pop.innerHTML = isMe ? `
-                <div class="popup-btn" onclick="enterEditMode()">تعديل</div>
-                <div class="popup-btn" onclick="deleteMessage('me')">حذف لدي</div>
-                <div class="popup-btn" style="color:var(--danger-color);" onclick="deleteMessage('all')">حذف لدى الجميع</div>
-            ` : `<div class="popup-btn" onclick="deleteMessage('me')">حذف لدي</div>`;
-            pop.style.display = 'block';
-            let x = (e.clientX || (e.touches ? e.touches[0].clientX : 100)) - 85;
-            let y = (e.clientY || (e.touches ? e.touches[0].clientY : 100)) - 40;
-            pop.style.left = Math.max(10, Math.min(x, window.innerWidth - 180)) + 'px';
-            pop.style.top = Math.max(10, Math.min(y, window.innerHeight - 150)) + 'px';
-        }
-
-        function enterEditMode() {
-            isEditMode = true; closeAllUI();
-            document.getElementById('edit-indicator').style.display = 'flex';
-            document.getElementById('chat-input').value = selectedMsgText;
-            document.getElementById('send-icon-svg').innerHTML = '<path d="M20 6L9 17l-5-5" stroke="white" stroke-width="3" fill="none"/>';
-            if(selectedMsgImg && selectedMsgImg !== "undefined") {
-                tempChatImg = selectedMsgImg;
-                document.getElementById('chatImgPrevBox').style.display = 'block';
-                document.getElementById('chatImgPrevSrc').src = selectedMsgImg;
-            }
-            document.getElementById('chat-input').focus();
-        }
-
-        function cancelEditMode() {
-            isEditMode = false;
-            document.getElementById('edit-indicator').style.display = 'none';
-            document.getElementById('chat-input').value = '';
-            document.getElementById('send-icon-svg').innerHTML = '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>';
-            removeChatImg();
         }
 
         function sendMessage() {
@@ -377,32 +453,46 @@
             const text = inp.value.trim();
             if(!text && !tempChatImg) return;
             const chatID = [userData.id, currentFriend.id].sort().join('_');
+            
             if(isEditMode) {
                 db.ref('chats/' + chatID + '/' + selectedMsgId).update({ text: text, img: tempChatImg });
                 cancelEditMode();
             } else {
                 const now = new Date();
-                const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                const date = now.getFullYear() + "/" + (now.getMonth() + 1).toString().padStart(2,'0') + "/" + now.getDate().toString().padStart(2,'0');
-                db.ref('chats/' + chatID).push({ sender: userData.id, text, img: tempChatImg, time, date, seen: false }).then(() => {
-                    playSound('send');
-                });
+                let hours = now.getHours();
+                const ampm = hours >= 12 ? 'م' : 'ص';
+                hours = hours % 12 || 12;
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                
+                // تنسيق الوقت المطلوب: 8:01 م
+                const finalTime = `${hours}:${minutes} ${ampm}`;
+                // تنسيق التاريخ المطلوب: 2026/3/29
+                const finalDate = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+                
+                let msgData = { 
+                    sender: userData.id, 
+                    text: text, 
+                    img: tempChatImg, 
+                    time: finalTime, 
+                    date: finalDate, 
+                    seen: false,
+                    soundPlayed: true
+                };
+                if(replyToId) msgData.replyTo = replyToId;
+                db.ref('chats/' + chatID).push(msgData).then(() => { playSound('send'); cancelReplyMode(); });
                 inp.value = ''; removeChatImg();
             }
         }
 
-        function handleFile(input) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                tempChatImg = e.target.result;
-                document.getElementById('chatImgPrevBox').style.display = 'block';
-                document.getElementById('chatImgPrevSrc').src = tempChatImg;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function removeChatImg() { 
-            tempChatImg = null; document.getElementById('chatImgPrevBox').style.display = 'none'; document.getElementById('chatFileInput').value = '';
+        function handleLongPress(e, id, text, img, sender) {
+            e.preventDefault(); selectedMsgId = id; selectedMsgText = text; selectedMsgImg = img;
+            const pop = document.getElementById('msgPopup'); const isMe = sender === userData.id;
+            pop.innerHTML = isMe ? `<div class="popup-btn" onclick="enterEditMode()">تعديل</div><div class="popup-btn" onclick="deleteMessage('me')">حذف لدي</div><div class="popup-btn" style="color:var(--danger-color);" onclick="deleteMessage('all')">حذف لدى الجميع</div>` : `<div class="popup-btn" onclick="deleteMessage('me')">حذف لدي</div>`;
+            pop.style.display = 'block';
+            let x = (e.clientX || (e.touches ? e.touches[0].clientX : 100)) - 85;
+            let y = (e.clientY || (e.touches ? e.touches[0].clientY : 100)) - 40;
+            pop.style.left = Math.max(10, Math.min(x, window.innerWidth - 180)) + 'px';
+            pop.style.top = Math.max(10, Math.min(y, window.innerHeight - 150)) + 'px';
         }
 
         function deleteMessage(type) {
@@ -412,106 +502,115 @@
             closeAllUI();
         }
 
-        function closeAllUI() { document.getElementById('msgPopup').style.display = 'none'; }
-        function closeChat() { 
-            const chatID = [userData.id, currentFriend.id].sort().join('_');
-            db.ref('chats/' + chatID).off();
-            document.getElementById('chat-window').style.display = 'none'; 
-            currentFriend = null;
-            cancelEditMode(); 
-        }
-        function viewImg(src) { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display = 'flex'; }
-        
-        function toggleTheme() {
-            const b = document.body;
-            b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        function enterEditMode() {
+            isEditMode = true; closeAllUI(); cancelReplyMode();
+            document.getElementById('edit-indicator').style.display = 'flex';
+            document.getElementById('chat-input').value = selectedMsgText;
+            document.getElementById('send-icon-svg').innerHTML = '<path d="M20 6L9 17l-5-5" stroke="white" stroke-width="3" fill="none"/>';
+            if(selectedMsgImg) { tempChatImg = selectedMsgImg; document.getElementById('chatImgPrevBox').style.display = 'block'; document.getElementById('chatImgPrevSrc').src = selectedMsgImg; }
+            document.getElementById('chat-input').focus();
         }
 
+        function cancelEditMode() {
+            isEditMode = false; document.getElementById('edit-indicator').style.display = 'none'; document.getElementById('chat-input').value = '';
+            document.getElementById('send-icon-svg').innerHTML = '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>'; removeChatImg();
+        }
+
+        function sendFriendRequest(targetID, targetName, targetAvatar) {
+            if(targetID === userData.id) return;
+            db.ref('requests/' + targetID + '/' + userData.id).set({ id: userData.id, name: userData.name, avatar: userData.avatar }).then(() => { showToast("تم إرسال طلب المراسلة"); document.getElementById('search-result-container').innerHTML = ""; });
+        }
+
+        function listenForRequests() {
+            db.ref('requests/' + userData.id).on('value', snap => {
+                const reqs = snap.val(); const dot = document.getElementById('requestDot'); const list = document.getElementById('requests-list');
+                list.innerHTML = "";
+                if(reqs) { dot.style.display = 'block'; Object.keys(reqs).forEach(key => { const r = reqs[key]; list.innerHTML += `<div class="req-card"><div class="msg-avatar" style="background-image:url('${r.avatar || ''}')"></div><div style="flex:1;"><div style="font-weight:bold;">${r.name}</div><div style="font-size:0.8rem; opacity:0.6;">@${r.id}</div></div><div style="display:flex; gap:8px;"><button class="btn-accept" onclick="acceptRequest('${r.id}', '${r.name}', '${r.avatar}')">قبول</button><button class="btn-ignore" onclick="deleteRequest('${r.id}')">تجاهل</button></div></div>`; }); }
+                else { dot.style.display = 'none'; list.innerHTML = '<p style="text-align:center; margin-top:50px; opacity:0.5;">لا توجد طلبات جديدة</p>'; }
+            });
+        }
+
+        function acceptRequest(id, name, avatar) {
+            if(!myFriends.find(f => f.id === id)) { myFriends.push({id, name, avatar}); localStorage.setItem('myFriendsList', JSON.stringify(myFriends)); }
+            db.ref('accepted/' + id + '/' + userData.id).set({ id: userData.id, name: userData.name, avatar: userData.avatar });
+            deleteRequest(id); renderFriends(); startUnreadMonitor();
+        }
+        function deleteRequest(id) { db.ref('requests/' + userData.id + '/' + id).remove(); }
+        db.ref('accepted/' + userData.id).on('child_added', snap => {
+            const f = snap.val(); if(!myFriends.find(old => old.id === f.id)) { myFriends.push(f); localStorage.setItem('myFriendsList', JSON.stringify(myFriends)); renderFriends(); startUnreadMonitor(); }
+            db.ref('accepted/' + userData.id + '/' + f.id).remove();
+        });
+
+        function startUnreadMonitor() {
+            myFriends.forEach(f => {
+                const chatID = [userData.id, f.id].sort().join('_');
+                db.ref('chats/' + chatID).on('value', snap => {
+                    const msgs = snap.val(); let count = 0;
+                    if(msgs) {
+                        const keys = Object.keys(msgs);
+                        keys.forEach(k => { if(msgs[k].sender !== userData.id && !msgs[k].seen) count++; });
+                        const lastM = msgs[keys[keys.length-1]];
+                        if(lastM && lastM.sender !== userData.id && !lastM.soundPlayed && (!currentFriend || currentFriend.id !== f.id)) {
+                             playSound('receive_away'); db.ref('chats/' + chatID + '/' + keys[keys.length-1]).update({ soundPlayed: true });
+                        }
+                    }
+                    const badge = document.getElementById('badge-' + f.id); if(badge) { badge.innerText = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
+                });
+            });
+        }
+
+        function handleFile(input) {
+            const reader = new FileReader(); reader.onload = e => { tempChatImg = e.target.result; document.getElementById('chatImgPrevBox').style.display = 'block'; document.getElementById('chatImgPrevSrc').src = tempChatImg; };
+            reader.readAsDataURL(input.files[0]);
+        }
+        function removeChatImg() { tempChatImg = null; document.getElementById('chatImgPrevBox').style.display = 'none'; document.getElementById('chatFileInput').value = ''; }
+        function closeAllUI() { document.getElementById('msgPopup').style.display = 'none'; }
+        function closeChat() { if(currentFriend) db.ref('chats/' + [userData.id, currentFriend.id].sort().join('_')).off(); document.getElementById('chat-window').style.display = 'none'; currentFriend = null; cancelEditMode(); cancelReplyMode(); }
+        function viewImg(src) { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display = 'flex'; }
+        function toggleTheme() { const b = document.body; b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
+        
         function renderFriends() {
             const container = document.getElementById('messages-list');
-            container.innerHTML = myFriends.map(f => `
-                <div class="msg-list-item" onclick="openChat('${f.id}')">
-                    <div class="msg-avatar" style="background-image:url('${f.avatar || 'https://via.placeholder.com/100'}')"></div>
-                    <div id="badge-${f.id}" class="unread-badge">0</div>
-                    <div><div style="font-weight:bold;">${f.name}</div><div style="color:var(--inactive-color); font-size:0.8rem;">@${f.id}</div></div>
-                </div>`).join('');
+            container.innerHTML = myFriends.map(f => `<div class="msg-list-item" onclick="openChat('${f.id}')"><div class="msg-avatar" style="background-image:url('${f.avatar || ''}')"></div><div id="badge-${f.id}" class="unread-badge">0</div><div><div style="font-weight:bold;">${f.name}</div><div style="color:var(--inactive-color); font-size:0.8rem;">@${f.id}</div></div></div>`).join('');
         }
 
         function loadProfile() {
-            document.getElementById('pNameShow').innerText = userData.name;
-            document.getElementById('pIdShow').innerText = "@" + userData.id;
-            document.getElementById('pAvatar').style.backgroundImage = `url('${userData.avatar || 'https://via.placeholder.com/100'}')`;
-            document.getElementById('pBanner').style.backgroundImage = `url('${userData.banner || 'https://via.placeholder.com/100'}')`;
-            document.getElementById('eName').value = userData.name;
-            document.getElementById('eId').value = userData.id;
-            document.getElementById('eAvatarPrev').style.backgroundImage = `url('${userData.avatar || 'https://via.placeholder.com/100'}')`;
-            document.getElementById('eBannerPrev').style.backgroundImage = `url('${userData.banner || 'https://via.placeholder.com/100'}')`;
+            document.getElementById('pNameShow').innerText = userData.name; document.getElementById('pIdShow').innerText = "@" + userData.id;
+            document.getElementById('pAvatar').style.backgroundImage = `url('${userData.avatar || ''}')`; document.getElementById('pBanner').style.backgroundImage = `url('${userData.banner || ''}')`;
+            document.getElementById('eName').value = userData.name; document.getElementById('eId').value = userData.id;
+            document.getElementById('eAvatarPrev').style.backgroundImage = `url('${userData.avatar || ''}')`; document.getElementById('eBannerPrev').style.backgroundImage = `url('${userData.banner || ''}')`;
         }
 
         function saveProfile() {
-            const nId = document.getElementById('eId').value.trim();
-            const nNm = document.getElementById('eName').value.trim();
-            if(!nId || !nNm) return;
-            if(nId !== userData.id) {
-                db.ref('users/' + nId).once('value', snap => {
-                    if(snap.exists()) {
-                        document.getElementById('toastAlert').style.display='block';
-                        setTimeout(()=>document.getElementById('toastAlert').style.display='none',2500);
-                    } else {
-                        db.ref('users/' + userData.id).remove();
-                        userData.id = nId; userData.name = nNm; finishSave();
-                    }
-                });
-            } else { userData.name = nNm; finishSave(); }
+            const nId = document.getElementById('eId').value.trim(); const nNm = document.getElementById('eName').value.trim(); if(!nId || !nNm) return;
+            if(nId !== userData.id) { db.ref('users/' + nId).once('value', snap => { if(snap.exists()) showToast("المعرف مستخدم!"); else { db.ref('users/' + userData.id).remove(); userData.id = nId; userData.name = nNm; finishSave(); } }); }
+            else { userData.name = nNm; finishSave(); }
         }
-
         function finishSave() {
             localStorage.setItem('myStarsID', userData.id); localStorage.setItem('myName', userData.name);
             localStorage.setItem('myAv', userData.avatar); localStorage.setItem('myBan', userData.banner);
             syncWithFirebase(); loadProfile(); goPage('profile');
         }
-
         function prevImg(input, targetId) {
-            const reader = new FileReader();
-            reader.onload = e => {
+            const reader = new FileReader(); reader.onload = e => {
                 document.getElementById(targetId).style.backgroundImage = `url('${e.target.result}')`;
                 if(targetId === 'eAvatarPrev') userData.avatar = e.target.result;
                 if(targetId === 'eBannerPrev') userData.banner = e.target.result;
             };
             reader.readAsDataURL(input.files[0]);
         }
-
         function searchUserByInternalID() {
-            const val = document.getElementById('addSearchInput').value.trim();
-            const container = document.getElementById('search-result-container');
-            if(!val) return container.innerHTML = "";
+            const val = document.getElementById('addSearchInput').value.trim(); const container = document.getElementById('search-result-container'); if(!val) return container.innerHTML = "";
             db.ref('users/' + val).once('value', snap => {
                 const u = snap.val();
-                if(u) {
-                    container.innerHTML = `<div style="margin:15px; padding:15px; background:var(--card-bg); border-radius:15px; display:flex; align-items:center; gap:12px; border:1px solid var(--border-color);">
-                        <div class="msg-avatar" style="background-image:url('${u.avatar || 'https://via.placeholder.com/100'}')"></div>
-                        <div style="flex:1;"><div style="font-weight:bold;">${u.name}</div><div>@${u.id}</div></div>
-                        <button onclick="addFriend('${u.id}','${u.name}','${u.avatar}')" style="background:var(--accent-color); color:white; border:none; padding:8px 15px; border-radius:10px;">إضافة</button></div>`;
-                } else container.innerHTML = '<p style="text-align:center; padding:20px;">غير موجود</p>';
+                if(u) { const isFriend = myFriends.find(f => f.id === u.id); container.innerHTML = `<div style="margin:15px; padding:15px; background:var(--card-bg); border-radius:15px; display:flex; align-items:center; gap:12px; border:1px solid var(--border-color);"><div class="msg-avatar" style="background-image:url('${u.avatar || ''}')"></div><div style="flex:1;"><div style="font-weight:bold;">${u.name}</div><div>@${u.id}</div></div>${isFriend ? '<span style="color:var(--inactive-color);">صديق</span>' : `<button onclick="sendFriendRequest('${u.id}','${u.name}','${u.avatar}')" class="btn-accept">إضافة</button>`}</div>`; }
+                else container.innerHTML = '<p style="text-align:center; padding:20px;">غير موجود</p>';
             });
         }
-
-        function addFriend(id, name, avatar) {
-            if(id === userData.id) return;
-            if(!myFriends.find(f => f.id === id)) {
-                myFriends.push({id, name, avatar});
-                localStorage.setItem('myFriendsList', JSON.stringify(myFriends));
-                renderFriends(); goPage('messages');
-            }
-        }
-
         function smartSearch() {
             const v = document.getElementById('friendSearch').value.toLowerCase();
-            document.querySelectorAll('.msg-list-item').forEach(i => {
-                i.style.display = i.innerText.toLowerCase().includes(v) ? 'flex' : 'none';
-            });
+            document.querySelectorAll('.msg-list-item').forEach(i => { i.style.display = i.innerText.toLowerCase().includes(v) ? 'flex' : 'none'; });
         }
-
         window.onload = init;
     </script>
 </body>
