@@ -78,7 +78,7 @@
             display: none; 
             overflow-y: auto; 
             padding-bottom: 90px; 
-            -webkit-overflow-scrolling: touch; 
+            -webkit-overflow-scrolling: touch;
         }
 
         .page.active { display: block; animation: fadeIn 0.3s ease; }
@@ -117,9 +117,20 @@
             display: none; 
             flex-direction: column; 
         }
-        .chat-header { height: 60px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 15px; position: relative; }
+        .chat-header { height: 70px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 15px; position: relative; }
         .chat-body { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
         
+        /* تنسيق ميزة آخر ظهور */
+        .user-status-text {
+            font-size: 0.7rem;
+            color: var(--inactive-color);
+            font-weight: 500;
+            margin-top: 2px;
+            direction: ltr;
+            text-align: right;
+        }
+        .status-online { color: var(--accent-color); font-weight: bold; }
+
         .chat-footer { 
             padding: 10px 15px env(safe-area-inset-bottom, 20px); 
             background: var(--nav-bg); 
@@ -201,10 +212,6 @@
         .btn-ignore { background: var(--input-bg); color: var(--inactive-color); border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
         
         .last-msg-preview { color: var(--inactive-color); font-size: 0.8rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
-
-        /* ستايل مخصص لحالة المتصل */
-        .online-status { font-size: 0.65rem; color: var(--accent-color); font-weight: normal; margin-top: 1px; }
-        .offline-status { font-size: 0.65rem; color: var(--inactive-color); font-weight: normal; margin-top: 1px; direction: ltr; text-align: right; }
     </style>
 </head>
 <body onclick="closeAllUI()">
@@ -245,10 +252,10 @@
         <div id="chat-window">
             <div class="chat-header">
                 <div onclick="closeChat()" style="cursor:pointer; margin-left:15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
-                <div id="chat-user-avatar" style="width:38px; height:38px; border-radius:50%; background-size:cover; margin-left:10px; background-color:#ccc; background-position:center;"></div>
+                <div id="chat-user-avatar" style="width:42px; height:42px; border-radius:50%; background-size:cover; margin-left:10px; background-color:#ccc; background-position:center;"></div>
                 <div style="display: flex; flex-direction: column; justify-content: center; flex: 1;">
-                    <div id="chat-user-name" style="font-weight:bold; font-size: 0.95rem;">User</div>
-                    <div id="user-presence-status" class="online-status">...</div>
+                    <div id="chat-user-name" style="font-weight:bold; font-size: 1rem;">User</div>
+                    <div id="chat-user-status" class="user-status-text">جاري التحميل...</div>
                 </div>
                 
                 <div class="more-chat-options" onclick="openFriendProfile()">
@@ -408,41 +415,59 @@
             listenForRequests();
             startLastMsgMonitor();
             fixKeyboardIssue();
-            updatePresenceStatus(); // تحديث حالة الاتصال فور الدخول
+            setUserPresence(); // تفعيل نظام تتبع حالة الاتصال
         }
 
-        // --- ميزة التواجد (نشط الآن / أخر ظهور) ---
-        function updatePresenceStatus() {
-            const userRef = db.ref('status/' + userData.id);
-            // عندما يتصل المستخدم
-            userRef.set({ status: "online" });
-            // عند إغلاق التطبيق أو الصفحة
-            userRef.onDisconnect().set({ 
-                status: "offline", 
-                last_seen: Date.now() 
+        // --- نظام تتبع حالة الاتصال (نشط الآن / آخر ظهور) ---
+        function setUserPresence() {
+            const myStatusRef = db.ref('status/' + userData.id);
+            const connectedRef = db.ref('.info/connected');
+
+            connectedRef.on('value', (snap) => {
+                if (snap.val() === true) {
+                    // عندما يتصل المستخدم
+                    myStatusRef.onDisconnect().set({
+                        state: 'offline',
+                        last_changed: firebase.database.ServerValue.TIMESTAMP
+                    }).then(() => {
+                        myStatusRef.set({
+                            state: 'online',
+                            last_changed: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    });
+                }
             });
         }
 
-        // مراقبة حالة الصديق في المحادثة المفتوحة
-        function observeFriendPresence(friendID) {
-            const statusLabel = document.getElementById('user-presence-status');
-            db.ref('status/' + friendID).on('value', snap => {
+        // مراقبة حالة الصديق في المحادثة
+        function watchFriendStatus(friendID) {
+            const statusRef = db.ref('status/' + friendID);
+            const statusLabel = document.getElementById('chat-user-status');
+
+            statusRef.on('value', (snap) => {
                 const data = snap.val();
-                if(!data || data.status === "online") {
+                if (!data) {
+                    statusLabel.innerText = "غير معروف";
+                    return;
+                }
+
+                if (data.state === 'online') {
                     statusLabel.innerText = "نشط الآن";
-                    statusLabel.className = "online-status";
+                    statusLabel.classList.add('status-online');
                 } else {
-                    const lastSeenDate = new Date(data.last_seen);
-                    const hours = lastSeenDate.getHours();
-                    const minutes = lastSeenDate.getHours() === 0 ? "00" : lastSeenDate.getMinutes().toString().padStart(2, '0');
-                    const ampm = hours >= 12 ? 'م' : 'ص';
-                    const h12 = hours % 12 || 12;
+                    statusLabel.classList.remove('status-online');
+                    const lastSeen = new Date(data.last_changed);
                     
-                    const timeStr = `${h12}:${minutes} ${ampm}`;
-                    const dateStr = `${lastSeenDate.getFullYear()}/${lastSeenDate.getMonth() + 1}/${lastSeenDate.getDate()}`;
+                    // تنسيق الوقت بالإنجليزية كما طلبت
+                    const hours = lastSeen.getHours();
+                    const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
+                    const ampm = hours >= 12 ? 'م' : 'ص';
+                    const hour12 = hours % 12 || 12;
+                    const timeStr = `${hour12}:${minutes} ${ampm}`;
+                    
+                    const dateStr = `${lastSeen.getFullYear()}/${(lastSeen.getMonth() + 1)}/${lastSeen.getDate()}`;
                     
                     statusLabel.innerText = `أخر ظهور ${timeStr}  |  ${dateStr}`;
-                    statusLabel.className = "offline-status";
                 }
             });
         }
@@ -453,15 +478,6 @@
                 input.addEventListener('focus', () => {
                     setTimeout(() => { window.scrollTo(0, 0); document.body.scrollTop = 0; }, 50);
                 });
-                input.addEventListener('blur', () => { setTimeout(() => { window.scrollTo(0, 0); }, 50); });
-            });
-            const originalHeight = window.innerHeight;
-            window.addEventListener('resize', () => {
-                if (window.innerHeight < originalHeight) {
-                    if(document.getElementById('chat-window').style.display === 'flex') {
-                        document.getElementById('chat-body').scrollTop = document.getElementById('chat-body').scrollHeight;
-                    }
-                }
             });
         }
 
@@ -487,8 +503,8 @@
             document.getElementById('chat-user-avatar').style.backgroundImage = `url('${currentFriend.avatar || 'https://via.placeholder.com/100'}')`;
             document.getElementById('chat-window').style.display = 'flex';
             
-            // تفعيل مراقبة حالة الصديق
-            observeFriendPresence(currentFriend.id);
+            // تفعيل مراقبة الحالة للصديق الحالي
+            watchFriendStatus(currentFriend.id);
 
             const chatID = [userData.id, currentFriend.id].sort().join('_');
             db.ref('chats/' + chatID).on('value', snap => {
@@ -496,17 +512,6 @@
                 if(msgs) Object.keys(msgs).forEach(key => { if(msgs[key].sender !== userData.id && !msgs[key].seen) db.ref('chats/' + chatID + '/' + key).update({ seen: true }); });
                 renderMessages(msgs);
             });
-        }
-
-        function closeChat() { 
-            if(currentFriend) {
-                db.ref('chats/' + [userData.id, currentFriend.id].sort().join('_')).off();
-                db.ref('status/' + currentFriend.id).off(); // إيقاف مراقبة الحالة عند الإغلاق
-            }
-            document.getElementById('chat-window').style.display = 'none'; 
-            currentFriend = null; 
-            cancelEditMode(); 
-            cancelReplyMode(); 
         }
 
         function openFriendProfile() {
@@ -519,11 +524,6 @@
                     document.getElementById('infoAvatar').style.backgroundImage = `url('${data.avatar || ''}')`;
                     document.getElementById('infoBanner').style.backgroundImage = `url('${data.banner || ''}')`;
                     document.getElementById('friend-profile-info').style.display = 'flex';
-                } else {
-                    document.getElementById('infoName').innerText = currentFriend.name;
-                    document.getElementById('infoId').innerText = "@" + currentFriend.id;
-                    document.getElementById('infoAvatar').style.backgroundImage = `url('${currentFriend.avatar || ''}')`;
-                    document.getElementById('friend-profile-info').style.display = 'flex';
                 }
             });
         }
@@ -534,10 +534,9 @@
         
         function confirmDeleteFriend() {
             if(!currentFriend) return;
-            const friendToDeleteID = currentFriend.id;
-            const chatID = [userData.id, friendToDeleteID].sort().join('_');
+            const chatID = [userData.id, currentFriend.id].sort().join('_');
             db.ref('chats/' + chatID).remove().then(() => {
-                myFriends = myFriends.filter(f => f.id !== friendToDeleteID);
+                myFriends = myFriends.filter(f => f.id !== currentFriend.id);
                 localStorage.setItem('myFriendsList', JSON.stringify(myFriends));
                 closeDeleteAlert(); closeFriendProfile(); closeChat(); renderFriends();
                 showToast("تم حذف الصداقة ومسح المحادثة");
@@ -582,12 +581,8 @@
             if(!text && !tempChatImg) return;
             const chatID = [userData.id, currentFriend.id].sort().join('_');
             const now = new Date();
-            const hours = now.getHours();
-            const min = now.getMinutes().toString().padStart(2, '0');
-            const ampm = hours >= 12 ? ' م' : ' ص';
-            const h12 = hours % 12 || 12;
-            const timeStr = `${h12}:${min}${ampm}`;
-            const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+            const timeStr = (now.getHours() % 12 || 12) + ":" + now.getMinutes().toString().padStart(2, '0') + (now.getHours() >= 12 ? ' م' : ' ص');
+            const dateStr = now.getFullYear() + "/" + (now.getMonth()+1) + "/" + now.getDate();
 
             if(isEditMode) {
                 db.ref('chats/' + chatID + '/' + selectedMsgId).update({ text: text, img: tempChatImg });
@@ -648,12 +643,9 @@
         function touchEndSwipe(e, id, sender, text) {
             let el = document.getElementById('cont-' + id);
             let moveX = e.changedTouches[0].clientX - startX;
-            let moveY = e.changedTouches[0].clientY - startY;
             const isMe = (sender === userData.id);
             el.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            if(Math.abs(moveX) > Math.abs(moveY)) {
-                if((!isMe && moveX > 65) || (isMe && moveX < -65)) { activateReplyMode(id, text, isMe ? userData.name : currentFriend.name); }
-            }
+            if((!isMe && moveX > 65) || (isMe && moveX < -65)) { activateReplyMode(id, text, isMe ? userData.name : currentFriend.name); }
             el.style.transform = `translateX(0px)`;
             setTimeout(() => { if(document.getElementById('icon-r-' + id)) document.getElementById('icon-r-' + id).style.opacity = 0; if(document.getElementById('icon-l-' + id)) document.getElementById('icon-l-' + id).style.opacity = 0; }, 200);
         }
@@ -721,11 +713,8 @@
                     if(el) {
                         if(data) {
                             const lastKey = Object.keys(data)[0];
-                            const last = data[lastKey];
-                            el.innerText = last.img ? "📷 صورة" : last.text;
-                        } else {
-                            el.innerText = "@" + f.id;
-                        }
+                            el.innerText = data[lastKey].img ? "📷 صورة" : data[lastKey].text;
+                        } else el.innerText = "@" + f.id;
                     }
                 });
             });
@@ -737,6 +726,14 @@
         }
         function removeChatImg() { tempChatImg = null; document.getElementById('chatImgPrevBox').style.display = 'none'; document.getElementById('chatFileInput').value = ''; }
         function closeAllUI() { document.getElementById('msgPopup').style.display = 'none'; }
+        function closeChat() { 
+            if(currentFriend) {
+                db.ref('chats/' + [userData.id, currentFriend.id].sort().join('_')).off(); 
+                db.ref('status/' + currentFriend.id).off(); // إيقاف مراقبة الحالة عند الإغلاق
+            }
+            document.getElementById('chat-window').style.display = 'none'; 
+            currentFriend = null; cancelEditMode(); cancelReplyMode(); 
+        }
         function viewImg(src) { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display = 'flex'; }
         function toggleTheme() { const b = document.body; b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
         
@@ -795,3 +792,4 @@
     </script>
 </body>
 </html>
+ 
