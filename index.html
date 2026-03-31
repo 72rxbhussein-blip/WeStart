@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>WeStars Ultimate Elite 2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -39,15 +39,51 @@
             --reply-bg: rgba(255, 255, 255, 0.05);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--page-bg); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: 0.3s; position: relative; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: -apple-system, sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+        }
 
-        .content { flex: 1; position: relative; overflow: hidden; }
-        .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; overflow-y: auto; padding-bottom: 90px; }
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: fixed; 
+        }
+
+        body { 
+            background-color: var(--page-bg); 
+            color: var(--text-color); 
+            display: flex; 
+            flex-direction: column; 
+            transition: 0.3s; 
+        }
+
+        .content { 
+            flex: 1; 
+            position: relative; 
+            overflow: hidden; 
+            height: 100%;
+        }
+
+        .page { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            display: none; 
+            overflow-y: auto; 
+            padding-bottom: 90px; 
+            -webkit-overflow-scrolling: touch; 
+        }
+
         .page.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- الهيدر والقوائم --- */
         .msg-header { padding: 25px 20px 5px; background: var(--nav-bg); display: flex; justify-content: space-between; align-items: center; }
         .msg-header-title { font-weight: 900; font-size: 1.5rem; }
         .header-actions { display: flex; gap: 10px; align-items: center; }
@@ -56,17 +92,44 @@
         .action-btn:active { transform: scale(0.9); }
         .dot-notify { position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background: var(--danger-color); border-radius: 50%; border: 2px solid var(--nav-bg); display: none; }
 
-        .search-area { padding: 10px 15px 15px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); }
+        .search-area { 
+            padding: 10px 15px 15px; 
+            background: var(--nav-bg); 
+            border-bottom: 1px solid var(--border-color); 
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
         .msg-list-item { display: flex; align-items: center; padding: 15px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); cursor: pointer; position: relative; }
         .msg-avatar { width: 55px; height: 55px; border-radius: 50%; background-size: cover; border: 2px solid var(--accent-color); margin-left: 12px; position: relative; background-position: center; }
 
         .unread-badge { position: absolute; top: 15px; right: 20px; background: var(--danger-color); color: white; min-width: 20px; height: 20px; border-radius: 10px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: bold; padding: 0 6px; border: 2px solid var(--card-bg); }
 
-        /* --- نافذة الدردشة --- */
-        #chat-window { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 3000; display: none; flex-direction: column; }
+        #chat-window { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: var(--bg-color); 
+            z-index: 3000; 
+            display: none; 
+            flex-direction: column; 
+        }
         .chat-header { height: 60px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 15px; position: relative; }
-        .chat-body { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; overflow-x: hidden; }
-        .chat-footer { padding: 10px 15px 25px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 5px; position: relative; }
+        .chat-body { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+        
+        .chat-footer { 
+            padding: 10px 15px env(safe-area-inset-bottom, 20px); 
+            background: var(--nav-bg); 
+            border-top: 1px solid var(--border-color); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 5px; 
+            position: relative; 
+            z-index: 3001;
+        }
         
         .more-chat-options { position: absolute; left: 15px; cursor: pointer; color: var(--text-color); width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
         .more-chat-options:active { background: var(--input-bg); }
@@ -76,7 +139,6 @@
 
         .reply-content-preview { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--inactive-color); font-size: 0.75rem; margin-top: 2px; }
 
-        /* --- فقاعات الرسائل --- */
         .bubble-container { position: relative; width: 100%; display: flex; flex-direction: column; transition: transform 0.1s linear; touch-action: pan-y; user-select: none; overflow: visible; }
         .bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; position: relative; word-wrap: break-word; transition: background 0.5s; z-index: 5; }
         .bubble.me { background: var(--chat-bubble-me); color: #fff; border-top-right-radius: 4px; align-self: flex-start; text-align: right; }
@@ -89,8 +151,8 @@
 
         .bubble-time { font-size: 0.65rem; color: inherit; opacity: 0.7; margin-top: 5px; display: block; direction: ltr; white-space: nowrap; }
         
-        @keyframes highlightEffect { 0% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.03); filter: brightness(1.5); } 100% { transform: scale(1); filter: brightness(1); } }
         .highlight-msg { animation: highlightEffect 1s ease; z-index: 10; }
+        @keyframes highlightEffect { 0% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.03); filter: brightness(1.5); } 100% { transform: scale(1); filter: brightness(1); } }
 
         .swipe-icon { position: absolute; top: 50%; transform: translateY(-50%); opacity: 0; transition: 0.1s; color: var(--accent-color); display: flex; align-items: center; z-index: 1; }
         .swipe-right { right: -45px; }
@@ -106,45 +168,20 @@
         .preview-img { max-height: 100px; border-radius: 10px; display: block; }
         .close-preview { position: absolute; top: -5px; right: -5px; background: var(--danger-color); color: white; border-radius: 50%; width: 22px; height: 22px; text-align: center; cursor: pointer; line-height: 20px; font-weight: bold; border: 2px solid var(--nav-bg); }
 
-        .styled-input { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-color); outline: none; }
+        .styled-input { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-color); outline: none; transition: border-color 0.2s; }
+        .styled-input:focus { border-color: var(--accent-color); }
         
-        /* تصميم صفحة المعلومات (Friend Profile) المحدثة */
         .friend-profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--page-bg); z-index: 5000; display: none; flex-direction: column; animation: slideInUp 0.3s ease; }
         @keyframes slideInUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
         .avatar-main { width: 110px; height: 110px; border-radius: 50%; border: 5px solid var(--bg-color); background-size: cover; margin: -55px auto 10px; position: relative; z-index: 5; background-color: #eee; background-position: center; }
         .banner { width: 100%; height: 160px; background: #222; background-size: cover; position: relative; background-position: center; }
 
-        /* زر حذف الصداقة الجديد */
-        .delete-friend-btn {
-            margin: 30px auto;
-            width: 80%;
-            padding: 15px;
-            background: var(--input-bg);
-            border: 1.5px solid var(--border-color);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            color: var(--danger-color);
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
+        .delete-friend-btn { margin: 30px auto; width: 80%; padding: 15px; background: var(--input-bg); border: 1.5px solid var(--border-color); border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--danger-color); font-weight: bold; cursor: pointer; transition: 0.2s; }
         .delete-friend-btn:active { transform: scale(0.95); background: rgba(255, 71, 87, 0.1); }
 
-        /* نافذة التنبيه المخصصة */
-        .custom-alert-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
-            z-index: 10000; display: none; align-items: center; justify-content: center;
-        }
-        .custom-alert-card {
-            width: 85%; max-width: 320px; background: var(--card-bg);
-            border-radius: 20px; padding: 25px; text-align: center;
-            border: 1px solid var(--border-color); animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
+        .custom-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 10000; display: none; align-items: center; justify-content: center; }
+        .custom-alert-card { width: 85%; max-width: 320px; background: var(--card-bg); border-radius: 20px; padding: 25px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
         .alert-title { font-weight: 900; font-size: 1.2rem; margin-bottom: 10px; color: var(--text-color); }
         .alert-msg { font-size: 0.9rem; opacity: 0.7; margin-bottom: 25px; line-height: 1.5; color: var(--text-color); }
         .alert-actions { display: flex; gap: 10px; }
@@ -152,7 +189,7 @@
         .btn-confirm { background: var(--danger-color); color: white; }
         .btn-cancel { background: var(--input-bg); color: var(--text-color); }
 
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 1000; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
         .nav-btn { flex: 1; display: flex; justify-content: center; align-items: center; }
         .nav-btn.active svg { stroke: var(--accent-color); }
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger-color); color: white; padding: 10px 20px; border-radius: 20px; z-index: 11000; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
@@ -164,6 +201,10 @@
         .btn-ignore { background: var(--input-bg); color: var(--inactive-color); border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
         
         .last-msg-preview { color: var(--inactive-color); font-size: 0.8rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+
+        /* ستايل مخصص لحالة المتصل */
+        .online-status { font-size: 0.65rem; color: var(--accent-color); font-weight: normal; margin-top: 1px; }
+        .offline-status { font-size: 0.65rem; color: var(--inactive-color); font-weight: normal; margin-top: 1px; direction: ltr; text-align: right; }
     </style>
 </head>
 <body onclick="closeAllUI()">
@@ -195,7 +236,9 @@
                     </div>
                 </div>
             </div>
-            <div class="search-area"><input type="text" id="friendSearch" class="styled-input" placeholder="بحث..." oninput="smartSearch()"></div>
+            <div class="search-area">
+                <input type="text" id="friendSearch" class="styled-input" placeholder="بحث..." oninput="smartSearch()">
+            </div>
             <div id="messages-list"></div>
         </section>
 
@@ -203,7 +246,10 @@
             <div class="chat-header">
                 <div onclick="closeChat()" style="cursor:pointer; margin-left:15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
                 <div id="chat-user-avatar" style="width:38px; height:38px; border-radius:50%; background-size:cover; margin-left:10px; background-color:#ccc; background-position:center;"></div>
-                <div id="chat-user-name" style="font-weight:bold;">User</div>
+                <div style="display: flex; flex-direction: column; justify-content: center; flex: 1;">
+                    <div id="chat-user-name" style="font-weight:bold; font-size: 0.95rem;">User</div>
+                    <div id="user-presence-status" class="online-status">...</div>
+                </div>
                 
                 <div class="more-chat-options" onclick="openFriendProfile()">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
@@ -211,7 +257,7 @@
             </div>
             <div class="chat-body" id="chat-body"></div>
             
-            <div class="chat-footer">
+            <div class="chat-footer" id="chatFooter">
                 <div id="edit-indicator">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--accent-color)" fill="none" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -259,7 +305,6 @@
                 <h2 id="infoName" style="font-weight:900; font-size: 1.6rem; margin-bottom: 5px;">User Name</h2>
                 <p id="infoId" style="color:var(--accent-color); font-size:1rem; font-weight: bold;">@id</p>
                 <hr style="margin: 20px auto; width: 50%; border: none; border-top: 1px solid var(--border-color);">
-                
                 <div class="delete-friend-btn" onclick="openDeleteAlert()">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     حذف الصداقة
@@ -355,12 +400,69 @@
         let myFriends = JSON.parse(localStorage.getItem('myFriendsList')) || [];
 
         function init() {
-            renderFriends(); loadProfile();
+            renderFriends(); 
+            loadProfile();
             document.body.setAttribute('data-theme', 'dark');
             syncWithFirebase();
             startUnreadMonitor();
             listenForRequests();
             startLastMsgMonitor();
+            fixKeyboardIssue();
+            updatePresenceStatus(); // تحديث حالة الاتصال فور الدخول
+        }
+
+        // --- ميزة التواجد (نشط الآن / أخر ظهور) ---
+        function updatePresenceStatus() {
+            const userRef = db.ref('status/' + userData.id);
+            // عندما يتصل المستخدم
+            userRef.set({ status: "online" });
+            // عند إغلاق التطبيق أو الصفحة
+            userRef.onDisconnect().set({ 
+                status: "offline", 
+                last_seen: Date.now() 
+            });
+        }
+
+        // مراقبة حالة الصديق في المحادثة المفتوحة
+        function observeFriendPresence(friendID) {
+            const statusLabel = document.getElementById('user-presence-status');
+            db.ref('status/' + friendID).on('value', snap => {
+                const data = snap.val();
+                if(!data || data.status === "online") {
+                    statusLabel.innerText = "نشط الآن";
+                    statusLabel.className = "online-status";
+                } else {
+                    const lastSeenDate = new Date(data.last_seen);
+                    const hours = lastSeenDate.getHours();
+                    const minutes = lastSeenDate.getHours() === 0 ? "00" : lastSeenDate.getMinutes().toString().padStart(2, '0');
+                    const ampm = hours >= 12 ? 'م' : 'ص';
+                    const h12 = hours % 12 || 12;
+                    
+                    const timeStr = `${h12}:${minutes} ${ampm}`;
+                    const dateStr = `${lastSeenDate.getFullYear()}/${lastSeenDate.getMonth() + 1}/${lastSeenDate.getDate()}`;
+                    
+                    statusLabel.innerText = `أخر ظهور ${timeStr}  |  ${dateStr}`;
+                    statusLabel.className = "offline-status";
+                }
+            });
+        }
+
+        function fixKeyboardIssue() {
+            const inputs = document.querySelectorAll('input[type="text"]');
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    setTimeout(() => { window.scrollTo(0, 0); document.body.scrollTop = 0; }, 50);
+                });
+                input.addEventListener('blur', () => { setTimeout(() => { window.scrollTo(0, 0); }, 50); });
+            });
+            const originalHeight = window.innerHeight;
+            window.addEventListener('resize', () => {
+                if (window.innerHeight < originalHeight) {
+                    if(document.getElementById('chat-window').style.display === 'flex') {
+                        document.getElementById('chat-body').scrollTop = document.getElementById('chat-body').scrollHeight;
+                    }
+                }
+            });
         }
 
         function showToast(msg) {
@@ -384,13 +486,27 @@
             document.getElementById('chat-user-name').innerText = currentFriend.name;
             document.getElementById('chat-user-avatar').style.backgroundImage = `url('${currentFriend.avatar || 'https://via.placeholder.com/100'}')`;
             document.getElementById('chat-window').style.display = 'flex';
-            const chatID = [userData.id, currentFriend.id].sort().join('_');
             
+            // تفعيل مراقبة حالة الصديق
+            observeFriendPresence(currentFriend.id);
+
+            const chatID = [userData.id, currentFriend.id].sort().join('_');
             db.ref('chats/' + chatID).on('value', snap => {
                 const msgs = snap.val();
                 if(msgs) Object.keys(msgs).forEach(key => { if(msgs[key].sender !== userData.id && !msgs[key].seen) db.ref('chats/' + chatID + '/' + key).update({ seen: true }); });
                 renderMessages(msgs);
             });
+        }
+
+        function closeChat() { 
+            if(currentFriend) {
+                db.ref('chats/' + [userData.id, currentFriend.id].sort().join('_')).off();
+                db.ref('status/' + currentFriend.id).off(); // إيقاف مراقبة الحالة عند الإغلاق
+            }
+            document.getElementById('chat-window').style.display = 'none'; 
+            currentFriend = null; 
+            cancelEditMode(); 
+            cancelReplyMode(); 
         }
 
         function openFriendProfile() {
@@ -413,7 +529,6 @@
         }
 
         function closeFriendProfile() { document.getElementById('friend-profile-info').style.display = 'none'; }
-
         function openDeleteAlert() { document.getElementById('deleteAlert').style.display = 'flex'; }
         function closeDeleteAlert() { document.getElementById('deleteAlert').style.display = 'none'; }
         
@@ -467,8 +582,12 @@
             if(!text && !tempChatImg) return;
             const chatID = [userData.id, currentFriend.id].sort().join('_');
             const now = new Date();
-            const timeStr = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0') + (now.getHours() >= 12 ? ' م' : ' ص');
-            const dateStr = now.getFullYear() + "/" + (now.getMonth()+1) + "/" + now.getDate();
+            const hours = now.getHours();
+            const min = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? ' م' : ' ص';
+            const h12 = hours % 12 || 12;
+            const timeStr = `${h12}:${min}${ampm}`;
+            const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
 
             if(isEditMode) {
                 db.ref('chats/' + chatID + '/' + selectedMsgId).update({ text: text, img: tempChatImg });
@@ -514,18 +633,11 @@
         }
 
         let startX = 0, startY = 0;
-        function touchStartSwipe(e, id) { 
-            startX = e.touches[0].clientX; 
-            startY = e.touches[0].clientY; 
-            document.getElementById('cont-' + id).style.transition = 'none'; 
-        }
+        function touchStartSwipe(e, id) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; document.getElementById('cont-' + id).style.transition = 'none'; }
         function touchMoveSwipe(e, id, sender) {
             let moveX = e.touches[0].clientX - startX;
             let moveY = e.touches[0].clientY - startY;
-            
-            // إذا كان المستخدم يتحرك للأعلى أو الأسفل أكثر من اليمين واليسار، نلغي السحب للرد
             if(Math.abs(moveY) > Math.abs(moveX)) return;
-
             let el = document.getElementById('cont-' + id);
             let iconR = document.getElementById('icon-r-' + id);
             let iconL = document.getElementById('icon-l-' + id);
@@ -537,14 +649,11 @@
             let el = document.getElementById('cont-' + id);
             let moveX = e.changedTouches[0].clientX - startX;
             let moveY = e.changedTouches[0].clientY - startY;
-            
             const isMe = (sender === userData.id);
             el.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            
             if(Math.abs(moveX) > Math.abs(moveY)) {
                 if((!isMe && moveX > 65) || (isMe && moveX < -65)) { activateReplyMode(id, text, isMe ? userData.name : currentFriend.name); }
             }
-            
             el.style.transform = `translateX(0px)`;
             setTimeout(() => { if(document.getElementById('icon-r-' + id)) document.getElementById('icon-r-' + id).style.opacity = 0; if(document.getElementById('icon-l-' + id)) document.getElementById('icon-l-' + id).style.opacity = 0; }, 200);
         }
@@ -628,7 +737,6 @@
         }
         function removeChatImg() { tempChatImg = null; document.getElementById('chatImgPrevBox').style.display = 'none'; document.getElementById('chatFileInput').value = ''; }
         function closeAllUI() { document.getElementById('msgPopup').style.display = 'none'; }
-        function closeChat() { if(currentFriend) db.ref('chats/' + [userData.id, currentFriend.id].sort().join('_')).off(); document.getElementById('chat-window').style.display = 'none'; currentFriend = null; cancelEditMode(); cancelReplyMode(); }
         function viewImg(src) { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display = 'flex'; }
         function toggleTheme() { const b = document.body; b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
         
