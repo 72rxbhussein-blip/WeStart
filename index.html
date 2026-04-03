@@ -1,16 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>WeStars Ultimate Elite 2026</title>
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
-
     <style>
+        /* المتغيرات اللونية الأساسية - الحفاظ على التصميم الأصلي */
         :root {
             --bg-color: #ffffff;
             --page-bg: #f1f2f6;
@@ -27,6 +25,7 @@
             --reply-bg: rgba(0, 210, 255, 0.1);
         }
 
+        /* المظهر الليلي (Dark Mode) - التصميم الفخم المعتمد */
         [data-theme="dark"] {
             --bg-color: #0b0b0b;
             --page-bg: #000000;
@@ -41,557 +40,406 @@
             --reply-bg: rgba(255, 255, 255, 0.05);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'IBM Plex Sans Arabic', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
-        html, body { height: 100%; width: 100%; overflow: hidden; position: fixed; background-color: var(--page-bg); color: var(--text-color); transition: 0.3s; }
-        
-        /* شاشة تسجيل الدخول الاحترافية */
-        #auth-screen {
-            position: fixed; inset: 0; background: var(--bg-color); z-index: 10000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center;
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: -apple-system, sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
         }
-        .auth-logo { width: 120px; height: 120px; background: var(--accent-color); border-radius: 35px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 40px rgba(0,210,255,0.3); transform: rotate(-10deg); }
-        .google-btn {
-            background: #ffffff; color: #000; border: 1px solid #ddd; padding: 12px 25px; border-radius: 15px;
-            display: flex; align-items: center; gap: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        .google-btn:active { transform: scale(0.95); }
 
-        .content { flex: 1; position: relative; overflow: hidden; height: 100%; display: none; }
-        .page { position: absolute; inset: 0; display: none; overflow-y: auto; padding-bottom: 90px; -webkit-overflow-scrolling: touch; }
+        /* تعديل أساسي لمنع رفع الشاشة بالكامل */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: fixed; /* تثبيت الجسم لمنع السحب التلقائي للمتصفح */
+        }
+
+        body { 
+            background-color: var(--page-bg); 
+            color: var(--text-color); 
+            display: flex; 
+            flex-direction: column; 
+            transition: 0.3s; 
+        }
+
+        .content { 
+            flex: 1; 
+            position: relative; 
+            overflow: hidden; 
+            height: 100%;
+        }
+
+        .page { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            display: none; 
+            overflow-y: auto; 
+            padding-bottom: 90px; 
+            -webkit-overflow-scrolling: touch; /* سلاسة التمرير في iOS */
+        }
+
         .page.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* التنسيقات العامة */
-        .msg-header { padding: 40px 20px 10px; background: var(--nav-bg); display: flex; justify-content: space-between; align-items: center; }
-        .msg-header-title { font-weight: 900; font-size: 1.8rem; letter-spacing: -1px; }
-        .header-actions { display: flex; gap: 12px; }
-        .action-btn { width: 45px; height: 45px; border-radius: 15px; background: var(--input-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent-color); position: relative; }
-        .dot-notify { position: absolute; top: 12px; right: 12px; width: 10px; height: 10px; background: var(--danger-color); border-radius: 50%; border: 2px solid var(--nav-bg); display: none; }
+        /* --- الهيدر والقوائم --- */
+        .msg-header { padding: 25px 20px 5px; background: var(--nav-bg); display: flex; justify-content: space-between; align-items: center; }
+        .msg-header-title { font-weight: 900; font-size: 1.5rem; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        
+        .action-btn { width: 42px; height: 42px; border-radius: 12px; background: var(--input-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent-color); position: relative; transition: 0.2s; }
+        .action-btn:active { transform: scale(0.9); }
+        .dot-notify { position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background: var(--danger-color); border-radius: 50%; border: 2px solid var(--nav-bg); display: none; }
 
-        .search-area { padding: 10px 15px 15px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); sticky; top: 0; z-index: 100; }
-        .styled-input { width: 100%; padding: 14px; border-radius: 16px; border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-color); outline: none; transition: 0.2s; }
-        .styled-input:focus { border-color: var(--accent-color); }
+        /* تعديل منطقة البحث لتكون مستقرة */
+        .search-area { 
+            padding: 10px 15px 15px; 
+            background: var(--nav-bg); 
+            border-bottom: 1px solid var(--border-color); 
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
 
-        .msg-list-item { display: flex; align-items: center; padding: 18px 15px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); cursor: pointer; }
-        .msg-avatar { width: 58px; height: 58px; border-radius: 50%; background-size: cover; border: 2px solid var(--accent-color); margin-left: 15px; position: relative; background-position: center; background-color: #eee; }
-        .unread-badge { position: absolute; top: 18px; right: 20px; background: var(--danger-color); color: white; min-width: 22px; height: 22px; border-radius: 11px; font-size: 0.75rem; display: none; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--card-bg); }
+        .msg-list-item { display: flex; align-items: center; padding: 15px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); cursor: pointer; position: relative; }
+        .msg-avatar { width: 55px; height: 55px; border-radius: 50%; background-size: cover; border: 2px solid var(--accent-color); margin-left: 12px; position: relative; background-position: center; }
 
-        /* نافذة الدردشة */
-        #chat-window { position: fixed; inset: 0; background: var(--bg-color); z-index: 3000; display: none; flex-direction: column; }
-        .chat-header { height: 85px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 25px 15px 0; }
-        .chat-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
-        .chat-footer { padding: 12px 15px env(safe-area-inset-bottom, 20px); background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; }
+        .unread-badge { position: absolute; top: 15px; right: 20px; background: var(--danger-color); color: white; min-width: 20px; height: 20px; border-radius: 10px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: bold; padding: 0 6px; border: 2px solid var(--card-bg); }
 
-        .user-status-text { font-size: 0.75rem; color: var(--inactive-color); }
-        .status-online { color: #2ecc71; font-weight: bold; }
-        .typing-indicator { color: var(--accent-color); font-style: italic; font-size: 0.75rem; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        /* --- نافذة الدردشة --- */
+        #chat-window { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: var(--bg-color); 
+            z-index: 3000; 
+            display: none; 
+            flex-direction: column; 
+        }
+        .chat-header { height: 60px; background: var(--nav-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 15px; position: relative; }
+        .chat-body { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+        
+        /* تذييل الدردشة: ضمان بقائه فوق لوحة المفاتيح دون سحب الشاشة */
+        .chat-footer { 
+            padding: 10px 15px env(safe-area-inset-bottom, 20px); 
+            background: var(--nav-bg); 
+            border-top: 1px solid var(--border-color); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 5px; 
+            position: relative; 
+            z-index: 3001;
+        }
+        
+        .more-chat-options { position: absolute; left: 15px; cursor: pointer; color: var(--text-color); width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .more-chat-options:active { background: var(--input-bg); }
 
-        /* فقاعات الرسائل */
-        .bubble-container { position: relative; width: 100%; display: flex; flex-direction: column; transition: 0.1s linear; touch-action: pan-y; }
-        .bubble { max-width: 82%; padding: 12px 16px; border-radius: 20px; font-size: 0.98rem; position: relative; line-height: 1.4; }
+        #edit-indicator, #reply-indicator { display: none; background: var(--input-bg); padding: 8px 12px; border-radius: 12px; border-right: 4px solid var(--accent-color); margin-bottom: 5px; align-items: center; justify-content: space-between; font-size: 0.85rem; animation: slideUp 0.2s ease; }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .reply-content-preview { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--inactive-color); font-size: 0.75rem; margin-top: 2px; }
+
+        /* --- فقاعات الرسائل --- */
+        .bubble-container { position: relative; width: 100%; display: flex; flex-direction: column; transition: transform 0.1s linear; touch-action: pan-y; user-select: none; overflow: visible; }
+        .bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; position: relative; word-wrap: break-word; transition: background 0.5s; z-index: 5; }
         .bubble.me { background: var(--chat-bubble-me); color: #fff; border-top-right-radius: 4px; align-self: flex-start; text-align: right; }
         .bubble.other { background: var(--chat-bubble-other); color: var(--text-color); border-top-left-radius: 4px; align-self: flex-end; text-align: left; }
-        .bubble-time { font-size: 0.65rem; opacity: 0.7; margin-top: 6px; display: block; direction: ltr; }
+        
+        .replied-msg-box { background: rgba(0,0,0,0.1); border-right: 3px solid #fff; padding: 5px 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 0.8rem; }
+        .bubble.other .replied-msg-box { background: var(--reply-bg); border-right: 3px solid var(--accent-color); }
+        .reply-name { font-weight: bold; display: block; font-size: 0.75rem; margin-bottom: 2px; }
+        .reply-text { opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* ميزات الرد والتعديل */
-        #edit-indicator, #reply-indicator { display: none; background: var(--input-bg); padding: 10px 15px; border-radius: 15px; border-right: 4px solid var(--accent-color); align-items: center; justify-content: space-between; animation: slideUp 0.3s; }
-        .replied-msg-box { background: rgba(0,0,0,0.05); border-right: 3px solid var(--accent-color); padding: 6px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 0.85rem; }
+        .bubble-time { font-size: 0.65rem; color: inherit; opacity: 0.7; margin-top: 5px; display: block; direction: ltr; white-space: nowrap; }
+        
+        @keyframes highlightEffect { 0% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.03); filter: brightness(1.5); } 100% { transform: scale(1); filter: brightness(1); } }
+        .highlight-msg { animation: highlightEffect 1s ease; z-index: 10; }
 
-        /* البروفايل */
-        .banner { width: 100%; height: 180px; background: #222; background-size: cover; background-position: center; position: relative; }
-        .avatar-main { width: 120px; height: 120px; border-radius: 50%; border: 6px solid var(--bg-color); background-size: cover; margin: -60px auto 15px; position: relative; background-color: #eee; background-position: center; }
+        .swipe-icon { position: absolute; top: 50%; transform: translateY(-50%); opacity: 0; transition: 0.1s; color: var(--accent-color); display: flex; align-items: center; z-index: 1; }
+        .swipe-right { right: -45px; }
+        .swipe-left { left: -45px; }
 
-        /* التنقل السفلي */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-btn { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; opacity: 0.5; transition: 0.3s; }
-        .nav-btn.active { opacity: 1; color: var(--accent-color); }
-
-        /* النوافذ المنبثقة */
-        .custom-popup { position: fixed; background: var(--card-bg); border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); z-index: 9000; display: none; min-width: 200px; overflow: hidden; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid var(--border-color); }
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .popup-btn { padding: 16px; text-align: center; border-bottom: 1px solid var(--border-color); cursor: pointer; font-weight: 600; color: var(--text-color); }
+        .custom-popup { position: fixed; background: var(--card-bg); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border-color); z-index: 9000; display: none; min-width: 170px; overflow: hidden; animation: popIn 0.2s; }
+        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .popup-btn { padding: 14px; font-size: 0.9rem; border-bottom: 1px solid var(--border-color); cursor: pointer; text-align: center; color: var(--text-color); font-weight: 500; }
+        .popup-btn:last-child { border-bottom: none; }
         .popup-btn:active { background: var(--input-bg); }
+        
+        .preview-box { display: none; padding: 10px; background: var(--input-bg); border-radius: 15px; position: relative; margin-bottom: 8px; width: fit-content; }
+        .preview-img { max-height: 100px; border-radius: 10px; display: block; }
+        .close-preview { position: absolute; top: -5px; right: -5px; background: var(--danger-color); color: white; border-radius: 50%; width: 22px; height: 22px; text-align: center; cursor: pointer; line-height: 20px; font-weight: bold; border: 2px solid var(--nav-bg); }
 
-        /* التحميل (Loading) */
-        #loading-overlay { position: fixed; inset: 0; background: var(--bg-color); z-index: 20000; display: flex; align-items: center; justify-content: center; }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--input-bg); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .styled-input { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-color); outline: none; transition: border-color 0.2s; }
+        .styled-input:focus { border-color: var(--accent-color); }
+        
+        /* تصميم صفحة المعلومات */
+        .friend-profile-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--page-bg); z-index: 5000; display: none; flex-direction: column; animation: slideInUp 0.3s ease; }
+        @keyframes slideInUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: var(--danger-color); color: white; padding: 12px 25px; border-radius: 30px; z-index: 11000; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.2); font-weight: bold; }
+        .avatar-main { width: 110px; height: 110px; border-radius: 50%; border: 5px solid var(--bg-color); background-size: cover; margin: -55px auto 10px; position: relative; z-index: 5; background-color: #eee; background-position: center; }
+        .banner { width: 100%; height: 160px; background: #222; background-size: cover; position: relative; background-position: center; }
+
+        .delete-friend-btn { margin: 30px auto; width: 80%; padding: 15px; background: var(--input-bg); border: 1.5px solid var(--border-color); border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--danger-color); font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .delete-friend-btn:active { transform: scale(0.95); background: rgba(255, 71, 87, 0.1); }
+
+        .custom-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 10000; display: none; align-items: center; justify-content: center; }
+        .custom-alert-card { width: 85%; max-width: 320px; background: var(--card-bg); border-radius: 20px; padding: 25px; text-align: center; border: 1px solid var(--border-color); animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .alert-title { font-weight: 900; font-size: 1.2rem; margin-bottom: 10px; color: var(--text-color); }
+        .alert-msg { font-size: 0.9rem; opacity: 0.7; margin-bottom: 25px; line-height: 1.5; color: var(--text-color); }
+        .alert-actions { display: flex; gap: 10px; }
+        .alert-btn { flex: 1; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; border: none; }
+        .btn-confirm { background: var(--danger-color); color: white; }
+        .btn-cancel { background: var(--input-bg); color: var(--text-color); }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--nav-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-btn { flex: 1; display: flex; justify-content: center; align-items: center; }
+        .nav-btn.active svg { stroke: var(--accent-color); }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger-color); color: white; padding: 10px 20px; border-radius: 20px; z-index: 11000; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .theme-icon { width: 45px; height: 45px; border-radius: 50%; background: var(--input-bg); display: flex; align-items: center; justify-content: center; margin-left: 15px; transition: 0.3s; }
+        
+        .req-card { margin: 10px 15px; padding: 15px; background: var(--card-bg); border-radius: 18px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-color); animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .btn-accept { background: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 10px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        .btn-ignore { background: var(--input-bg); color: var(--inactive-color); border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        
+        .last-msg-preview { color: var(--inactive-color); font-size: 0.8rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
     </style>
 </head>
 <body onclick="closeAllUI()">
 
-    <div id="loading-overlay"><div class="spinner"></div></div>
-
-    <div id="auth-screen" style="display:none;">
-        <div class="auth-logo">
-            <svg viewBox="0 0 24 24" width="60" height="60" fill="white"><path d="M12 2L1 21h22L12 2zm0 3.45l8.15 14.1H3.85L12 5.45zM11 17h2v2h-2v-2zm0-8h2v6h-2V9z"/></svg>
-        </div>
-        <h1 style="margin-bottom:10px; font-weight:900;">WeStars 2026</h1>
-        <p style="color:var(--inactive-color); margin-bottom:40px;">مرحباً بك في الجيل القادم من التواصل</p>
-        <button class="google-btn" onclick="signInWithGoogle()">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20">
-            تسجيل الدخول بواسطة جوجل
-        </button>
-    </div>
-
     <div id="toastAlert" class="toast">تنبيه!</div>
 
-    <main class="content" id="main-content">
+    <div id="deleteAlert" class="custom-alert-overlay" onclick="closeDeleteAlert()">
+        <div class="custom-alert-card" onclick="event.stopPropagation()">
+            <div class="alert-title">هل أنت متأكد؟</div>
+            <div class="alert-msg">سيتم حذف هذا الصديق نهائياً ومسح كافة المحادثات بينكما من قائمة الرسائل.</div>
+            <div class="alert-actions">
+                <button class="alert-btn btn-confirm" onclick="confirmDeleteFriend()">نعم، موافق</button>
+                <button class="alert-btn btn-cancel" onclick="closeDeleteAlert()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="content">
         <section id="page-messages" class="page active">
             <div class="msg-header">
                 <div class="msg-header-title">الرسائل</div>
                 <div class="header-actions">
                     <div class="action-btn" onclick="goPage('requests')">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                         <div id="requestDot" class="dot-notify"></div>
                     </div>
                     <div class="action-btn" onclick="goPage('add-friend')">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </div>
                 </div>
             </div>
             <div class="search-area">
-                <input type="text" id="friendSearch" class="styled-input" placeholder="بحث عن محادثة..." oninput="smartSearch()">
+                <input type="text" id="friendSearch" class="styled-input" placeholder="بحث..." oninput="smartSearch()">
             </div>
             <div id="messages-list"></div>
         </section>
 
         <div id="chat-window">
             <div class="chat-header">
-                <div onclick="closeChat()" style="cursor:pointer; margin-left:15px;"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
-                <div id="chat-user-avatar" class="msg-avatar" style="width:45px; height:45px; margin-left:12px; border-width:1.5px;"></div>
-                <div style="flex:1;">
-                    <div id="chat-user-name" style="font-weight:900; font-size:1.1rem;">User</div>
-                    <div id="chat-user-status" class="user-status-text">...</div>
-                </div>
-                <div class="action-btn" style="background:none;" onclick="openFriendProfile()">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
+                <div onclick="closeChat()" style="cursor:pointer; margin-left:15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+                <div id="chat-user-avatar" style="width:38px; height:38px; border-radius:50%; background-size:cover; margin-left:10px; background-color:#ccc; background-position:center;"></div>
+                <div id="chat-user-name" style="font-weight:bold;">User</div>
+                
+                <div class="more-chat-options" onclick="openFriendProfile()">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
                 </div>
             </div>
             <div class="chat-body" id="chat-body"></div>
             
-            <div class="chat-footer">
+            <div class="chat-footer" id="chatFooter">
                 <div id="edit-indicator">
-                    <span style="color:var(--accent-color); font-weight:bold;">تعديل الرسالة...</span>
-                    <span onclick="cancelEditMode()" style="cursor:pointer; font-size:1.5rem;">×</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--accent-color)" fill="none" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        <span style="color:var(--accent-color); font-weight:bold;">تعديل الرسالة</span>
+                    </div>
+                    <span onclick="cancelEditMode()" style="cursor:pointer; font-weight:900; opacity:0.6;">×</span>
                 </div>
+
                 <div id="reply-indicator">
                     <div style="flex:1;">
-                        <div id="reply-to-name" style="color:var(--accent-color); font-weight:bold; font-size:0.8rem;">الرد على...</div>
-                        <div id="reply-to-text" style="opacity:0.6; font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">الرسالة...</div>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                             <svg viewBox="0 0 24 24" width="14" height="14" fill="var(--accent-color)"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"></path></svg>
+                             <span id="reply-to-name" style="color:var(--accent-color); font-weight:bold; font-size:0.8rem;">الرد على...</span>
+                        </div>
+                        <div id="reply-to-text" class="reply-content-preview">الرسالة المختصرة...</div>
                     </div>
-                    <span onclick="cancelReplyMode()" style="cursor:pointer; font-size:1.5rem;">×</span>
+                    <span onclick="cancelReplyMode()" style="cursor:pointer; font-weight:900; opacity:0.6; padding:5px;">×</span>
                 </div>
 
-                <div id="chatImgPrevBox" style="display:none; position:relative; width:fit-content; margin-bottom:10px;">
-                    <img id="chatImgPrevSrc" style="max-height:120px; border-radius:15px; display:block; border:2px solid var(--accent-color);">
-                    <div onclick="removeChatImg()" style="position:absolute; top:-10px; right:-10px; background:var(--danger-color); color:white; width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:bold; border:2px solid var(--nav-bg);">×</div>
+                <div id="chatImgPrevBox" class="preview-box">
+                    <img id="chatImgPrevSrc" class="preview-img">
+                    <span onclick="removeChatImg()" class="close-preview">×</span>
                 </div>
 
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <label style="cursor:pointer; padding:5px;">
-                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--accent-color)" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                        <input type="file" id="chatFileInput" hidden accept="image/*" onchange="uploadImageToFirebase(this)">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <label style="cursor:pointer;">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--accent-color)" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        <input type="file" id="chatFileInput" hidden accept="image/*" onchange="handleFile(this)">
                     </label>
-                    <input type="text" id="chat-input" class="styled-input" placeholder="اكتب رسالتك..." oninput="updateTypingStatus()">
-                    <div id="send-btn-action" onclick="sendMessage()" style="background:var(--accent-color); min-width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s;">
-                        <svg id="send-icon-svg" viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                    <input type="text" id="chat-input" class="styled-input" style="flex:1;" placeholder="الرسالة...">
+                    <div id="send-btn-action" onclick="sendMessage()" style="background:var(--accent-color); width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                        <svg id="send-icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="friend-profile-info" class="friend-profile-page">
+            <div style="padding:15px; position:absolute; top:0; right:0; z-index:10; cursor:pointer;" onclick="closeFriendProfile()">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" stroke-width="3" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+            </div>
+            <div class="banner" id="infoBanner"></div>
+            <div class="avatar-main" id="infoAvatar"></div>
+            <div style="text-align:center; padding: 0 20px;">
+                <h2 id="infoName" style="font-weight:900; font-size: 1.6rem; margin-bottom: 5px;">User Name</h2>
+                <p id="infoId" style="color:var(--accent-color); font-size:1rem; font-weight: bold;">@id</p>
+                <hr style="margin: 20px auto; width: 50%; border: none; border-top: 1px solid var(--border-color);">
+                <div class="delete-friend-btn" onclick="openDeleteAlert()">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    حذف الصداقة
                 </div>
             </div>
         </div>
 
         <section id="page-profile" class="page">
-            <div class="banner" id="pBanner">
-                 <div onclick="goPage('edit-profile')" style="position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.5); padding:10px; border-radius:50%; cursor:pointer; backdrop-filter:blur(5px);"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="white" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div>
-            </div>
-            <div class="avatar-main" id="pAvatar"></div>
-            <div style="text-align:center;">
-                <h2 id="pNameShow" style="font-weight:900; font-size:1.6rem;">Guest User</h2>
-                <p id="pIdShow" style="color:var(--accent-color); font-weight:bold; font-size:1.1rem; margin-top:5px;">@ID</p>
-            </div>
-            
-            <div style="margin-top:30px; padding:0 20px; display:flex; flex-direction:column; gap:15px;">
-                <div onclick="toggleTheme()" style="background:var(--card-bg); padding:18px; border-radius:20px; display:flex; align-items:center; gap:15px; border:1px solid var(--border-color); cursor:pointer;">
-                    <div style="background:var(--input-bg); width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center;">🌙</div>
-                    <span style="font-weight:bold;">الوضع الليلي / النهاري</span>
+            <div class="profile-top">
+                <div class="banner" id="pBanner">
+                    <div onclick="goPage('edit-profile')" style="position:absolute; top:15px; left:15px; background:rgba(0,0,0,0.4); padding:8px; border-radius:50%; cursor:pointer;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div>
                 </div>
-                <div onclick="logout()" style="background:var(--card-bg); padding:18px; border-radius:20px; display:flex; align-items:center; gap:15px; border:1px solid var(--border-color); cursor:pointer; color:var(--danger-color);">
-                    <div style="background:rgba(255, 71, 87, 0.1); width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center;">🚪</div>
-                    <span style="font-weight:bold;">تسجيل الخروج</span>
+                <div class="avatar-main" id="pAvatar"></div>
+                <div style="text-align:center;">
+                    <h2 id="pNameShow" style="font-weight:900;">WeStars</h2>
+                    <p id="pIdShow" style="color:var(--inactive-color); font-size:0.85rem;">@id</p>
                 </div>
             </div>
-        </section>
-
-        <section id="page-add-friend" class="page">
-            <div style="padding:40px 20px 20px; display:flex; align-items:center; background:var(--nav-bg);">
-                <div onclick="goPage('messages')" style="cursor:pointer; margin-left:15px;"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
-                <h2 style="font-weight:900;">إضافة صديق</h2>
+            <div style="margin-top:25px; padding:0 20px;">
+                <div onclick="toggleTheme()" style="background:var(--card-bg); padding:15px; border-radius:18px; display:flex; align-items:center; cursor:pointer; border:1px solid var(--border-color);">
+                    <div class="theme-icon" id="themeIcon">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--accent-color)" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    </div>
+                    <span style="font-weight:bold;">تغيير المظهر (ليلي/نهاري)</span>
+                </div>
             </div>
-            <div style="padding:0 20px;"><input type="text" id="addSearchInput" class="styled-input" placeholder="اكتب الـ ID الخاص بصديقك..." oninput="searchUserByInternalID()"></div>
-            <div id="search-result-container"></div>
         </section>
 
         <section id="page-requests" class="page">
-            <div style="padding:40px 20px 20px; display:flex; align-items:center; background:var(--nav-bg);">
-                <div onclick="goPage('messages')" style="cursor:pointer; margin-left:15px;"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
-                <h2 style="font-weight:900;">طلبات المراسلة</h2>
+             <div style="padding:15px; display:flex; align-items:center; background:var(--nav-bg); border-bottom:1px solid var(--border-color);">
+                <div onclick="goPage('messages')" style="margin-left:15px; cursor:pointer;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+                <h3 style="flex:1; text-align:center;">طلبات المراسلة</h3>
             </div>
-            <div id="requests-list"></div>
+            <div id="requests-list" style="padding-top:10px;"></div>
+        </section>
+
+        <section id="page-add-friend" class="page">
+            <div style="padding:15px; display:flex; align-items:center; background:var(--nav-bg); border-bottom:1px solid var(--border-color);">
+                <div onclick="goPage('messages')" style="margin-left:15px; cursor:pointer;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+                <h3 style="flex:1; text-align:center;">إضافة صديق</h3>
+            </div>
+            <div style="padding:15px;"><input type="text" id="addSearchInput" class="styled-input" placeholder="اكتب المعرف هنا..." oninput="searchUserByInternalID()"></div>
+            <div id="search-result-container"></div>
         </section>
 
         <section id="page-edit-profile" class="page">
-            <div style="padding:40px 20px 20px; display:flex; align-items:center; background:var(--nav-bg);">
-                <div onclick="goPage('profile')" style="cursor:pointer; margin-left:15px;"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
-                <h2 style="font-weight:900; flex:1;">تعديل الحساب</h2>
-                <button onclick="saveProfile()" style="background:var(--accent-color); color:white; border:none; padding:8px 20px; border-radius:12px; font-weight:bold;">حفظ</button>
+            <div style="padding:15px; display:flex; align-items:center; background:var(--nav-bg); border-bottom:1px solid var(--border-color);">
+                <div onclick="goPage('profile')" style="margin-left:15px; cursor:pointer;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+                <h3 style="flex:1; text-align:center;">إعدادات الحساب</h3>
+                <button onclick="saveProfile()" style="color:var(--accent-color); background:none; border:none; font-weight:bold; font-size:1rem; cursor:pointer;">حفظ</button>
             </div>
             <div style="padding:20px;">
-                <div id="eBannerPrev" class="banner" style="border-radius:20px; cursor:pointer;">
-                    <label style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3); color:white;">تغيير الغلاف<input type="file" hidden onchange="uploadToStorage(this, 'banner')"></label>
+                <div id="eBannerPrev" style="height:140px; border-radius:15px; background-size:cover; margin-bottom:15px; position:relative; background-color:#333; background-position:center;">
+                    <label style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3); color:#fff; cursor:pointer;">تغيير الغلاف<input type="file" hidden onchange="prevImg(this, 'eBannerPrev')"></label>
                 </div>
-                <div id="eAvatarPrev" class="avatar-main" style="cursor:pointer;">
-                    <label style="position:absolute; inset:0; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); color:white;">📷<input type="file" hidden onchange="uploadToStorage(this, 'avatar')"></label>
+                <div id="eAvatarPrev" style="width:95px; height:95px; border-radius:50%; background-size:cover; margin:-48px auto 20px; border:4px solid var(--bg-color); position:relative; background-color:#eee; background-position:center;">
+                    <label style="position:absolute; bottom:0; right:0; background:var(--accent-color); width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid var(--bg-color);"><svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg><input type="file" hidden onchange="prevImg(this, 'eAvatarPrev')"></label>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:15px;">
-                    <input type="text" id="eName" class="styled-input" placeholder="الاسم المستعار" maxlength="15">
-                    <input type="text" id="eId" class="styled-input" placeholder="ID فريد (انجليزي وأرقام فقط)" maxlength="15" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')">
+                    <div><input type="text" id="eName" class="styled-input" maxlength="15" placeholder="الاسم"></div>
+                    <div><input type="text" id="eId" class="styled-input" maxlength="15" placeholder="المعرف" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')"></div>
                 </div>
             </div>
         </section>
     </main>
 
-    <nav class="bottom-nav" id="bottom-nav" style="display:none;">
-        <div class="nav-btn active" onclick="goPage('messages')">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            <span style="font-size:0.7rem; font-weight:bold;">الدردشات</span>
-        </div>
-        <div class="nav-btn" onclick="goPage('profile')">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span style="font-size:0.7rem; font-weight:bold;">حسابي</span>
-        </div>
+    <nav class="bottom-nav">
+        <div class="nav-btn active" onclick="goPage('messages')"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+        <div class="nav-btn" onclick="goPage('profile')"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
     </nav>
 
-    <div id="lb" onclick="this.style.display='none'" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:11000; display:none; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
-        <img id="lbImg" style="max-width:95%; max-height:90%; border-radius:10px; box-shadow:0 0 50px rgba(0,0,0,0.5);">
-    </div>
+    <div id="lb" onclick="this.style.display='none'" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:11000; display:none; align-items:center; justify-content:center;"><img id="lbImg" style="max-width:98%; max-height:95%;"></div>
     
     <div id="msgPopup" class="custom-popup" onclick="event.stopPropagation()"></div>
 
     <script>
-        // --- إعدادات Firebase ---
-        const firebaseConfig = {
-            apiKey: "AIzaSy...", // استبدلها بمفتاحك الحقيقي
-            authDomain: "westart-ac4d2.firebaseapp.com",
-            databaseURL: "https://westart-ac4d2-default-rtdb.firebaseio.com/",
-            projectId: "westart-ac4d2",
-            storageBucket: "westart-ac4d2.appspot.com",
-            messagingSenderId: "...",
-            appId: "..."
-        };
-
+        const firebaseConfig = { databaseURL: "https://westart-ac4d2-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const auth = firebase.auth();
-        const storage = firebase.storage();
 
-        // --- متغيرات الحالة ---
-        let userData = { uid: null, name: "WeStars", id: "", avatar: "", banner: "" };
-        let myFriends = [];
-        let currentFriend = null;
-        let selectedMsgId = null, selectedMsgText = "", selectedMsgImg = null, replyToId = null, tempChatImg = null, isEditMode = false;
-        let typingTimeout;
+        let currentFriend = null, selectedMsgId = null, selectedMsgText = "", selectedMsgImg = null, replyToId = null;
+        let tempChatImg = null, isEditMode = false;
+        let myID = localStorage.getItem('myStarsID') || 'user' + Math.floor(Math.random()*9999);
+        localStorage.setItem('myStarsID', myID);
 
-        // --- المصادقة (Auth Logic) ---
-        auth.onAuthStateChanged(user => {
-            document.getElementById('loading-overlay').style.display = 'none';
-            if (user) {
-                userData.uid = user.uid;
-                db.ref('users/' + user.uid).once('value', snap => {
-                    if (snap.exists()) {
-                        userData = snap.val();
-                        initApp();
-                    } else {
-                        // مستخدم جديد من جوجل
-                        userData.name = user.displayName;
-                        userData.avatar = user.photoURL;
-                        userData.id = "user_" + Math.random().toString(36).substr(2, 5);
-                        db.ref('users/' + user.uid).set(userData);
-                        initApp();
-                    }
-                });
-            } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-                document.getElementById('main-content').style.display = 'none';
-                document.getElementById('bottom-nav').style.display = 'none';
-            }
-        });
+        const userData = {
+            name: localStorage.getItem('myName') || "WeStars",
+            id: myID,
+            avatar: localStorage.getItem('myAv') || "",
+            banner: localStorage.getItem('myBan') || ""
+        };
 
-        function signInWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithRedirect(provider);
-        }
+        let myFriends = JSON.parse(localStorage.getItem('myFriendsList')) || [];
 
-        function logout() {
-            auth.signOut().then(() => location.reload());
-        }
-
-        // --- تشغيل التطبيق ---
-        function initApp() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            document.getElementById('bottom-nav').style.display = 'flex';
-            document.body.setAttribute('data-theme', 'dark');
-            
+        function init() {
+            renderFriends(); 
             loadProfile();
-            setUserPresence();
-            listenForMyFriends();
+            document.body.setAttribute('data-theme', 'dark');
+            syncWithFirebase();
+            startUnreadMonitor();
             listenForRequests();
+            startLastMsgMonitor();
+            fixKeyboardIssue(); // استدعاء دالة حل مشكلة الكيبورد
         }
 
-        function setUserPresence() {
-            const myStatusRef = db.ref('status/' + userData.uid);
-            db.ref('.info/connected').on('value', snap => {
-                if (snap.val() === true) {
-                    myStatusRef.onDisconnect().set({ state: 'offline', last_changed: firebase.database.ServerValue.TIMESTAMP });
-                    myStatusRef.set({ state: 'online', last_changed: firebase.database.ServerValue.TIMESTAMP });
-                }
-            });
-        }
-
-        // --- منطق الأصدقاء والرسائل ---
-        function listenForMyFriends() {
-            db.ref('friends/' + userData.uid).on('value', snap => {
-                myFriends = [];
-                const data = snap.val();
-                if (data) {
-                    Object.keys(data).forEach(key => myFriends.push(data[key]));
-                }
-                renderFriends();
-                startUnreadMonitor();
-            });
-        }
-
-        function renderFriends() {
-            const container = document.getElementById('messages-list');
-            container.innerHTML = myFriends.map(f => `
-                <div class="msg-list-item" onclick="openChat('${f.uid}')">
-                    <div class="msg-avatar" style="background-image:url('${f.avatar || ''}')"></div>
-                    <div id="badge-${f.uid}" class="unread-badge">0</div>
-                    <div style="flex:1;">
-                        <div style="font-weight:900;">${f.name}</div>
-                        <div id="last-msg-${f.uid}" style="font-size:0.8rem; color:var(--inactive-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">@${f.id}</div>
-                    </div>
-                </div>`).join('');
+        // --- دالة حل مشكلة الكيبورد ورفع الشاشة ---
+        function fixKeyboardIssue() {
+            const inputs = document.querySelectorAll('input[type="text"]');
             
-            myFriends.forEach(f => {
-                const chatID = [userData.uid, f.uid].sort().join('_');
-                db.ref('chats/' + chatID).limitToLast(1).on('value', s => {
-                    const m = s.val();
-                    const el = document.getElementById('last-msg-' + f.uid);
-                    if (el && m) {
-                        const last = Object.values(m)[0];
-                        el.innerText = last.img ? "📷 صورة" : last.text;
-                    }
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    // منع المتصفح من محاولة التمرير الذاتي الذي يخرب التصميم
+                    setTimeout(() => {
+                        window.scrollTo(0, 0);
+                        document.body.scrollTop = 0;
+                    }, 50);
+                });
+
+                input.addEventListener('blur', () => {
+                    // العودة للوضع الطبيعي عند إغلاق الكيبورد
+                    setTimeout(() => {
+                        window.scrollTo(0, 0);
+                    }, 50);
                 });
             });
-        }
 
-        function openChat(friendUid) {
-            currentFriend = myFriends.find(f => f.uid === friendUid);
-            document.getElementById('chat-user-name').innerText = currentFriend.name;
-            document.getElementById('chat-user-avatar').style.backgroundImage = `url('${currentFriend.avatar || ''}')`;
-            document.getElementById('chat-window').style.display = 'flex';
-            
-            watchFriendStatus(friendUid);
-            const chatID = [userData.uid, friendUid].sort().join('_');
-
-            // مراقبة الرسائل (آخر 50)
-            db.ref('chats/' + chatID).limitToLast(50).on('value', snap => {
-                const msgs = snap.val();
-                if (msgs) {
-                    Object.keys(msgs).forEach(k => {
-                        if (msgs[k].sender !== userData.uid && !msgs[k].seen) db.ref(`chats/${chatID}/${k}`).update({ seen: true });
-                    });
-                }
-                renderMessages(msgs);
-            });
-
-            // مراقبة الكتابة
-            db.ref(`typing/${chatID}/${friendUid}`).on('value', s => {
-                const statusLabel = document.getElementById('chat-user-status');
-                if (s.val() === true) {
-                    statusLabel.innerHTML = '<span class="typing-indicator">جاري الكتابة الآن...</span>';
-                } else {
-                    watchFriendStatus(friendUid); // ارجع لحالة آخر ظهور
-                }
-            });
-        }
-
-        function renderMessages(msgs) {
-            const container = document.getElementById('chat-body');
-            container.innerHTML = '';
-            if (!msgs) return;
-            Object.keys(msgs).forEach(key => {
-                const m = msgs[key];
-                if (m.deletedBy === userData.uid) return;
-                const isMe = m.sender === userData.uid;
-                let replyHtml = "";
-                if (m.replyTo && msgs[m.replyTo]) {
-                    const original = msgs[m.replyTo];
-                    replyHtml = `<div class="replied-msg-box" onclick="scrollToMsg('${m.replyTo}')">
-                        <div style="font-weight:bold; color:var(--accent-color);">${original.sender === userData.uid ? 'أنت' : currentFriend.name}</div>
-                        <div style="opacity:0.7; font-size:0.8rem;">${original.text || '📷 صورة'}</div>
-                    </div>`;
-                }
-
-                container.innerHTML += `
-                    <div class="bubble-container" id="cont-${key}" ontouchstart="touchStartSwipe(event, '${key}')" ontouchend="touchEndSwipe(event, '${key}', '${m.sender}', '${m.text}')">
-                        <div id="msg-${key}" class="bubble ${isMe ? 'me' : 'other'}" oncontextmenu="handleLongPress(event, '${key}', '${m.text || ''}', '${m.img || ''}', '${m.sender}')">
-                            ${replyHtml}
-                            ${m.img ? `<img src="${m.img}" style="width:100%; border-radius:12px; margin-bottom:8px;" onclick="viewImg('${m.img}')">` : ''}
-                            ${m.text || ''}
-                            <span class="bubble-time">${m.time} | ${m.date}</span>
-                        </div>
-                    </div>`;
-            });
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // --- رفع الملفات لـ Firebase Storage ---
-        function uploadImageToFirebase(input) {
-            if (!input.files[0]) return;
-            const file = input.files[0];
-            const ref = storage.ref(`chats/${Date.now()}_${file.name}`);
-            showToast("جاري رفع الصورة...");
-            
-            ref.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
-                tempChatImg = url;
-                document.getElementById('chatImgPrevBox').style.display = 'block';
-                document.getElementById('chatImgPrevSrc').src = url;
-                showToast("تم الرفع بنجاح");
-            });
-        }
-
-        function uploadToStorage(input, type) {
-            if (!input.files[0]) return;
-            const file = input.files[0];
-            const ref = storage.ref(`users/${userData.uid}/${type}`);
-            showToast("جاري التحديث...");
-            
-            ref.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
-                if (type === 'avatar') {
-                    userData.avatar = url;
-                    document.getElementById('eAvatarPrev').style.backgroundImage = `url('${url}')`;
-                } else {
-                    userData.banner = url;
-                    document.getElementById('eBannerPrev').style.backgroundImage = `url('${url}')`;
-                }
-            });
-        }
-
-        // --- إرسال الرسائل ---
-        function sendMessage() {
-            const inp = document.getElementById('chat-input');
-            const text = inp.value.trim();
-            if (!text && !tempChatImg) return;
-            
-            const chatID = [userData.uid, currentFriend.uid].sort().join('_');
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-            const dateStr = now.toLocaleDateString('en-GB');
-
-            if (isEditMode) {
-                db.ref(`chats/${chatID}/${selectedMsgId}`).update({ text, img: tempChatImg });
-                cancelEditMode();
-            } else {
-                const msgData = {
-                    sender: userData.uid,
-                    text: text,
-                    img: tempChatImg || null,
-                    time: timeStr,
-                    date: dateStr,
-                    seen: false
-                };
-                if (replyToId) msgData.replyTo = replyToId;
-                db.ref(`chats/${chatID}`).push(msgData);
-                inp.value = '';
-                removeChatImg();
-                cancelReplyMode();
-            }
-            // توقف عن حالة الكتابة فور الإرسال
-            db.ref(`typing/${chatID}/${userData.uid}`).set(false);
-        }
-
-        function updateTypingStatus() {
-            const chatID = [userData.uid, currentFriend.uid].sort().join('_');
-            db.ref(`typing/${chatID}/${userData.uid}`).set(true);
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                db.ref(`typing/${chatID}/${userData.uid}`).set(false);
-            }, 2000);
-        }
-
-        // --- وظائف مساعدة (UI) ---
-        function goPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-' + id).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            if(id === 'messages') document.querySelectorAll('.nav-btn')[0].classList.add('active');
-            if(id === 'profile') document.querySelectorAll('.nav-btn')[1].classList.add('active');
-        }
-
-        function closeChat() {
-            document.getElementById('chat-window').style.display = 'none';
-            if (currentFriend) {
-                const chatID = [userData.uid, currentFriend.uid].sort().join('_');
-                db.ref('chats/' + chatID).off();
-                db.ref(`typing/${chatID}/${currentFriend.uid}`).off();
-                db.ref('status/' + currentFriend.uid).off();
-            }
-            currentFriend = null;
-        }
-
-        function loadProfile() {
-            document.getElementById('pNameShow').innerText = userData.name;
-            document.getElementById('pIdShow').innerText = "@" + userData.id;
-            document.getElementById('pAvatar').style.backgroundImage = `url('${userData.avatar || ''}')`;
-            document.getElementById('pBanner').style.backgroundImage = `url('${userData.banner || ''}')`;
-            document.getElementById('eName').value = userData.name;
-            document.getElementById('eId').value = userData.id;
-            document.getElementById('eAvatarPrev').style.backgroundImage = `url('${userData.avatar || ''}')`;
-            document.getElementById('eBannerPrev').style.backgroundImage = `url('${userData.banner || ''}')`;
-        }
-
-        function saveProfile() {
-            const newId = document.getElementById('eId').value.trim();
-            const newName = document.getElementById('eName').value.trim();
-            if (!newId || !newName) return;
-            
-            userData.id = newId;
-            userData.name = newName;
-            db.ref('users/' + userData.uid).update(userData).then(() => {
-                showToast("تم حفظ التعديلات");
-                loadProfile();
-                goPage('profile');
-            });
-        }
-
-        function watchFriendStatus(friendUid) {
-            const label = document.getElementById('chat-user-status');
-            db.ref('status/' + friendUid).on('value', snap => {
-                const s = snap.val();
-                if (!s) return;
-                if (s.state === 'online') {
-                    label.innerText = "متصل الآن";
-                    label.className = "user-status-text status-online";
-                } else {
-                    label.className = "user-status-text";
-                    const last = new Date(s.last_changed);
-                    label.innerText = "آخر ظهور: " + last.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            // مراقبة حجم النافذة للتعامل مع لوحة المفاتيح في الأندرويد
+            const originalHeight = window.innerHeight;
+            window.addEventListener('resize', () => {
+                if (window.innerHeight < originalHeight) {
+                    // الكيبورد مفتوح - نحافظ على ثبات الهيدر
+                    if(document.getElementById('chat-window').style.display === 'flex') {
+                        document.getElementById('chat-body').scrollTop = document.getElementById('chat-body').scrollHeight;
+                    }
                 }
             });
         }
@@ -599,105 +447,136 @@
         function showToast(msg) {
             const t = document.getElementById('toastAlert');
             t.innerText = msg; t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
+            setTimeout(() => t.style.display = 'none', 2500);
         }
 
-        function closeAllUI() { document.getElementById('msgPopup').style.display = 'none'; }
-        function removeChatImg() { tempChatImg = null; document.getElementById('chatImgPrevBox').style.display = 'none'; }
-        function viewImg(src) { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display = 'flex'; }
-        function toggleTheme() {
-            const b = document.body;
-            const current = b.getAttribute('data-theme');
-            b.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+        function syncWithFirebase() { db.ref('users/' + userData.id).set({ name: userData.name, id: userData.id, avatar: userData.avatar, banner: userData.banner }); }
+
+        function goPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + id).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if(id === 'messages') document.querySelectorAll('.nav-btn')[0].classList.add('active');
+            if(id === 'profile') document.querySelectorAll('.nav-btn')[1].classList.add('active');
         }
 
-        // --- منطق البحث والطلبات ---
-        function searchUserByInternalID() {
-            const val = document.getElementById('addSearchInput').value.trim();
-            const container = document.getElementById('search-result-container');
-            if (!val) return container.innerHTML = "";
+        function openChat(id) {
+            currentFriend = myFriends.find(f => f.id === id);
+            document.getElementById('chat-user-name').innerText = currentFriend.name;
+            document.getElementById('chat-user-avatar').style.backgroundImage = `url('${currentFriend.avatar || 'https://via.placeholder.com/100'}')`;
+            document.getElementById('chat-window').style.display = 'flex';
+            const chatID = [userData.id, currentFriend.id].sort().join('_');
             
-            db.ref('users').orderByChild('id').equalTo(val).once('value', snap => {
+            db.ref('chats/' + chatID).on('value', snap => {
+                const msgs = snap.val();
+                if(msgs) Object.keys(msgs).forEach(key => { if(msgs[key].sender !== userData.id && !msgs[key].seen) db.ref('chats/' + chatID + '/' + key).update({ seen: true }); });
+                renderMessages(msgs);
+            });
+        }
+
+        function openFriendProfile() {
+            if(!currentFriend) return;
+            db.ref('users/' + currentFriend.id).once('value', snap => {
                 const data = snap.val();
-                if (data) {
-                    const u = Object.values(data)[0];
-                    const uid = Object.keys(data)[0];
-                    if (uid === userData.uid) return;
-                    container.innerHTML = `<div class="req-card" style="margin:20px; padding:15px; background:var(--card-bg); border-radius:20px; display:flex; align-items:center; gap:15px; border:1px solid var(--border-color);">
-                        <div class="msg-avatar" style="background-image:url('${u.avatar || ''}')"></div>
-                        <div style="flex:1;"><b>${u.name}</b><br><small>@${u.id}</small></div>
-                        <button onclick="sendFriendRequest('${uid}', '${u.name}', '${u.avatar}')" class="btn-accept" style="background:var(--accent-color); color:white; border:none; padding:10px 20px; border-radius:12px; font-weight:bold;">إرسال طلب</button>
+                if(data) {
+                    document.getElementById('infoName').innerText = data.name;
+                    document.getElementById('infoId').innerText = "@" + data.id;
+                    document.getElementById('infoAvatar').style.backgroundImage = `url('${data.avatar || ''}')`;
+                    document.getElementById('infoBanner').style.backgroundImage = `url('${data.banner || ''}')`;
+                    document.getElementById('friend-profile-info').style.display = 'flex';
+                } else {
+                    document.getElementById('infoName').innerText = currentFriend.name;
+                    document.getElementById('infoId').innerText = "@" + currentFriend.id;
+                    document.getElementById('infoAvatar').style.backgroundImage = `url('${currentFriend.avatar || ''}')`;
+                    document.getElementById('friend-profile-info').style.display = 'flex';
+                }
+            });
+        }
+
+        function closeFriendProfile() { document.getElementById('friend-profile-info').style.display = 'none'; }
+
+        function openDeleteAlert() { document.getElementById('deleteAlert').style.display = 'flex'; }
+        function closeDeleteAlert() { document.getElementById('deleteAlert').style.display = 'none'; }
+        
+        function confirmDeleteFriend() {
+            if(!currentFriend) return;
+            const friendToDeleteID = currentFriend.id;
+            const chatID = [userData.id, friendToDeleteID].sort().join('_');
+            db.ref('chats/' + chatID).remove().then(() => {
+                myFriends = myFriends.filter(f => f.id !== friendToDeleteID);
+                localStorage.setItem('myFriendsList', JSON.stringify(myFriends));
+                closeDeleteAlert(); closeFriendProfile(); closeChat(); renderFriends();
+                showToast("تم حذف الصداقة ومسح المحادثة");
+            });
+        }
+
+        function renderMessages(msgs) {
+            const container = document.getElementById('chat-body');
+            container.innerHTML = '';
+            if(!msgs) return;
+            Object.keys(msgs).forEach(key => {
+                const m = msgs[key];
+                if(m.deletedBy && m.deletedBy === userData.id) return;
+                const isMe = m.sender === userData.id;
+                let replyHtml = "";
+                if(m.replyTo) {
+                    const original = msgs[m.replyTo];
+                    replyHtml = `<div class="replied-msg-box" onclick="scrollToMsg('${m.replyTo}')">
+                        <span class="reply-name">${original ? (original.sender === userData.id ? 'أنت' : currentFriend.name) : 'رسالة محذوفة'}</span>
+                        <div class="reply-text">${original ? (original.text || 'صورة') : '...'}</div>
                     </div>`;
-                } else {
-                    container.innerHTML = "<p style='text-align:center; padding:30px;'>المستخدم غير موجود</p>";
                 }
+                const timeDisplay = `${m.date || ''} | ${m.time || ''}`;
+                container.innerHTML += `<div class="bubble-container" id="cont-${key}" 
+                    ontouchstart="touchStartSwipe(event, '${key}')" ontouchmove="touchMoveSwipe(event, '${key}', '${m.sender}')" ontouchend="touchEndSwipe(event, '${key}', '${m.sender}', '${m.text}')">
+                    <div id="icon-r-${key}" class="swipe-icon swipe-right"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"></path></svg></div>
+                    <div id="icon-l-${key}" class="swipe-icon swipe-left"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"></path></svg></div>
+                    <div id="msg-${key}" class="bubble ${isMe ? 'me' : 'other'}" oncontextmenu="handleLongPress(event, '${key}', '${m.text || ''}', '${m.img || ''}', '${m.sender}')">
+                        ${replyHtml}
+                        ${m.img ? `<img src="${m.img}" style="width:100%; border-radius:10px; margin-bottom:5px; cursor:pointer;" onclick="viewImg('${m.img}')">` : ''}
+                        ${m.text || ''}
+                        <span class="bubble-time">${timeDisplay}</span>
+                    </div>
+                </div>`;
             });
+            container.scrollTop = container.scrollHeight;
         }
 
-        function sendFriendRequest(toUid, name, avatar) {
-            db.ref(`requests/${toUid}/${userData.uid}`).set({
-                uid: userData.uid,
-                name: userData.name,
-                id: userData.id,
-                avatar: userData.avatar
-            }).then(() => showToast("تم إرسال الطلب"));
+        function sendMessage() {
+            const inp = document.getElementById('chat-input');
+            const text = inp.value.trim();
+            if(!text && !tempChatImg) return;
+            const chatID = [userData.id, currentFriend.id].sort().join('_');
+            const now = new Date();
+            const timeStr = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0') + (now.getHours() >= 12 ? ' م' : ' ص');
+            const dateStr = now.getFullYear() + "/" + (now.getMonth()+1) + "/" + now.getDate();
+
+            if(isEditMode) {
+                db.ref('chats/' + chatID + '/' + selectedMsgId).update({ text: text, img: tempChatImg });
+                cancelEditMode();
+            } else {
+                let msgData = { sender: userData.id, text: text, img: tempChatImg, time: timeStr, date: dateStr, seen: false };
+                if(replyToId) msgData.replyTo = replyToId;
+                db.ref('chats/' + chatID).push(msgData);
+                inp.value = ''; removeChatImg(); cancelReplyMode();
+            }
         }
 
-        function listenForRequests() {
-            db.ref('requests/' + userData.uid).on('value', snap => {
-                const reqs = snap.val();
-                const list = document.getElementById('requests-list');
-                const dot = document.getElementById('requestDot');
-                list.innerHTML = "";
-                if (reqs) {
-                    dot.style.display = 'block';
-                    Object.values(reqs).forEach(r => {
-                        list.innerHTML += `<div class="req-card" style="margin:15px; padding:15px; background:var(--card-bg); border-radius:18px; display:flex; align-items:center; gap:12px; border:1px solid var(--border-color);">
-                            <div class="msg-avatar" style="background-image:url('${r.avatar || ''}')"></div>
-                            <div style="flex:1;"><b>${r.name}</b><br>@${r.id}</div>
-                            <button onclick="acceptRequest('${r.uid}', '${r.name}', '${r.avatar}', '${r.id}')" style="background:var(--accent-color); color:white; border:none; padding:8px 15px; border-radius:10px; font-weight:bold;">قبول</button>
-                        </div>`;
-                    });
-                } else {
-                    dot.style.display = 'none';
-                    list.innerHTML = "<p style='text-align:center; padding:40px; opacity:0.5;'>لا توجد طلبات جديدة</p>";
-                }
-            });
-        }
-
-        function acceptRequest(fUid, fName, fAvatar, fId) {
-            const fData = { uid: fUid, name: fName, avatar: fAvatar, id: fId };
-            // إضافة للصديق عندي
-            db.ref(`friends/${userData.uid}/${fUid}`).set(fData);
-            // إضافة لي عنده
-            db.ref(`friends/${fUid}/${userData.uid}`).set({ uid: userData.uid, name: userData.name, avatar: userData.avatar, id: userData.id });
-            // حذف الطلب
-            db.ref(`requests/${userData.uid}/${fUid}`).remove();
-            showToast("تمت الإضافة بنجاح");
-        }
-
-        // --- التعامل مع الرسائل (Long Press & Swipe) ---
         function handleLongPress(e, id, text, img, sender) {
-            e.preventDefault();
-            selectedMsgId = id; selectedMsgText = text; selectedMsgImg = img;
-            const pop = document.getElementById('msgPopup');
-            const isMe = sender === userData.uid;
-            
-            pop.innerHTML = isMe ? 
-                `<div class="popup-btn" onclick="enterEditMode()">تعديل</div>
-                 <div class="popup-btn" style="color:var(--danger-color)" onclick="deleteMessage('all')">حذف للجميع</div>` :
-                `<div class="popup-btn" onclick="deleteMessage('me')">حذف لدي</div>`;
-            
+            e.preventDefault(); selectedMsgId = id; selectedMsgText = text; selectedMsgImg = img;
+            const pop = document.getElementById('msgPopup'); const isMe = sender === userData.id;
+            pop.innerHTML = isMe ? `<div class="popup-btn" onclick="enterEditMode()">تعديل</div><div class="popup-btn" onclick="deleteMessage('me')">حذف لدي</div><div class="popup-btn" style="color:var(--danger-color);" onclick="deleteMessage('all')">حذف لدى الجميع</div>` : `<div class="popup-btn" onclick="deleteMessage('me')">حذف لدي</div>`;
             pop.style.display = 'block';
-            pop.style.left = '50%';
-            pop.style.top = '50%';
-            pop.style.transform = 'translate(-50%, -50%)';
+            let x = (e.clientX || (e.touches ? e.touches[0].clientX : 100)) - 85;
+            let y = (e.clientY || (e.touches ? e.touches[0].clientY : 100)) - 40;
+            pop.style.left = Math.max(10, Math.min(x, window.innerWidth - 180)) + 'px';
+            pop.style.top = Math.max(10, Math.min(y, window.innerHeight - 150)) + 'px';
         }
 
         function deleteMessage(type) {
-            const chatID = [userData.uid, currentFriend.uid].sort().join('_');
-            if (type === 'all') db.ref(`chats/${chatID}/${selectedMsgId}`).remove();
-            else db.ref(`chats/${chatID}/${selectedMsgId}`).update({ deletedBy: userData.uid });
+            const chatID = [userData.id, currentFriend.id].sort().join('_');
+            if(type === 'all') db.ref('chats/' + chatID + '/' + selectedMsgId).remove();
+            else db.ref('chats/' + chatID + '/' + selectedMsgId).update({ deletedBy: userData.id });
             closeAllUI();
         }
 
@@ -705,28 +584,182 @@
             isEditMode = true; closeAllUI();
             document.getElementById('edit-indicator').style.display = 'flex';
             document.getElementById('chat-input').value = selectedMsgText;
+            document.getElementById('send-icon-svg').innerHTML = '<path d="M20 6L9 17l-5-5" stroke="white" stroke-width="3" fill="none"/>';
+            if(selectedMsgImg) { tempChatImg = selectedMsgImg; document.getElementById('chatImgPrevBox').style.display = 'block'; document.getElementById('chatImgPrevSrc').src = selectedMsgImg; }
             document.getElementById('chat-input').focus();
         }
 
         function cancelEditMode() {
-            isEditMode = false;
-            document.getElementById('edit-indicator').style.display = 'none';
-            document.getElementById('chat-input').value = '';
+            isEditMode = false; document.getElementById('edit-indicator').style.display = 'none'; document.getElementById('chat-input').value = '';
+            document.getElementById('send-icon-svg').innerHTML = '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>'; removeChatImg();
         }
 
-        let startX = 0;
-        function touchStartSwipe(e) { startX = e.touches[0].clientX; }
+        let startX = 0, startY = 0;
+        function touchStartSwipe(e, id) { 
+            startX = e.touches[0].clientX; 
+            startY = e.touches[0].clientY; 
+            document.getElementById('cont-' + id).style.transition = 'none'; 
+        }
+        function touchMoveSwipe(e, id, sender) {
+            let moveX = e.touches[0].clientX - startX;
+            let moveY = e.touches[0].clientY - startY;
+            if(Math.abs(moveY) > Math.abs(moveX)) return;
+            let el = document.getElementById('cont-' + id);
+            let iconR = document.getElementById('icon-r-' + id);
+            let iconL = document.getElementById('icon-l-' + id);
+            const isMe = (sender === userData.id);
+            if(!isMe && moveX > 0 && moveX < 110) { el.style.transform = `translateX(${moveX}px)`; iconR.style.opacity = moveX / 70; } 
+            else if(isMe && moveX < 0 && moveX > -110) { el.style.transform = `translateX(${moveX}px)`; iconL.style.opacity = Math.abs(moveX) / 70; }
+        }
         function touchEndSwipe(e, id, sender, text) {
+            let el = document.getElementById('cont-' + id);
             let moveX = e.changedTouches[0].clientX - startX;
-            if (Math.abs(moveX) > 70) {
-                replyToId = id;
-                document.getElementById('reply-indicator').style.display = 'flex';
-                document.getElementById('reply-to-name').innerText = sender === userData.uid ? "أنت" : currentFriend.name;
-                document.getElementById('reply-to-text').innerText = text || "📷 صورة";
-                document.getElementById('chat-input').focus();
+            let moveY = e.changedTouches[0].clientY - startY;
+            const isMe = (sender === userData.id);
+            el.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            if(Math.abs(moveX) > Math.abs(moveY)) {
+                if((!isMe && moveX > 65) || (isMe && moveX < -65)) { activateReplyMode(id, text, isMe ? userData.name : currentFriend.name); }
             }
+            el.style.transform = `translateX(0px)`;
+            setTimeout(() => { if(document.getElementById('icon-r-' + id)) document.getElementById('icon-r-' + id).style.opacity = 0; if(document.getElementById('icon-l-' + id)) document.getElementById('icon-l-' + id).style.opacity = 0; }, 200);
+        }
+
+        function activateReplyMode(id, text, name) {
+            replyToId = id; const repInd = document.getElementById('reply-indicator');
+            document.getElementById('reply-to-name').innerText = name;
+            document.getElementById('reply-to-text').innerText = text || "صورة";
+            repInd.style.display = 'flex'; document.getElementById('chat-input').focus();
         }
         function cancelReplyMode() { replyToId = null; document.getElementById('reply-indicator').style.display = 'none'; }
+
+        function scrollToMsg(targetId) {
+            const target = document.getElementById('msg-' + targetId);
+            if(target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('highlight-msg');
+                setTimeout(() => target.classList.remove('highlight-msg'), 1000);
+            }
+        }
+
+        function sendFriendRequest(targetID, targetName, targetAvatar) {
+            if(targetID === userData.id) return;
+            db.ref('requests/' + targetID + '/' + userData.id).set({ id: userData.id, name: userData.name, avatar: userData.avatar }).then(() => { showToast("تم إرسال طلب المراسلة"); });
+        }
+
+        function listenForRequests() {
+            db.ref('requests/' + userData.id).on('value', snap => {
+                const reqs = snap.val(); const dot = document.getElementById('requestDot'); const list = document.getElementById('requests-list');
+                list.innerHTML = "";
+                if(reqs) { dot.style.display = 'block'; Object.keys(reqs).forEach(key => { const r = reqs[key]; list.innerHTML += `<div class="req-card"><div class="msg-avatar" style="background-image:url('${r.avatar || ''}')"></div><div style="flex:1;"><div style="font-weight:bold;">${r.name}</div><div>@${r.id}</div></div><div style="display:flex; gap:8px;"><button class="btn-accept" onclick="acceptRequest('${r.id}', '${r.name}', '${r.avatar}')">قبول</button><button class="btn-ignore" onclick="deleteRequest('${r.id}')">تجاهل</button></div></div>`; }); }
+                else dot.style.display = 'none';
+            });
+        }
+
+        function acceptRequest(id, name, avatar) {
+            if(!myFriends.find(f => f.id === id)) { myFriends.push({id, name, avatar}); localStorage.setItem('myFriendsList', JSON.stringify(myFriends)); }
+            db.ref('accepted/' + id + '/' + userData.id).set({ id: userData.id, name: userData.name, avatar: userData.avatar });
+            deleteRequest(id); renderFriends(); startUnreadMonitor(); startLastMsgMonitor();
+        }
+        function deleteRequest(id) { db.ref('requests/' + userData.id + '/' + id).remove(); }
+        
+        db.ref('accepted/' + userData.id).on('child_added', snap => {
+            const f = snap.val(); if(!myFriends.find(old => old.id === f.id)) { myFriends.push(f); localStorage.setItem('myFriendsList', JSON.stringify(myFriends)); renderFriends(); startUnreadMonitor(); startLastMsgMonitor(); }
+            db.ref('accepted/' + userData.id + '/' + f.id).remove();
+        });
+
+        function startUnreadMonitor() {
+            myFriends.forEach(f => {
+                const chatID = [userData.id, f.id].sort().join('_');
+                db.ref('chats/' + chatID).on('value', snap => {
+                    const msgs = snap.val(); let count = 0;
+                    if(msgs) Object.keys(msgs).forEach(k => { if(msgs[k].sender !== userData.id && !msgs[k].seen) count++; });
+                    const badge = document.getElementById('badge-' + f.id); if(badge) { badge.innerText = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
+                });
+            });
+        }
+
+        function startLastMsgMonitor() {
+            myFriends.forEach(f => {
+                const chatID = [userData.id, f.id].sort().join('_');
+                db.ref('chats/' + chatID).limitToLast(1).on('value', snap => {
+                    const data = snap.val();
+                    const el = document.getElementById('last-msg-' + f.id);
+                    if(el) {
+                        if(data) {
+                            const lastKey = Object.keys(data)[0];
+                            const last = data[lastKey];
+                            el.innerText = last.img ? "📷 صورة" : last.text;
+                        } else {
+                            el.innerText = "@" + f.id;
+                        }
+                    }
+                });
+            });
+        }
+
+        function handleFile(input) {
+            const reader = new FileReader(); reader.onload = e => { tempChatImg = e.target.result; document.getElementById('chatImgPrevBox').style.display = 'block'; document.getElementById('chatImgPrevSrc').src = tempChatImg; };
+            reader.readAsDataURL(input.files[0]);
+        }
+        function removeChatImg() { tempChatImg = null; document.getElementById('chatImgPrevBox').style.display = 'none'; document.getElementById('chatFileInput').value = ''; }
+        function closeAllUI() { document.getElementById('msgPopup').style.display = 'none'; }
+        function closeChat() { if(currentFriend) db.ref('chats/' + [userData.id, currentFriend.id].sort().join('_')).off(); document.getElementById('chat-window').style.display = 'none'; currentFriend = null; cancelEditMode(); cancelReplyMode(); }
+        function viewImg(src) { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display = 'flex'; }
+        function toggleTheme() { const b = document.body; b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
+        
+        function renderFriends() {
+            const container = document.getElementById('messages-list');
+            container.innerHTML = myFriends.map(f => `
+                <div class="msg-list-item" onclick="openChat('${f.id}')">
+                    <div class="msg-avatar" style="background-image:url('${f.avatar || ''}')"></div>
+                    <div id="badge-${f.id}" class="unread-badge">0</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:bold;">${f.name}</div>
+                        <div id="last-msg-${f.id}" class="last-msg-preview">@${f.id}</div>
+                    </div>
+                </div>`).join('');
+            startLastMsgMonitor();
+        }
+
+        function loadProfile() {
+            document.getElementById('pNameShow').innerText = userData.name; document.getElementById('pIdShow').innerText = "@" + userData.id;
+            document.getElementById('pAvatar').style.backgroundImage = `url('${userData.avatar || ''}')`; document.getElementById('pBanner').style.backgroundImage = `url('${userData.banner || ''}')`;
+            document.getElementById('eName').value = userData.name; document.getElementById('eId').value = userData.id;
+            document.getElementById('eAvatarPrev').style.backgroundImage = `url('${userData.avatar || ''}')`; document.getElementById('eBannerPrev').style.backgroundImage = `url('${userData.banner || ''}')`;
+        }
+
+        function saveProfile() {
+            const nId = document.getElementById('eId').value.trim(); const nNm = document.getElementById('eName').value.trim(); if(!nId || !nNm) return;
+            if(nId !== userData.id) { db.ref('users/' + nId).once('value', snap => { if(snap.exists()) showToast("المعرف مستخدم!"); else { db.ref('users/' + userData.id).remove(); userData.id = nId; userData.name = nNm; finishSave(); } }); }
+            else { userData.name = nNm; finishSave(); }
+        }
+        function finishSave() {
+            localStorage.setItem('myStarsID', userData.id); localStorage.setItem('myName', userData.name);
+            localStorage.setItem('myAv', userData.avatar); localStorage.setItem('myBan', userData.banner);
+            syncWithFirebase(); loadProfile(); goPage('profile');
+        }
+        function prevImg(input, targetId) {
+            const reader = new FileReader(); reader.onload = e => {
+                document.getElementById(targetId).style.backgroundImage = `url('${e.target.result}')`;
+                if(targetId === 'eAvatarPrev') userData.avatar = e.target.result;
+                if(targetId === 'eBannerPrev') userData.banner = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+        function searchUserByInternalID() {
+            const val = document.getElementById('addSearchInput').value.trim(); const container = document.getElementById('search-result-container'); if(!val) return container.innerHTML = "";
+            db.ref('users/' + val).once('value', snap => {
+                const u = snap.val();
+                if(u) { const isFriend = myFriends.find(f => f.id === u.id); container.innerHTML = `<div style="margin:15px; padding:15px; background:var(--card-bg); border-radius:15px; display:flex; align-items:center; gap:12px; border:1px solid var(--border-color);"><div class="msg-avatar" style="background-image:url('${u.avatar || ''}')"></div><div style="flex:1;"><div style="font-weight:bold;">${u.name}</div><div>@${u.id}</div></div>${isFriend ? '<span style="color:var(--inactive-color);">صديق</span>' : `<button onclick="sendFriendRequest('${u.id}','${u.name}','${u.avatar}')" class="btn-accept">إضافة</button>`}</div>`; }
+                else container.innerHTML = '<p style="text-align:center; padding:20px;">غير موجود</p>';
+            });
+        }
+        function smartSearch() {
+            const v = document.getElementById('friendSearch').value.toLowerCase();
+            document.querySelectorAll('.msg-list-item').forEach(i => { i.style.display = i.innerText.toLowerCase().includes(v) ? 'flex' : 'none'; });
+        }
+        window.onload = init;
     </script>
 </body>
 </html>
+
